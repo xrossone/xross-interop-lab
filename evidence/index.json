@@ -1,0 +1,251 @@
+{
+ "schema_version": 1,
+ "updated_at": "2026-09-15",
+ "notes": "证据登记簿：dossier/specs 中的 evidence_refs 必须指向这里登记的 id（tools/test_dossiers.py 强制）。kind 词表：run-manifest | device-run | source-tree | page-review | user-observation。",
+ "entries": [
+  {
+   "id": "run-2026-09-15-t01-workspace",
+   "kind": "run-manifest",
+   "level": "build-verified",
+   "date": "2026-09-15",
+   "path": "evidence/2026-09-15-t01-workspace/run-manifest.json",
+   "notes": "impl/ workspace 骨架 + T01 卫生测试"
+  },
+  {
+   "id": "run-2026-09-15-t02-source-intake",
+   "kind": "run-manifest",
+   "level": "source-reviewed",
+   "date": "2026-09-15",
+   "path": "evidence/2026-09-15-t02-source-intake/run-manifest.json",
+   "notes": "file-core+airplay 19 项来源 intake 扫描与一致性测试"
+  },
+  {
+   "id": "run-2026-09-15-t03-xross-map",
+   "kind": "run-manifest",
+   "level": "source-reviewed",
+   "date": "2026-09-15",
+   "path": "evidence/2026-09-15-t03-xross-integration-map/run-manifest.json",
+   "notes": "xross-dev 集成映射（锚定 099b6c72）"
+  },
+  {
+   "id": "device-run-2026-09-15-airplay-poc",
+   "kind": "device-run",
+   "level": "device-verified",
+   "date": "2026-09-15",
+   "path": "docs/research/airplay-research.md",
+   "device": {
+    "sender": "iPad Pro 12.9 (iPad13,8), AirPlay/960.13.1, iPadOS（版本未记录完整 build）",
+    "receiver": "MacBook Pro, macOS 26.6 (25G5065a), arm64, 有线以太网"
+   },
+   "notes": "真机 POC：UxPlay 基线（视频✅ 音频❌）；shairplay-rust transient 直连（视频链路✅ 画质扭曲，音频❌，PIN 配对未实现）。日志 /tmp/shairplay-audit/player.log（重启即失，研究文档含摘录结论）。"
+  },
+  {
+   "id": "user-observed-uxplay-iphone-mirror",
+   "kind": "user-observation",
+   "level": "catalogued",
+   "date": "2026-09-15 前",
+   "path": "references/research/xross-interop-plan-2026-09-15/docs/00-decisions-and-scope.md",
+   "notes": "用户观察：本机 UxPlay 曾成功接收 iPhone 镜像并开窗。未固定版本 → user-observed/unpinned，不得替代可复现测试。"
+  },
+  {
+   "id": "src-r13-protocol",
+   "kind": "source-tree",
+   "level": "source-reviewed",
+   "date": "2026-09-15",
+   "path": "~/Dev/others/r13-protocol（commit 62bd3406，lock R13）",
+   "notes": "LocalSend 协议文档仓；无 LICENSE（restricted）：只作事实引用，逐条注明出处"
+  },
+  {
+   "id": "src-r14-localsend",
+   "kind": "source-tree",
+   "level": "source-reviewed",
+   "date": "2026-09-15",
+   "path": "~/Dev/others/r14-localsend（commit 230fb692，lock R14）",
+   "notes": "LocalSend app（Apache-2.0）；v2 行为参考"
+  },
+  {
+   "id": "src-xrossdev-localsend-adapter",
+   "kind": "source-tree",
+   "level": "source-reviewed",
+   "date": "2026-09-15",
+   "path": "xross-dev@099b6c72 crates/adapter/xross-adapter-localsend + vendors/localsend-rs@428981a",
+   "notes": "主仓 LocalSend adapter：端点路由/发现/TLS/同意语义的 source-reviewed 事实来源（T03 映射）"
+  },
+  {
+   "id": "src-shairplay-rust-audit",
+   "kind": "source-tree",
+   "level": "source-reviewed",
+   "date": "2026-09-15",
+   "path": "~/Dev/others/r02-shairplay-rust（commit 2fb72b3=v0.10.0，lock R02；本地分支 fix/pair-setup-pin）",
+   "notes": "完整供应链审计见 docs/research/airplay-research.md §2（Gate 1 已过）"
+  },
+  {
+   "id": "src-uxplay-lab-clone",
+   "kind": "source-tree",
+   "level": "source-reviewed",
+   "date": "2026-09-15",
+   "path": "~/Dev/others/r01-uxplay（commit d9791de，lock R01）；POC 用的用户自有 UxPlay clone 为 44024fe（2026-09-11，含 GHSA-479c-ww7g-wgp8 修复）",
+   "notes": "pair-setup-pin 参考实现在 lib/raop_handlers.h:275-430 + lib/srp.c"
+  },
+  {
+   "id": "src-r15-neardrop",
+   "kind": "source-tree",
+   "level": "catalogued",
+   "date": "2026-09-15",
+   "path": "~/Dev/others/r15-neardrop（commit 8f1fdc7d，lock R15）",
+   "notes": "T02 元数据扫描；深度 source-review 待 P-F02-2"
+  },
+  {
+   "id": "src-r16-bada",
+   "kind": "source-tree",
+   "level": "catalogued",
+   "date": "2026-09-15",
+   "path": "~/Dev/others/r16-bada（commit 9fba4ee6，lock R16；restricted：无根 LICENSE）",
+   "notes": "T02 元数据扫描"
+  },
+  {
+   "id": "src-r17-nearby",
+   "kind": "source-tree",
+   "level": "catalogued",
+   "date": "2026-09-15",
+   "path": "~/Dev/others/r17-nearby（commit 2ea517ea，lock R17）",
+   "notes": "T02 元数据扫描"
+  },
+  {
+   "id": "src-r19-rquickshare",
+   "kind": "source-tree",
+   "level": "catalogued",
+   "date": "2026-09-15",
+   "path": "~/Dev/others/r19-rquickshare（commit 378d8ae9，lock R19）",
+   "notes": "T02 元数据扫描"
+  },
+  {
+   "id": "page-r32-miraclecast",
+   "kind": "page-review",
+   "level": "catalogued",
+   "date": "2026-09-15",
+   "path": "references/research/xross-interop-plan-2026-09-15/docs/03-reference-projects.md#R32 albfan/miraclecast",
+   "notes": "设计包编目审查（page_review）：sink 参照；README 声明 source 未实现"
+  },
+  {
+   "id": "page-r33-gnome-network-displays",
+   "kind": "page-review",
+   "level": "catalogued",
+   "date": "2026-09-15",
+   "path": "references/research/xross-interop-plan-2026-09-15/docs/03-reference-projects.md#R33 GNOME/gnome-network-displays",
+   "notes": "设计包编目审查（page_review）：Linux source 参照"
+  },
+  {
+   "id": "page-r34-miracast-sink",
+   "kind": "page-review",
+   "level": "catalogued",
+   "date": "2026-09-15",
+   "path": "references/research/xross-interop-plan-2026-09-15/docs/03-reference-projects.md#R34 ivygroup/miracast-sink",
+   "notes": "设计包编目审查（page_review）：WFD RTSP 历史参照"
+  },
+  {
+   "id": "page-r37-castengine",
+   "kind": "page-review",
+   "level": "catalogued",
+   "date": "2026-09-15",
+   "path": "references/research/xross-interop-plan-2026-09-15/docs/03-reference-projects.md#R37 openharmony/castengine_wifi_display",
+   "notes": "设计包编目审查（page_review）：开放 WFD 组件；系统依赖边界"
+  },
+  {
+   "id": "page-s04-win-miracastreceiver",
+   "kind": "page-review",
+   "level": "catalogued",
+   "date": "2026-09-15",
+   "path": "references/research/xross-interop-plan-2026-09-15/docs/03-reference-projects.md#S04 Windows MiracastReceiver API",
+   "notes": "设计包编目审查（page_review）：系统 receiver 入口文档"
+  },
+  {
+   "id": "page-r42-openscreen",
+   "kind": "page-review",
+   "level": "catalogued",
+   "date": "2026-09-15",
+   "path": "references/research/xross-interop-plan-2026-09-15/docs/03-reference-projects.md#R42 chromium/openscreen",
+   "notes": "设计包编目审查（page_review）：libcast 公开实现"
+  },
+  {
+   "id": "page-r43-castreceiver",
+   "kind": "page-review",
+   "level": "catalogued",
+   "date": "2026-09-15",
+   "path": "references/research/xross-interop-plan-2026-09-15/docs/03-reference-projects.md#R43 googlecast/CastReceiver",
+   "notes": "设计包编目审查（page_review）：CAF receiver 语义"
+  },
+  {
+   "id": "page-r44-pychromecast",
+   "kind": "page-review",
+   "level": "catalogued",
+   "date": "2026-09-15",
+   "path": "references/research/xross-interop-plan-2026-09-15/docs/03-reference-projects.md#R44 pychromecast",
+   "notes": "设计包编目审查（page_review）：sender 行为对照"
+  },
+  {
+   "id": "page-r45-protocol",
+   "kind": "page-review",
+   "level": "catalogued",
+   "date": "2026-09-15",
+   "path": "references/research/xross-interop-plan-2026-09-15/docs/03-reference-projects.md#R45 cast-web/protocol",
+   "notes": "设计包编目审查（page_review）：CASTV2 交叉参考（restricted）"
+  },
+  {
+   "id": "page-r46-pupnp",
+   "kind": "page-review",
+   "level": "catalogued",
+   "date": "2026-09-15",
+   "path": "references/research/xross-interop-plan-2026-09-15/docs/03-reference-projects.md#R46 pupnp/pupnp",
+   "notes": "设计包编目审查（page_review）：SSDP/SOAP/GENA 能力"
+  },
+  {
+   "id": "page-r47-platinum",
+   "kind": "page-review",
+   "level": "catalogued",
+   "date": "2026-09-15",
+   "path": "references/research/xross-interop-plan-2026-09-15/docs/03-reference-projects.md#R47 plutinosoft/Platinum",
+   "notes": "设计包编目审查（page_review）：三角色结构（GPL/商业待核）"
+  },
+  {
+   "id": "page-r48-gerbera",
+   "kind": "page-review",
+   "level": "catalogued",
+   "date": "2026-09-15",
+   "path": "references/research/xross-interop-plan-2026-09-15/docs/03-reference-projects.md#R48 gerbera/gerbera",
+   "notes": "设计包编目审查（page_review）：DMS/TV profiles 对照"
+  },
+  {
+   "id": "page-r49-rygel",
+   "kind": "page-review",
+   "level": "catalogued",
+   "date": "2026-09-15",
+   "path": "references/research/xross-interop-plan-2026-09-15/docs/03-reference-projects.md#R49 GNOME/rygel",
+   "notes": "设计包编目审查（page_review）：DMR/DMS GNOME 实现"
+  },
+  {
+   "id": "page-s07-cast-getting-started",
+   "kind": "page-review",
+   "level": "catalogued",
+   "date": "2026-09-15",
+   "path": "references/research/xross-interop-plan-2026-09-15/docs/03-reference-projects.md#S07 Google Cast getting started",
+   "notes": "设计包编目审查（page_review）：sender/receiver 平台区别"
+  },
+  {
+   "id": "page-s08-registration",
+   "kind": "page-review",
+   "level": "catalogued",
+   "date": "2026-09-15",
+   "path": "references/research/xross-interop-plan-2026-09-15/docs/03-reference-projects.md#S08 Google Cast registration",
+   "notes": "设计包编目审查（page_review）：app ID/设备注册边界"
+  },
+  {
+   "id": "page-s09-web-receiver",
+   "kind": "page-review",
+   "level": "catalogued",
+   "date": "2026-09-15",
+   "path": "references/research/xross-interop-plan-2026-09-15/docs/03-reference-projects.md#S09 Google Cast Web Receiver",
+   "notes": "设计包编目审查（page_review）：CAF 运行条件"
+  }
+ ]
+}
