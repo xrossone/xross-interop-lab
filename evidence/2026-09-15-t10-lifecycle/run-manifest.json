@@ -1,0 +1,33 @@
+{
+  "schema_version": 1,
+  "run_id": "2026-09-15-t10-lifecycle",
+  "task": "T10 · 实现会话注册表、事件与取消",
+  "evidence_level": "build-verified",
+  "is_test_evidence": true,
+  "synthetic": false,
+  "base_commit": "d4957d0（T09 提交）",
+  "case_ids": ["T10-01", "T10-02", "T10-03", "T10-04"],
+  "result": "pass",
+  "commands": [
+    {"seq": 1, "purpose": "red：session/events/limits 未实现", "command": "cargo test --manifest-path impl/Cargo.toml -p interop-runtime --test lifecycle", "exit_code": 101, "result": "fail（E0432，预期 red）"},
+    {"seq": 2, "purpose": "实现后本测试套件", "command": "cargo test --manifest-path impl/Cargo.toml -p interop-runtime --test lifecycle", "exit_code": 0, "result": "pass：4 tests"},
+    {"seq": 3, "purpose": "全 workspace 回归（40 tests）+ clippy", "command": "cargo test --manifest-path impl/Cargo.toml && cargo clippy --manifest-path impl/Cargo.toml --workspace --all-targets", "exit_code": 0, "result": "pass：全绿、0 warnings"}
+  ],
+  "acceptance_mapping": {
+    "T10-01": "单 authority 序列化：accept(99)→expire(99) 与 expire(100)→accept(100) 双向都恰好一个终态（terminal_decisions==1）；deadline 已过的 accept 裁决为 Expired；终态不可逆",
+    "T10-02": "同一会话 cancel×100：全部返回 Cancelled、状态一致、cleanup_events 恰好 1 条",
+    "T10-03": "4096 条上限淘汰后 subscribe_after(1) → Gap+snapshot_advice；缓冲内 cursor → 连续事件（sequence 递增校验）；最新 cursor → 空事件合法；16MiB 总字节上限独立验证（100×1MiB 只留尾部）",
+    "T10-04": "worker_crashed(\"crashy-worker\") 只影响挂靠它的 ses_bad（→Failed+清理），ses_good_1/2 保持 Active；sweep 按 absolute deadline 回收超期会话（→Failed）"
+  },
+  "source_ids": ["docs/05 §4 状态机/幂等", "docs/05 §6 事件（4096/16MiB/gap+snapshot）", "docs/01 CORE-06/07/10", "APP-06"],
+  "new_dependencies": "无",
+  "artifacts": [
+    {"path": "impl/crates/interop-runtime/src/session.rs"},
+    {"path": "impl/crates/interop-runtime/src/events.rs"},
+    {"path": "impl/crates/interop-runtime/src/limits.rs"},
+    {"path": "impl/crates/interop-runtime/tests/lifecycle.rs"}
+  ],
+  "credentials_redacted": true,
+  "license_route_approved": false,
+  "notes": "证据等级 build-verified。同步单点注册表即 actor 序列化语义（测试在单线程下验证裁决不变性）；tokio 多线程 actor 化与真实 IPC 事件流桥接列 T11+。事件元数据字节估算（+64B/条）是有意保守。"
+}
