@@ -1,0 +1,14 @@
+[package]
+name = "interopd"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+publish.workspace = true
+
+[dependencies]
+interop-contract = { path = "../../crates/interop-contract" }
+interop-ipc = { path = "../../crates/interop-ipc" }
+
+[[bin]]
+name = "interopd"
+path = "src/main.rs"

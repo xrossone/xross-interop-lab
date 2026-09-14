@@ -73,6 +73,15 @@ dependencies = [
 ]
 
 [[package]]
+name = "interop-ipc"
+version = "0.1.0"
+dependencies = [
+ "interop-contract",
+ "serde",
+ "serde_json",
+]
+
+[[package]]
 name = "interop-policy"
 version = "0.1.0"
 dependencies = [
@@ -86,6 +95,14 @@ dependencies = [
  "interop-contract",
  "interop-policy",
  "standalone-host",
+]
+
+[[package]]
+name = "interopd"
+version = "0.1.0"
+dependencies = [
+ "interop-contract",
+ "interop-ipc",
 ]
 
 [[package]]

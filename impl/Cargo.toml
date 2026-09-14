@@ -4,8 +4,10 @@ members = [
     "crates/interop-contract",
     "crates/interop-file",
     "crates/interop-policy",
+    "crates/interop-ipc",
     "crates/interop-runtime",
     "adapters/standalone-host",
+    "apps/interopd",
 ]
 
 [workspace.package]

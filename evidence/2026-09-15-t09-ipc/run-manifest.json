@@ -1,0 +1,41 @@
+{
+  "schema_version": 1,
+  "run_id": "2026-09-15-t09-ipc",
+  "task": "T09 · 实现本地RPC framing与认证",
+  "evidence_level": "build-verified",
+  "is_test_evidence": true,
+  "synthetic": false,
+  "base_commit": "a537af6（T08 提交）",
+  "case_ids": ["T09-01", "T09-02", "T09-03", "T09-04"],
+  "result": "pass",
+  "commands": [
+    {"seq": 1, "purpose": "red：frame/auth/server 未实现", "command": "cargo test --manifest-path impl/Cargo.toml -p interop-ipc --test ipc", "exit_code": 101, "result": "fail（E0432，预期 red）"},
+    {"seq": 2, "purpose": "实现后本测试套件", "command": "cargo test --manifest-path impl/Cargo.toml -p interop-ipc --test ipc", "exit_code": 0, "result": "pass：7 tests"},
+    {"seq": 3, "purpose": "全 workspace 回归（36 tests，19 套件）", "command": "cargo test --manifest-path impl/Cargo.toml", "exit_code": 0, "result": "pass"},
+    {"seq": 4, "purpose": "静态检查", "command": "cargo clippy --manifest-path impl/Cargo.toml --workspace --all-targets", "exit_code": 0, "result": "pass：0 warnings"}
+  ],
+  "acceptance_mapping": {
+    "T09-01": "hello+ping 两帧拼接后用逐字节 reader（每次 read() 交 1 字节）喂入 → read_frame 完整还原两帧 → hello 授权响应 + pong，内容精确",
+    "T09-02": "0xffffffff / 262145 / 0 三种长度：头 4 字节读完后、读身体（分配）前即返回 InvalidFrame；截断 reader 证明不需要身体字节",
+    "T09-03": "未 hello 直接 offers.decide / ping → auth-denied（hello 先认证）",
+    "T09-04": "hello api_major=1 → version-unsupported 错误响应且 conn.is_closed()==true；关闭后任何帧 → AuthDenied"
+  },
+  "supplementary": [
+    "非 JSON / 批量 JSON-RPC（数组）/ 坏 UTF-8 → InvalidFrame",
+    "token 无效 → auth-denied；授予 scopes = token 自身 scopes ∩ 请求（不放大）",
+    "未知方法 → unsupported-method；golden：ping payload 长度由测试计算且 frame 前缀==长度"
+  ],
+  "contract_evolution": "ErrorCode 增补 UnsupportedMethod（docs/05 §1 明确要求该方法级语义但 §3 初始表未列）与 VersionUnsupported（T09-04 需要显式版本拒绝码）；JSON Schema error_code enum 已同步",
+  "new_dependencies": ["serde_json 1（interop-ipc 直接依赖；JSON-RPC 序列化）"],
+  "source_ids": ["docs/05 §6 本地控制 IPC v0.1", "docs/01 §8（256KiB frame 上限）", "docs/07 §5/§8"],
+  "artifacts": [
+    {"path": "impl/crates/interop-ipc/src/frame.rs"},
+    {"path": "impl/crates/interop-ipc/src/auth.rs"},
+    {"path": "impl/crates/interop-ipc/src/server.rs"},
+    {"path": "impl/apps/interopd/src/main.rs"},
+    {"path": "impl/crates/interop-ipc/tests/ipc.rs"}
+  ],
+  "credentials_redacted": true,
+  "license_route_approved": false,
+  "notes": "证据等级 build-verified（本机测试）。诚实边界：interopd 骨架只实现了 Unix socket 载体与 0600 权限；Windows named pipe、peer-UID 校验、token 的受控 secret store 生成、速率限制均属后续任务（SEC-05 完整面）。当前测试层均为 in-process；未做真实双进程 socket 互通（该验证列 T10/T14）。"
+}

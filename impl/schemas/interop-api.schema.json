@@ -46,7 +46,9 @@
       "enum": [
         "unsupported-profile",
         "unsupported-role",
+        "unsupported-method",
         "unsupported-feature",
+        "version-unsupported",
         "platform-unavailable",
         "permission-required",
         "hardware-unavailable",

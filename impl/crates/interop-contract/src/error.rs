@@ -10,7 +10,9 @@ use serde::{Deserialize, Serialize};
 pub enum ErrorCode {
     UnsupportedProfile,
     UnsupportedRole,
+    UnsupportedMethod,
     UnsupportedFeature,
+    VersionUnsupported,
     PlatformUnavailable,
     PermissionRequired,
     HardwareUnavailable,
