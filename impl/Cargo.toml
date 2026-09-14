@@ -1,0 +1,13 @@
+[workspace]
+resolver = "2"
+members = [
+    "crates/interop-contract",
+]
+
+[workspace.package]
+version = "0.1.0"
+edition = "2021"
+# 许可证按组件决定（plans/01 T01 实现决策）：在用户做出开源决议前，
+# impl/ 产物整体标记为专有；未来开源时只复制许可清理过的子集并逐组件改标。
+license = "LicenseRef-Proprietary"
+publish = false

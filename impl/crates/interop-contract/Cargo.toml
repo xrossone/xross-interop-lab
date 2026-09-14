@@ -1,0 +1,10 @@
+[package]
+name = "interop-contract"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+publish.workspace = true
+
+# T01 约束（docs/04 §3）：contract 不依赖 Tokio、网络栈、GUI、codec、Xross 账号栈；
+# 仅允许基本序列化/标识类型等小型依赖。分层白名单见 tests/t01_workspace_hygiene.rs。
+[dependencies]
