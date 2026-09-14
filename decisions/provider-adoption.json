@@ -1,0 +1,259 @@
+{
+ "schema_version": 1,
+ "decided_at": "2026-09-14T22:04:28+00:00",
+ "scope": "T05 首批 provider 许可与实现路线（UxPlay/shairplay/LocalSend/QuickShare 参考/GStreamer/WinRT）",
+ "policy": {
+  "route_vocabulary": [
+   "reuse",
+   "worker",
+   "independent",
+   "vendor",
+   "blocked"
+  ],
+  "rules": [
+   "语言替换/翻译不构成许可豁免（T05-01）",
+   "worker（独立程序）不是许可隔离定理：须做组合性质审查（T05-02）",
+   "未取得厂商分发权 → 永远 vendor-gated（T05-03）",
+   "GPL 产物独立目录/发布单元；本阶段一律不自行放行（production_approved 全 false）"
+  ]
+ },
+ "entries": [
+  {
+   "id": "P-UXPLAY",
+   "key": "uxplay",
+   "provider": "UxPlay（FDH2/UxPlay）",
+   "source_ids": [
+    "R01"
+   ],
+   "route": "worker",
+   "usage": {
+    "copy": false,
+    "reference": true,
+    "runtime": true
+   },
+   "source_license": "GPL-3.0（文件级混合）",
+   "derivation": {
+    "translated_or_ported": false,
+    "notes": "外部进程运行未修改二进制；不翻译、不链接、不复制源码"
+   },
+   "output_release_unit": "external-binary（独立分发；如随产品附带须履行 GPL-3.0 源码 offer）",
+   "output_license": "GPL-3.0（上游自带，义务保留）",
+   "vendor_gated": false,
+   "composition_review": {
+    "status": "pending",
+    "note": "只运行未修改二进制 + 进程边界 IPC，组合风险低，但按流程完成独立性记录后才能放行"
+   },
+   "production_approved": false,
+   "approval": {
+    "status": "pending-user-review",
+    "decided_by": "agent（初步）",
+    "date": "2026-09-14T22:04:28+00:00",
+    "why": null
+   },
+   "recheck_conditions": "打包分发评审时放行；airplay-research Gate 4",
+   "why": "镜像接收 oracle 与应急 fallback（真机对比基准）；GPL 表达零进入自有代码"
+  },
+  {
+   "id": "P-SHAIRPLAY",
+   "key": "shairplay-shairplay-rust",
+   "provider": "shairplay-rust（metaneutrons）",
+   "source_ids": [
+    "R02"
+   ],
+   "route": "worker",
+   "usage": {
+    "copy": false,
+    "reference": true,
+    "runtime": true
+   },
+   "source_license": "LGPL-3.0-or-later",
+   "derivation": {
+    "translated_or_ported": false,
+    "notes": "库在独立 airplay-worker 进程内使用；本地 fix/pair-setup-pin 分支的修改若采用，按 LGPL-3.0 开放该 fork"
+   },
+   "output_release_unit": "airplay-worker（独立发布单元：LGPL notice + 源码 offer + 可替换链接说明）",
+   "output_license": "LGPL-3.0-obligations（组合产物整体许可另审）",
+   "vendor_gated": false,
+   "composition_review": {
+    "status": "pending",
+    "note": "Rust 静态链接下 LGPL 的合规实现方式（动态加载 vs 分发目标文件 vs 独立进程）待 T15+ 定案；Gate 4 未开始"
+   },
+   "production_approved": false,
+   "approval": {
+    "status": "pending-user-review",
+    "decided_by": "agent（初步）",
+    "date": "2026-09-14T22:04:28+00:00",
+    "why": null
+   },
+   "recheck_conditions": "Gate 4 商业分发 review；composition_review=passed 后才可 approved",
+   "why": "AirPlay 首选技术路线（Gate 1 供应链审计已过、transient 链路真机已通）；LGPL 边界靠独立进程+独立发布单元维持"
+  },
+  {
+   "id": "P-LOCALSEND",
+   "key": "localsend",
+   "provider": "LocalSend 实现（xross-adapter-localsend / vendored localsend-rs / 用户自有 localsend-rs）",
+   "source_ids": [
+    "R13",
+    "R14"
+   ],
+   "route": "reuse",
+   "usage": {
+    "copy": false,
+    "reference": true,
+    "runtime": true
+   },
+   "source_license": "R14 app=Apache-2.0；localsend-rs=MIT（Cargo.toml 声明，LICENSE 文件缺失——用户自有仓库待补）；R13 协议文档=无许可（restricted，事实引用）",
+   "derivation": {
+    "translated_or_ported": false,
+    "notes": "复用自有实现与主仓 adapter；不复制 R13 文本"
+   },
+   "output_release_unit": "interop 核心产物（宽松许可兼容）",
+   "output_license": "随 impl/ 组件决议（当前 LicenseRef-Proprietary）",
+   "vendor_gated": false,
+   "composition_review": null,
+   "production_approved": false,
+   "approval": {
+    "status": "pending-user-review",
+    "decided_by": "agent（初步）",
+    "date": "2026-09-14T22:04:28+00:00",
+    "why": null
+   },
+   "recheck_conditions": "用户确认 localsend-rs LICENSE 文件补齐后可将 approval.status 置 approved",
+   "why": "协议实现已成熟（主仓 6 个回归测试）；interop 只做 Offer/审批契约投影，零重复实现"
+  },
+  {
+   "id": "P-QUICKSHARE-REF",
+   "key": "quickshare-references",
+   "provider": "Quick Share 参考集（NearDrop/nearby/ukey2/rquickshare/Bada）",
+   "source_ids": [
+    "R15",
+    "R16",
+    "R17",
+    "R18",
+    "R19"
+   ],
+   "route": "independent",
+   "usage": {
+    "copy": false,
+    "reference": true,
+    "runtime": false
+   },
+   "source_license": "R15 Unlicense；R17/R18 Apache-2.0；R19 GPL-3.0；R16 无根许可（restricted）",
+   "derivation": {
+    "translated_or_ported": false,
+    "notes": "独立 Rust 实现：只取协议事实/规范/结构思想；R19 仅结构参考，R16 仅事实"
+   },
+   "output_release_unit": "interop 核心产物（自有代码）",
+   "output_license": "LicenseRef-Proprietary（未来开源由用户决定）",
+   "vendor_gated": false,
+   "composition_review": null,
+   "production_approved": false,
+   "approval": {
+    "status": "pending-user-review",
+    "decided_by": "agent（初步）",
+    "date": "2026-09-14T22:04:28+00:00",
+    "why": null
+   },
+   "recheck_conditions": "specs-reviewed/f02 固化后重评是否引入 R46/R18 类宽松许可组件",
+   "why": "wire spec 未固化（P-F02-1/2 未关），谈不上任何复用；独立实现路线证据链先行"
+  },
+  {
+   "id": "P-GSTREAMER",
+   "key": "gstreamer",
+   "provider": "GStreamer（运行时多媒体框架）",
+   "source_ids": [],
+   "route": "reuse",
+   "usage": {
+    "copy": false,
+    "reference": false,
+    "runtime": true
+   },
+   "source_license": "LGPL-2.1+（核心）；插件矩阵含 GPL/商业参差（逐插件审计待做）",
+   "derivation": {
+    "translated_or_ported": false,
+    "notes": "媒体 worker 进程的运行时依赖（UxPlay 同款模式）；不 fork，不内嵌源码"
+   },
+   "output_release_unit": "media-worker（独立发布单元，附 LGPL/GPL notice 与插件清单）",
+   "output_license": "运行时依赖义务（LGPL-2.1+ notice/源码 offer；GPL 插件只进独立单元）",
+   "vendor_gated": false,
+   "composition_review": {
+    "status": "pending",
+    "note": "插件许可矩阵（含 GPL 插件、fdkaac 等非免费插件）未审计；headless 场景的插件最小集未定"
+   },
+   "production_approved": false,
+   "approval": {
+    "status": "pending-user-review",
+    "decided_by": "agent（初步）",
+    "date": "2026-09-14T22:04:28+00:00",
+    "why": null
+   },
+   "recheck_conditions": "插件最小集+许可矩阵审计后重评",
+   "why": "成熟管线解码/渲染；避免重复造硬解轮子（docs/00 §3.3）；只作为独立 worker 的内部实现"
+  },
+  {
+   "id": "P-WINRT",
+   "key": "winrt-miracast",
+   "provider": "Windows Miracast/WinRT API（系统提供）",
+   "source_ids": [
+    "S04",
+    "S05"
+   ],
+   "route": "independent",
+   "usage": {
+    "copy": false,
+    "reference": true,
+    "runtime": true
+   },
+   "source_license": "Windows OS API（随系统许可使用）；windows-rs 绑定 crate=MIT/Apache-2.0（未 intake）",
+   "derivation": {
+    "translated_or_ported": false,
+    "notes": "直接调用系统 API（系统已有栈不重复实现）；API 层无厂商 SDK 分发问题"
+   },
+   "output_release_unit": "windows native media provider",
+   "output_license": "自有绑定代码随 impl/ 决议",
+   "vendor_gated": false,
+   "composition_review": null,
+   "production_approved": false,
+   "approval": {
+    "status": "pending-user-review",
+    "decided_by": "agent（初步）",
+    "date": "2026-09-14T22:04:28+00:00",
+    "why": null
+   },
+   "recheck_conditions": "windows-rs crate 依赖 intake（SEC-07）+ Windows 真机 probe（P-M05-1）后才可放行；若未来需要真厂商 SDK（如认证相关），另立 vendor-gated 条目并保持锁定",
+   "why": "M05 receiver 最现实的路径（MediaSourceCreated 提供 MediaSource 呈现）"
+  },
+  {
+   "id": "P-FAIRPLAY",
+   "key": "apple-fairplay",
+   "provider": "Apple FairPlay / AirPlay 设备认证材料",
+   "source_ids": [
+    "R06"
+   ],
+   "route": "vendor",
+   "usage": {
+    "copy": false,
+    "reference": false,
+    "runtime": false
+   },
+   "source_license": "Apple 专有（无授权）",
+   "derivation": {
+    "translated_or_ported": false,
+    "notes": "不获取、不使用、不绕过；airport.key（领域公开 RSA key）不在其列"
+   },
+   "output_release_unit": null,
+   "output_license": null,
+   "vendor_gated": true,
+   "composition_review": null,
+   "production_approved": false,
+   "approval": {
+    "status": "pending-user-review",
+    "decided_by": "agent（初步）",
+    "date": "2026-09-14T22:04:28+00:00",
+    "why": null
+   },
+   "recheck_conditions": "仅当 Apple 授权计划可用且用户书面批准",
+   "why": "T05-03 真实锚点：无分发授权 → 永远 vendor-gated，release manifest 永远拒绝"
+  }
+ ]
+}

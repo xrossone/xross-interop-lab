@@ -1,0 +1,40 @@
+{
+  "schema_version": 1,
+  "run_id": "2026-09-15-t05-provider-adoption",
+  "task": "T05 · 为首批provider选择许可与实现路线",
+  "evidence_level": "source-reviewed",
+  "is_test_evidence": true,
+  "synthetic": false,
+  "base_commit": "01484ce（T04 提交）",
+  "case_ids": ["T05-01", "T05-02", "T05-03"],
+  "result": "pass",
+  "commands": [
+    {"seq": 1, "purpose": "red：provider-adoption.json 缺失", "command": "python3 -m unittest discover -s tools -p 'test_*.py'", "exit_code": 1, "result": "fail（预期 red）"},
+    {"seq": 2, "purpose": "三产物齐备后全量校验", "command": "python3 -m unittest discover -s tools -p 'test_*.py'", "exit_code": 0, "result": "pass：20 tests OK（含 T05 fixture×3 + 真实数据一致性 + release manifest 拒绝断言）"}
+  ],
+  "acceptance_mapping": {
+    "T05-01": "route_is_license_sound：copyleft 来源 + translated_or_ported=true + 宽松输出 → 拒绝（fixture）+ 真实数据全过（无任何翻译条目；R19 仅结构参考预置禁止）",
+    "T05-02": "worker 路线必须有 composition_review；status!=passed 不得放行（fixture：socket 包装内部函数自动放行被拒；真实：UxPlay/shairplay/GStreamer 全 pending）",
+    "T05-03": "vendor_gated=true → 永远拒绝（fixture + 真实 P-FAIRPLAY 条目，release manifest 构建器给出 vendor-gated 理由）",
+    "step4": "build_release_feature_manifest：本阶段 approved=∅，7 个 provider 全部 rejected 且带理由——无许可结论的构建被拒绝"
+  },
+  "decisions": {
+    "UxPlay": "worker/外部二进制（GPL-3.0 义务保留）",
+    "shairplay-rust": "worker/独立 airplay-worker（LGPL-3.0 独立发布单元，组合审查 pending）",
+    "LocalSend": "reuse（自有+主仓 adapter；localsend-rs LICENSE 文件缺失待用户补）",
+    "QuickShare 参考": "independent（事实→独立 Rust）",
+    "GStreamer": "reuse/media-worker 运行时（插件许可矩阵 pending）",
+    "WinRT": "independent/系统 API（windows-rs intake pending）",
+    "Apple FairPlay": "vendor 永久锁定"
+  },
+  "new_dependencies": "无",
+  "artifacts": [
+    {"path": "decisions/provider-adoption.json"},
+    {"path": "provenance/approved-inputs.json"},
+    {"path": "provenance/review-log.md"},
+    {"path": "tools/test_provider_adoption.py"}
+  ],
+  "credentials_redacted": true,
+  "license_route_approved": false,
+  "notes": "全部 production_approved=false，生产放行权保留给用户。发现：localsend-rs（用户自有）缺 LICENSE 文件。"
+}

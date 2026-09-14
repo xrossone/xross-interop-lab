@@ -1,0 +1,106 @@
+{
+ "schema_version": 1,
+ "updated_at": "2026-09-14T22:04:28+00:00",
+ "policy": "实现 agent 只能读取本清单内的材料（最小知情）；每项注明用途范围。新增输入必须走 review-log 记录。",
+ "inputs": [
+  {
+   "id": "design-pack",
+   "what": "references/research/xross-interop-plan-2026-09-15（CHECKSUMS 已验）",
+   "scope": "docs/00,01,04,05,06,07,12 + plans/01 + templates",
+   "usage": "规格输入",
+   "status": "approved"
+  },
+  {
+   "id": "dossiers",
+   "what": "research/<profile>/dossier.md × 6（T04）",
+   "scope": "F01/F02/M01/M05/M07/M08",
+   "usage": "实现输入",
+   "status": "approved"
+  },
+  {
+   "id": "specs-reviewed",
+   "what": "specs-reviewed/<profile>.md",
+   "scope": "F01/M01 为实质 spec；其余 review-pending 仅作研究路标",
+   "usage": "wire spec（按状态）",
+   "status": "approved"
+  },
+  {
+   "id": "airplay-research",
+   "what": "docs/research/airplay-research.md",
+   "scope": "全文",
+   "usage": "M01 实现输入",
+   "status": "approved"
+  },
+  {
+   "id": "xross-integration-map",
+   "what": "research/xross-integration-map.md + decisions/xross-contract-baseline.json",
+   "scope": "T03 产出",
+   "usage": "集成 seam 输入",
+   "status": "approved"
+  },
+  {
+   "id": "r02-shairplay-rust",
+   "what": "~/Dev/others/r02-shairplay-rust @2fb72b3",
+   "scope": "airplay-worker（LGPL 单元）",
+   "usage": "runtime-link + 阅读",
+   "status": "approved-route-pending-packaging"
+  },
+  {
+   "id": "r13-protocol",
+   "what": "~/Dev/others/r13-protocol @62bd3406",
+   "scope": "协议事实引用（restricted：不复制文本）",
+   "usage": "facts",
+   "status": "approved"
+  },
+  {
+   "id": "r14-localsend",
+   "what": "~/Dev/others/r14-localsend @230fb692",
+   "scope": "行为参考",
+   "usage": "reference",
+   "status": "approved"
+  },
+  {
+   "id": "localsend-rs-user",
+   "what": "~/Dev/localsend-rs @4f46cc1（用户自有）",
+   "scope": "复用候选；MIT 已声明但 LICENSE 文件缺失待补",
+   "usage": "reuse",
+   "status": "pending-user-confirmation"
+  },
+  {
+   "id": "r15-r17-r18-facts",
+   "what": "NearDrop/nearby/ukey2 固定树",
+   "scope": "协议事实与规范",
+   "usage": "facts",
+   "status": "approved"
+  },
+  {
+   "id": "r19-rquickshare",
+   "what": "~/Dev/others/r19-rquickshare @378d8ae9（GPL-3.0）",
+   "scope": "结构思想 only——代码/表达不进 impl/",
+   "usage": "reference-structure",
+   "status": "approved"
+  },
+  {
+   "id": "r01-uxplay-facts",
+   "what": "UxPlay @d9791de（lab）/ @44024fe（POC oracle）",
+   "scope": "行级事实引用（注明 commit+行）",
+   "usage": "facts",
+   "status": "approved"
+  },
+  {
+   "id": "xross-dev",
+   "what": "xross-dev @099b6c72",
+   "scope": "T03 映射；经 XrossHostAdapter 对接",
+   "usage": "integration",
+   "status": "approved"
+  }
+ ],
+ "explicitly_banned": [
+  "R16 Bada 表达（restricted）",
+  "R19 代码复制",
+  "R13 文档文本复制",
+  "FairPlay/设备认证材料（vendor-gated）",
+  "R35 gated 材料",
+  "未 intake 的新依赖（含 windows-rs，SEC-07）"
+ ]
+}
