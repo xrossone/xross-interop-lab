@@ -8,7 +8,7 @@
   "toolchain": "stable",
   "workspace": "92 crates 按 contract/kernel/runtime/service/adapter/platform/probe/testkit/app 分层；分层依赖由 scripts/check-boundaries.ts 强制；无动态插件",
   "read_only": true,
-  "note": "xross-dev 工具链 pin 1.97.1；interop impl/ pin 1.98.0——两者互不依赖，仅经 wire/JSON 契约对接。注意：该 checkout 为用户活跃工作区（基线锚定 099b6c72，扫描期间 HEAD 曾从 4dcebc20 前移）；集成实现开始前需用 tools/test_xross_baseline.py 复核 anchors 仍然有效。"
+  "note": "xross-dev 工具链 pin 1.97.1；interop impl/ pin 1.98.0——两者互不依赖，仅经 wire/JSON 契约对接。注意：该 checkout 为用户活跃工作区（基线锚定 099b6c72，扫描期间 HEAD 曾从 4dcebc20 前移；顶层设计补读于 a483bd14）；集成实现开始前需用 tools/test_xross_baseline.py 复核 anchors 仍然有效。"
  },
  "anchors": [
   "crates/adapter/xross-adapter-localsend/src/lib.rs",
@@ -40,7 +40,9 @@
   "crates/service/xross-svc-devices/src/route.rs",
   "proto/xross/control/v1/control.proto",
   "proto/xross/fabric/v1/wire.proto",
-  "docs/handbook/00-north-star.md"
+  "docs/handbook/00-north-star.md",
+  "docs/handbook/01-architecture.md",
+  "docs/handbook/09-the-capability-plane.md"
  ],
  "localsend": {
   "status": "reuse-first",
@@ -168,7 +170,7 @@
  ],
  "adapter_seam": {
   "name": "XrossHostAdapter：以 ControlServiceClient（gRPC/UDS + ControlToken）为唯一 xrossd 接入点",
-  "rationale": "主仓唯一受支持的本地正门是 daemon 控制面（control.proto + action broker）；媒体等缺失接口经 mock host 先行。唯一 seam = interop 侧只实现这一个 adapter trait，主仓升级只影响该 adapter；不建平行 Offer/Lease/身份模型"
+  "rationale": "主仓唯一受支持的本地正门是 daemon 控制面（control.proto + action broker）；媒体等缺失接口经 mock host 先行。唯一 seam = interop 侧只实现这一个 adapter trait，主仓升级只影响该 adapter；不建平行 Offer/Lease/身份模型 顶层设计细化：主仓本地 API 是 control.v1（仅第一方管理）与 client.v1（公开 seam，scoped actions）两个契约；第一方角色 vs 独立进程走哪条属产品形态裁决（pending-user-review），standalone 不受影响。"
  },
  "scope_conflicts": [
   {
@@ -192,5 +194,16 @@
    "scope_source": "user-goal",
    "note": "interop 侧保留拟议抽象用于 standalone 模式；映射表注明与主仓真实类型的对应，不要求主仓改名"
   }
- ]
+ ],
+ "top_level_design_findings": {
+  "authority": "north-star 自标 A REFERENCE, NOT AN AUTHORITY（用户 2026-08-27）；scope 归用户——MVP 收窄不否决 interop 计划，也不代替用户为新方向开 scope 行",
+  "adapter_category": "adapter/ = 外来协议隔离区（可依赖 contract+service）；fabric 不得学习协议名词；xross.* 命名空间保留给第一方签名服务（interop 用 interop.*）",
+  "one_daemon_rule": "一个设备一个 daemon，不许嵌第二套 fabric（north-star §6.4）——interopd 集成模式不得自建身份/网络",
+  "capability_plane": "原生能力必须走 capability port + head/bridge；'a peer never reaches a head'；'a native API is always behind an FFI boundary owned by Rust'",
+  "media_on_wire_boundary": "主仓禁止 codec 输出上线/屏幕流给 peer；仅单帧（capture-allow）与本地录制放行；成品文件走普通 transfer。interop 媒体首批不上 fabric（本地呈现/落盘）",
+  "device_directory_stance": "status.md/one_list.rs 实测裁决：LAN 与 fabric 双可见 = 故意两行（不按 alias/IP/model 合并）；与 plan 0007 stage D 的矛盾被显式记录。T11 endpoint registry 采用同一立场",
+  "feature_ledger": "旧功能目录 reconciliation：FC-12 Nearby/LocalSend=built；FC-42 AirPlay=decision—probably not-carried——主仓帐本未 carry AirPlay/Miracast/Cast，interop lab 是重新打开这些方向的载体",
+  "repo_focus": "GO.md（2026-09-08）：主仓当前焦点=付费后端（temporary-transfer R2/billing/operator console）；interop 集成窗口与用户另议",
+  "reference": "research/xross-top-level-design.md（读于 a483bd14）"
+ }
 }

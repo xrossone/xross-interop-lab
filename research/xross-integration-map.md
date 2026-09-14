@@ -6,6 +6,8 @@
 **机器可读基线**：[decisions/xross-contract-baseline.json](../decisions/xross-contract-baseline.json)
 （30 个 anchor 路径由 `tools/test_xross_baseline.py` 强制存在性校验）
 **方法**：只读（git 元数据 + 文件读取），未修改 xross-dev 任何文件。
+**顶层设计补充**：[research/xross-top-level-design.md](xross-top-level-design.md)（读于 `a483bd14`：权威链/
+分层类别/两个本地 API 契约/能力平面/媒体边界/设备目录"两行不合并"实测裁决/GO.md 排期）。
 
 ## 0. 总体架构事实（决定集成方式）
 
@@ -99,6 +101,10 @@
 **XrossHostAdapter：以 `ControlServiceClient`（gRPC/UDS + ControlToken）为 xrossd 的唯一接入点。**
 
 理由：主仓唯一受支持的本地正门是 daemon 控制面；interop 侧只实现这一个 adapter trait，主仓升级只影响该 adapter；**不建平行模型**——Offer 用 TransferOffer+ConsentTable，lease 用 LeaseStore/HttpLease，身份用 DeviceDirectory，均不做第二套（docs/04 §9 "不能用拟议名称新建并存模型"）。
+**细化（读顶层设计后）**：主仓本地 API 是**两个契约**——`xross.control.v1` 仅第一方管理，
+`xross.client.v1` 才是公开 seam（scoped actions）。interop 作为第一方角色可用前者；作为独立进程
+应走后者。二选一属产品形态裁决（见顶层设计简报 §3 与待裁决清单），本 lab 暂不自行选定——
+standalone 形态不受影响。
 
 ## 4. localsend-rs 复用面评估（goal 要求）
 

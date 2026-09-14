@@ -95,3 +95,6 @@ xross-dev 媒体接口 absent（mock host 先行）；无任何 release-qualifie
    testkit 的确定性 peer 做模拟闭环（simulated），不冒充真机。
 4. **T12 platform probe（只读）**：macOS/Win/Linux 网络与媒体能力矩阵，RadioLease 模型落地。
 5. **F02 wire spec**（P-F02-1/2）：若优先 Quick Share 方向则先做；否则排在 M01 后。
+6. **集成形态裁决**（读 xross-dev 顶层设计后新增）：interop 进产品时是作为第一方角色
+   （用 `xross.control.v1`）还是独立进程（用 `xross.client.v1` 公开 seam）——需用户裁决；
+   详见 [research/xross-top-level-design.md](../research/xross-top-level-design.md)。
