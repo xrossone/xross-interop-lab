@@ -2,6 +2,7 @@
 resolver = "2"
 members = [
     "crates/interop-contract",
+    "crates/interop-file",
     "crates/interop-policy",
     "crates/interop-runtime",
     "adapters/standalone-host",

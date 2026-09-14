@@ -1,0 +1,38 @@
+{
+  "schema_version": 1,
+  "run_id": "2026-09-15-t08-storage",
+  "task": "T08 · 实现受限流式存储与原子commit",
+  "evidence_level": "build-verified",
+  "is_test_evidence": true,
+  "synthetic": false,
+  "base_commit": "078115b（T07 提交）",
+  "case_ids": ["T08-01", "T08-02", "T08-03", "T08-04", "T08-05"],
+  "result": "pass",
+  "commands": [
+    {"seq": 1, "purpose": "red：path/spool/integrity 未实现", "command": "cargo test --manifest-path impl/Cargo.toml -p interop-file --test storage", "exit_code": 101, "result": "fail（E0432，预期 red）"},
+    {"seq": 2, "purpose": "实现后本测试套件（测试先抓出 3 个测试自身 bug：symlink 前多建目录、sanitize display_name 重复传入、t08-05 偏移算错——全部修正）", "command": "cargo test --manifest-path impl/Cargo.toml -p interop-file --test storage", "exit_code": 0, "result": "pass：6 tests"},
+    {"seq": 3, "purpose": "全 workspace 回归", "command": "cargo test --manifest-path impl/Cargo.toml", "exit_code": 0, "result": "pass：15 套件 29 tests 全绿"},
+    {"seq": 4, "purpose": "静态检查", "command": "cargo clippy --manifest-path impl/Cargo.toml --workspace --all-targets", "exit_code": 0, "result": "pass：0 warnings"}
+  ],
+  "acceptance_mapping": {
+    "T08-01": "sanitize 拒绝 ../../secret 形状（components 与 display_name）、C:\\Windows\\x、\\\\server\\share、C:evil、保留名 CON/AUX 等；begin() 先做形状校验再触碰文件系统——被拒条目 0 个临时文件",
+    "T08-02": "begin 后把中间目录 sub 换成指向外部的 symlink → commit 的 lstat no-follow 检查拒绝（InvalidFrame），外部目录 0 写入；root 自身是 symlink 时 SpoolStore::open 直接拒绝",
+    "T08-03": "声明 1KiB 预算写 2KiB → resource-limit；临时文件立即删除、句柄终止（后续 write 拒绝）；spool 目录清理干净",
+    "T08-04": "commit 时 hash 不符 → integrity-failed、不发布、临时文件删除；正确 hash → 原子 rename 发布，receipt 含 size+sha256，无 .tmp 残留",
+    "T08-05": "ReadLease 快照文件身份（len+mtime+ino）；中途替换内容 → 后续 read_chunk 返回 source-changed；重新 open 可继续"
+  },
+  "sha256_vectors": "空串 / abc / 1e6 个 'a' 三个已知向量通过（sha256_known_vectors）",
+  "new_dependencies": [
+    {"crate": "sha2 0.10", "reason": "SHA-256 完整性校验——RustCrypto 成熟原语不重写（docs/00 §3.3）", "license": "MIT OR Apache-2.0", "intake": "本 run manifest 即记录；Cargo.lock 锁定版本；hygiene 测试验证无 git 依赖"}
+  ],
+  "source_ids": ["docs/07 §3 文件路径与发布", "docs/01 FILE-02/05/06/07/08", "SEC-03"],
+  "artifacts": [
+    {"path": "impl/crates/interop-file/src/path.rs"},
+    {"path": "impl/crates/interop-file/src/spool.rs"},
+    {"path": "impl/crates/interop-file/src/integrity.rs"},
+    {"path": "impl/crates/interop-file/tests/storage.rs"}
+  ],
+  "credentials_redacted": true,
+  "license_route_approved": false,
+  "notes": "证据等级 build-verified。诚实边界：lstat no-follow 检查与 rename 之间存在理论 TOCTOU 窗口，无窗口的 dirfd+O_NOFOLLOW 链是平台特定加固，已记入 spool 模块文档与后续 hardening。跨文件系统发布是上层 publish port 的显式流程，本层不假装原子。"
+}
