@@ -11,6 +11,22 @@ dependencies = [
 ]
 
 [[package]]
+name = "interop-policy"
+version = "0.1.0"
+dependencies = [
+ "interop-contract",
+]
+
+[[package]]
+name = "interop-runtime"
+version = "0.1.0"
+dependencies = [
+ "interop-contract",
+ "interop-policy",
+ "standalone-host",
+]
+
+[[package]]
 name = "itoa"
 version = "1.0.18"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -81,6 +97,15 @@ dependencies = [
  "serde",
  "serde_core",
  "zmij",
+]
+
+[[package]]
+name = "standalone-host"
+version = "0.1.0"
+dependencies = [
+ "interop-contract",
+ "interop-policy",
+ "interop-runtime",
 ]
 
 [[package]]

@@ -2,6 +2,9 @@
 resolver = "2"
 members = [
     "crates/interop-contract",
+    "crates/interop-policy",
+    "crates/interop-runtime",
+    "adapters/standalone-host",
 ]
 
 [workspace.package]

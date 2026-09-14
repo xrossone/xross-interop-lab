@@ -1,0 +1,11 @@
+[package]
+name = "standalone-host"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+publish.workspace = true
+
+[dependencies]
+interop-contract = { path = "../../crates/interop-contract" }
+interop-policy = { path = "../../crates/interop-policy" }
+interop-runtime = { path = "../../crates/interop-runtime" }

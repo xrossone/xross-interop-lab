@@ -1,0 +1,37 @@
+{
+  "schema_version": 1,
+  "run_id": "2026-09-15-t07-host-ports",
+  "task": "T07 · 实现HostPorts与scoped grant",
+  "evidence_level": "build-verified",
+  "is_test_evidence": true,
+  "synthetic": false,
+  "base_commit": "41211e5（T06 提交）",
+  "case_ids": ["T07-01", "T07-02", "T07-03"],
+  "result": "pass",
+  "commands": [
+    {"seq": 1, "purpose": "red：grant/host/standalone-host 未实现", "command": "cargo test --manifest-path impl/Cargo.toml -p interop-runtime --test host_ports", "exit_code": 101, "result": "fail（E0432/E0433，预期 red）"},
+    {"seq": 2, "purpose": "实现后本测试套件", "command": "cargo test --manifest-path impl/Cargo.toml -p interop-runtime --test host_ports", "exit_code": 0, "result": "pass：7 tests"},
+    {"seq": 3, "purpose": "全 workspace 回归", "command": "cargo test --manifest-path impl/Cargo.toml", "exit_code": 0, "result": "pass：12 套件全绿（23 tests）"},
+    {"seq": 4, "purpose": "静态检查（workspace 全体）", "command": "cargo clippy --manifest-path impl/Cargo.toml --workspace --all-targets", "exit_code": 0, "result": "pass：0 warnings"}
+  ],
+  "acceptance_mapping": {
+    "T07-01": "receive(Write) grant 反用为 Read / 换 entry / 换 subject / 换 session 全部 auth-denied（无通配、默认拒绝）；ContentRequest 类型层面不携带本机路径（FILE-08）",
+    "T07-02": "StandaloneHost 批准（ttl=60s）→ 59s open_sink+append 成功 → 61s sink_commit → OfferExpired；published_count()==0 且 spool 未进入 committed（过期不落最终文件）",
+    "T07-03": "requested_scopes 含 Vault → 整体 auth-denied（不裁剪后部分批准）；即使直接对 FakeHost issue_scoped(Vault)，在 standalone 可签发集合（只 Entry）外也 auth-denied——QuickShare 配对成功不放大 scope（SEC-01）"
+  },
+  "supplementary_tests": [
+    "byte_budget_exceeded_is_resource_limit（累计预算：60+60>100 → resource-limit）",
+    "media_open → platform-unavailable（mock host 先行，T03-02）；network_listen → permission-required（默认关闭监听，docs/00 §3.10）"
+  ],
+  "source_ids": ["docs/04 §4 HostPorts 表", "docs/07 §2 权限图", "docs/01 §8 默认值（60s/预算）", "T03 xross-integration-map（ConsortiumTable/Lease 对应事实）"],
+  "new_dependencies": "无新增外部依赖（workspace 内 path 依赖：policy→contract，runtime→contract+policy，standalone-host→三者）",
+  "artifacts": [
+    {"path": "impl/crates/interop-policy/src/grant.rs", "sha256": "52713001e1f2803be55193981839b36f4795413891ea7f510b1bf25b0c047387"},
+    {"path": "impl/crates/interop-runtime/src/host.rs", "sha256": "7267ce49f7b0c8b562fd760958ba21ca7e02a770cbd37f43b0eaa2663825bca1"},
+    {"path": "impl/adapters/standalone-host/src/lib.rs", "sha256": "139e391e9f8c9a960dda0a1cf5eb463effc4f904004785cac175aa05ebc5c7ed"},
+    {"path": "impl/crates/interop-runtime/tests/host_ports.rs", "sha256": "c14dfac515fae397ad5c6bdff0bef79c4deafef395bc0e446cdf841e8770cd69"}
+  ],
+  "credentials_redacted": true,
+  "license_route_approved": false,
+  "notes": "证据等级 build-verified。standalone-host 的 provider subject 是 mock 约定（<profile前缀>-provider），integrated 模式换主仓真实主体。integrated 模式经 XrossHostAdapter 只走 host ports（T03 seam），本 crate 无身份/网络构造参数（INT-02 由构造签名保证）。"
+}

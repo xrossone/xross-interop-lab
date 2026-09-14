@@ -1,0 +1,13 @@
+[package]
+name = "interop-runtime"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+publish.workspace = true
+
+[dependencies]
+interop-contract = { path = "../interop-contract" }
+interop-policy = { path = "../interop-policy" }
+
+[dev-dependencies]
+standalone-host = { path = "../../adapters/standalone-host" }
