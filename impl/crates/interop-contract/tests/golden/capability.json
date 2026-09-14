@@ -1,0 +1,14 @@
+{
+  "profile_id": "localsend.v2",
+  "role": "receive",
+  "provider_id": "localsend-core",
+  "state": "source-reviewed",
+  "available": true,
+  "prerequisites": [
+    "selected-lan-interface"
+  ],
+  "media_forms": [],
+  "evidence_ids": [
+    "run_example"
+  ]
+}

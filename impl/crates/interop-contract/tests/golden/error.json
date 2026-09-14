@@ -1,0 +1,7 @@
+{
+  "code": "unsupported-feature",
+  "message": "media form not supported",
+  "retryable": false,
+  "phase": "negotiating",
+  "profile_id": "localsend.v2"
+}

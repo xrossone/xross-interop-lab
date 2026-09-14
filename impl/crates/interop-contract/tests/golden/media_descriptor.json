@@ -1,0 +1,21 @@
+{
+  "session_id": "ses_fixture",
+  "intent": "mirror",
+  "tracks": [
+    {
+      "codec": "h264",
+      "format_id": 1,
+      "timebase": "1/90000",
+      "clock_domain": "sender-rtp",
+      "layout_or_dimensions": "1920x1080",
+      "transport_security": "aes-128-ctr"
+    }
+  ],
+  "source_form": "encoded-stream",
+  "controls": [
+    "play",
+    "stop"
+  ],
+  "permissions": [],
+  "owner_provider": "airplay-worker"
+}

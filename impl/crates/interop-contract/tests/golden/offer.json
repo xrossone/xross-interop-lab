@@ -1,0 +1,24 @@
+{
+  "offer_id": "ofr_fixture",
+  "endpoint_id": "ep_fixture",
+  "profile_id": "localsend.v2",
+  "entries": [
+    {
+      "entry_id": "ent_fixture",
+      "display_name": "demo.bin",
+      "relative_components": [
+        "docs",
+        "demo.bin"
+      ],
+      "media_type_hint": "application/octet-stream",
+      "declared_size": "9007199254740993",
+      "wire_payload_id": "wp_1"
+    }
+  ],
+  "total_bytes": "9007199254740993",
+  "requested_actions": [
+    "save"
+  ],
+  "trust_context": "untrusted",
+  "attempt_id": "att_fixture"
+}

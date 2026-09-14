@@ -1,0 +1,179 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://xross.interop/schemas/interop-api.schema.json",
+  "title": "Xross Interop internal contract v0.1",
+  "description": "内部 v0.1 契约（docs/05）：不是任何外部 wire 协议。大整数一律十进制字符串；未知 critical 枚举拒绝。与 impl/crates/interop-contract 的 Rust 序列化由 tests/contract_schema.rs 锁定一致。",
+  "type": "object",
+  "$defs": {
+    "u64_wire": {
+      "type": "string",
+      "pattern": "^[0-9]+$",
+      "description": "u64 的十进制字符串编码（避免 JS 53bit 精度丢失）"
+    },
+    "opaque_id": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 64,
+      "pattern": "^[A-Za-z0-9][A-Za-z0-9._-]*$",
+      "description": "opaque 本地 ID：不携带 path/token/address；生产值 CSPRNG 生成"
+    },
+    "role": {
+      "type": "string",
+      "enum": ["send", "receive", "control", "server", "client", "renderer"]
+    },
+    "evidence_state": {
+      "type": "string",
+      "enum": [
+        "catalogued",
+        "source-reviewed",
+        "build-verified",
+        "simulated",
+        "device-verified",
+        "release-qualified",
+        "blocked"
+      ]
+    },
+    "media_form": {
+      "type": "string",
+      "enum": ["encoded-stream", "pcm-stream", "native-presentation", "media-resource"]
+    },
+    "session_intent": {
+      "type": "string",
+      "enum": ["mirror", "audio", "media-url", "screen"]
+    },
+    "error_code": {
+      "type": "string",
+      "enum": [
+        "unsupported-profile",
+        "unsupported-role",
+        "unsupported-feature",
+        "platform-unavailable",
+        "permission-required",
+        "hardware-unavailable",
+        "pairing-failed",
+        "auth-denied",
+        "offer-expired",
+        "busy",
+        "deadline-exceeded",
+        "resource-limit",
+        "invalid-frame",
+        "integrity-failed",
+        "source-changed",
+        "destination-unavailable",
+        "cancelled",
+        "provider-crashed",
+        "event-gap",
+        "license-gated",
+        "vendor-gated",
+        "protected-content"
+      ]
+    },
+    "capability": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["profile_id", "role", "provider_id", "state", "available"],
+      "properties": {
+        "profile_id": { "type": "string" },
+        "role": { "$ref": "#/$defs/role" },
+        "provider_id": { "type": "string" },
+        "state": { "$ref": "#/$defs/evidence_state" },
+        "available": { "type": "boolean" },
+        "prerequisites": { "type": "array", "items": { "type": "string" } },
+        "media_forms": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/media_form" }
+        },
+        "evidence_ids": { "type": "array", "items": { "type": "string" } }
+      }
+    },
+    "offer_entry": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["entry_id", "display_name", "declared_size", "wire_payload_id"],
+      "properties": {
+        "entry_id": { "$ref": "#/$defs/opaque_id" },
+        "display_name": { "type": "string", "description": "不受信任文本" },
+        "relative_components": {
+          "type": "array",
+          "items": { "type": "string", "minLength": 1 },
+          "description": "逐 component 目录结构；不允许 . / .. / 分隔符 / NUL"
+        },
+        "media_type_hint": { "type": "string" },
+        "declared_size": { "$ref": "#/$defs/u64_wire" },
+        "wire_payload_id": { "type": "string" }
+      }
+    },
+    "share_offer": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["offer_id", "endpoint_id", "profile_id", "entries", "trust_context", "attempt_id"],
+      "properties": {
+        "offer_id": { "$ref": "#/$defs/opaque_id" },
+        "endpoint_id": { "$ref": "#/$defs/opaque_id" },
+        "profile_id": { "type": "string" },
+        "entries": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/offer_entry" }
+        },
+        "total_bytes": { "$ref": "#/$defs/u64_wire" },
+        "deadline": { "type": "string", "format": "date-time" },
+        "requested_actions": { "type": "array", "items": { "type": "string" } },
+        "trust_context": { "type": "string" },
+        "attempt_id": { "type": "string" }
+      }
+    },
+    "error": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["code", "message", "retryable"],
+      "properties": {
+        "code": { "$ref": "#/$defs/error_code" },
+        "message": { "type": "string" },
+        "retryable": { "type": "boolean" },
+        "phase": { "type": "string" },
+        "profile_id": { "type": "string" },
+        "evidence_id": { "type": "string" },
+        "remedy": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["hint"],
+          "properties": {
+            "hint": { "type": "string" },
+            "doc_ref": { "type": "string" }
+          }
+        }
+      }
+    },
+    "media_track": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["codec", "format_id", "timebase", "clock_domain", "transport_security"],
+      "properties": {
+        "codec": { "type": "string" },
+        "format_id": { "type": "integer", "minimum": 0 },
+        "timebase": { "type": "string" },
+        "clock_domain": { "type": "string" },
+        "layout_or_dimensions": { "type": "string" },
+        "transport_security": { "type": "string" },
+        "codec_extradata_hash": { "type": "string" }
+      }
+    },
+    "media_descriptor": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["session_id", "intent", "tracks", "source_form", "owner_provider"],
+      "properties": {
+        "session_id": { "$ref": "#/$defs/opaque_id" },
+        "intent": { "$ref": "#/$defs/session_intent" },
+        "tracks": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/media_track" }
+        },
+        "source_form": { "$ref": "#/$defs/media_form" },
+        "controls": { "type": "array", "items": { "type": "string" } },
+        "permissions": { "type": "array", "items": { "type": "string" } },
+        "owner_provider": { "type": "string" }
+      }
+    }
+  }
+}

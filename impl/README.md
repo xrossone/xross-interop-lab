@@ -13,7 +13,7 @@
 
 | crate | 职责 | 引入于 |
 |---|---|---|
-| `crates/interop-contract` | 领域对象、统一错误、能力声明、JSON 契约 | T01（T06 填充） |
+| `crates/interop-contract` | 领域对象、统一错误、能力声明、JSON 契约（ids/capability/offer/media/error + golden + JSON Schema） | T01/T06 |
 
 后续按任务需要创建（docs/04 §2：不一次创建所有空 crate）：
 `interop-policy`、`interop-runtime`、`interop-file`、`interop-ipc`、
