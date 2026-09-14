@@ -1,0 +1,11 @@
+[package]
+name = "interop-testkit"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+publish.workspace = true
+
+[dependencies]
+interop-contract = { path = "../interop-contract" }
+serde_json = "1"
+sha2 = "0.10"  # fixture hash（RustCrypto；与 interop-file 同一原语）

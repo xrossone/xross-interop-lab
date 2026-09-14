@@ -98,6 +98,15 @@ dependencies = [
 ]
 
 [[package]]
+name = "interop-testkit"
+version = "0.1.0"
+dependencies = [
+ "interop-contract",
+ "serde_json",
+ "sha2",
+]
+
+[[package]]
 name = "interopd"
 version = "0.1.0"
 dependencies = [

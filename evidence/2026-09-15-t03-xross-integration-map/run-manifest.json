@@ -1,33 +1,73 @@
 {
-  "schema_version": 1,
-  "run_id": "2026-09-15-t03-xross-integration-map",
-  "task": "T03 · 映射当前Xross真实权威与集成ports（只读）",
-  "evidence_level": "source-reviewed",
-  "is_test_evidence": true,
-  "synthetic": false,
-  "base_commit": "45eb5b3（T02 提交）",
-  "platform": {"os": "macOS 26.6", "arch": "arm64", "toolchain": "python3 标准库 + git"},
-  "case_ids": ["T03-01", "T03-02", "T03-03"],
-  "result": "pass",
-  "commands": [
-    {"seq": 1, "purpose": "red：baseline 缺失", "command": "python3 -m unittest discover -s tools -p 'test_*.py'", "exit_code": 1, "result": "fail（预期 red）"},
-    {"seq": 2, "purpose": "xross-dev 只读扫描（Explore agent 结构化提取 + 人工抽查）", "command": "git -C xross-dev rev-parse HEAD; grep MediaSession/MediaGraph（空）；ConsentTable/transport/localsend tests 存在性抽查", "exit_code": 0, "result": "pass；抽查全部吻合（ConsentTable consent.rs:232、peer_uid transport.rs、6 个 localsend 回归、vendored localsend-rs origin=CrossCopy/localsend-rs）"},
-    {"seq": 3, "purpose": "生成 baseline 后全量测试", "command": "python3 -m unittest discover -s tools -p 'test_*.py'", "exit_code": 0, "result": "pass：10 tests OK"}
-  ],
-  "acceptance_mapping": {
-    "T03-01": "localsend.status=reuse-first；7 个可复用模块 + 6 个主仓回归测试列出；vendored/用户副本 origin 一致性断言",
-    "T03-02": "media.stability=absent（grep 证据 + north-star:241 narrowed 记录）；integration.status=blocked-dependency；mock_host_first=true",
-    "T03-03": "scope_conflicts 3 条（SC-1 媒体、SC-2 IPC carrier、SC-3 ContentLease 命名）全部 resolution∈{keep-in-scope,defer,pending-user-review}，scope_source=user-goal"
+ "schema_version": 1,
+ "run_id": "2026-09-15-t03-xross-integration-map",
+ "task": "T03 · 映射当前Xross真实权威与集成ports（只读）",
+ "kind": "manual",
+ "evidence_level": "source-reviewed",
+ "is_test_evidence": true,
+ "synthetic": false,
+ "base_commit": "45eb5b3（T02 提交）",
+ "platform": {
+  "os": "macOS 26.6",
+  "arch": "arm64",
+  "toolchain": "python3 标准库 + git"
+ },
+ "case_ids": [
+  "T03-01",
+  "T03-02",
+  "T03-03"
+ ],
+ "result": "pass",
+ "commands": [
+  {
+   "seq": 1,
+   "purpose": "red：baseline 缺失",
+   "command": "python3 -m unittest discover -s tools -p 'test_*.py'",
+   "exit_code": 1,
+   "result": "fail（预期 red）"
   },
-  "xross_dev_baseline": {"commit": "099b6c72", "branch": "content-plane-0044", "note": "用户活跃工作区：扫描开始时 HEAD=4dcebc20，生成基线时已前移至 099b6c72（kuntu/file-search 相关提交，未触及本映射 anchors）；测试语义=基线 commit 必须是 HEAD 祖先"},
-  "source_ids": ["xross-dev@099b6c72", "localsend-rs(CrossCopy)@4f46cc1(用户副本)/428981a(vendored)"],
-  "new_dependencies": "无",
-  "artifacts": [
-    {"path": "research/xross-integration-map.md"},
-    {"path": "decisions/xross-contract-baseline.json"},
-    {"path": "tools/test_xross_baseline.py"}
-  ],
-  "credentials_redacted": true,
-  "license_route_approved": false,
-  "notes": "未修改 xross-dev。集成唯一 seam：XrossHostAdapter（ControlServiceClient gRPC/UDS）。媒体接口 absent → mock host 先行。"
+  {
+   "seq": 2,
+   "purpose": "xross-dev 只读扫描（Explore agent 结构化提取 + 人工抽查）",
+   "command": "git -C xross-dev rev-parse HEAD; grep MediaSession/MediaGraph（空）；ConsentTable/transport/localsend tests 存在性抽查",
+   "exit_code": 0,
+   "result": "pass；抽查全部吻合（ConsentTable consent.rs:232、peer_uid transport.rs、6 个 localsend 回归、vendored localsend-rs origin=CrossCopy/localsend-rs）"
+  },
+  {
+   "seq": 3,
+   "purpose": "生成 baseline 后全量测试",
+   "command": "python3 -m unittest discover -s tools -p 'test_*.py'",
+   "exit_code": 0,
+   "result": "pass：10 tests OK"
+  }
+ ],
+ "acceptance_mapping": {
+  "T03-01": "localsend.status=reuse-first；7 个可复用模块 + 6 个主仓回归测试列出；vendored/用户副本 origin 一致性断言",
+  "T03-02": "media.stability=absent（grep 证据 + north-star:241 narrowed 记录）；integration.status=blocked-dependency；mock_host_first=true",
+  "T03-03": "scope_conflicts 3 条（SC-1 媒体、SC-2 IPC carrier、SC-3 ContentLease 命名）全部 resolution∈{keep-in-scope,defer,pending-user-review}，scope_source=user-goal"
+ },
+ "artifacts": [
+  {
+   "path": "research/xross-integration-map.md"
+  },
+  {
+   "path": "decisions/xross-contract-baseline.json"
+  },
+  {
+   "path": "tools/test_xross_baseline.py"
+  }
+ ],
+ "credentials_redacted": true,
+ "license_route_approved": false,
+ "notes": "未修改 xross-dev。集成唯一 seam：XrossHostAdapter（ControlServiceClient gRPC/UDS）。媒体接口 absent → mock host 先行。",
+ "xross_dev_baseline": {
+  "commit": "099b6c72",
+  "branch": "content-plane-0044",
+  "note": "用户活跃工作区：扫描开始时 HEAD=4dcebc20，生成基线时已前移至 099b6c72（kuntu/file-search 相关提交，未触及本映射 anchors）；测试语义=基线 commit 必须是 HEAD 祖先"
+ },
+ "source_ids": [
+  "xross-dev@099b6c72",
+  "localsend-rs(CrossCopy)@4f46cc1(用户副本)/428981a(vendored)"
+ ],
+ "new_dependencies": "无"
 }

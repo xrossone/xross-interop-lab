@@ -1,0 +1,37 @@
+{
+  "schema_version": 1,
+  "run_id": "2026-09-15-t14-testkit",
+  "task": "T14 · 实现conformance testkit与证据记录",
+  "kind": "manual",
+  "evidence_level": "build-verified",
+  "is_test_evidence": true,
+  "synthetic": false,
+  "base_commit": "7aeff2f（T10 提交）",
+  "case_ids": ["T14-01", "T14-02", "T14-03", "T14-04"],
+  "result": "pass",
+  "commands": [
+    {"command": "cargo test --manifest-path impl/Cargo.toml -p interop-testkit --test testkit", "exit_code": 0, "purpose": "T14 验收套件（6 tests）"},
+    {"command": "cargo test --manifest-path impl/Cargo.toml --workspace", "exit_code": 0, "purpose": "全 workspace 回归（46 tests）"},
+    {"command": "cargo clippy --manifest-path impl/Cargo.toml --workspace --all-targets", "exit_code": 0, "purpose": "静态检查 0 warnings"},
+    {"command": "python3 -m unittest discover -s tools -p 'test_*.py'", "exit_code": 0, "purpose": "lab 测试（含 run manifest schema 校验）"}
+  ],
+  "acceptance_mapping": {
+    "T14-01": "fixture 篡改/缺失 → verify_fixtures 返回失败列表；verify 路径不触碰登记表（记录前后 exists 不变，无静默重录）；提交的 sample.bin 与记录生成算法逐字节一致",
+    "T14-02": "RunManifest::new(..., RunKind::Simulated).finish() 的 evidence_level 恒为 simulated；Device 变体必须携带 attestation 才可能产出 device-verified；Manual 为 manual——类型层无升级路径",
+    "T14-03": "check_redaction 对假 AWS key（分段构造）/PEM 头返回 Err 并标注形状；干净日志 Ok；tools/test_run_manifests.py 对 lab 全部 run manifest 做同形状 JSON 级 tripwire",
+    "T14-04": "Fragmenter(seed=42) 两次 fragment_reorder 输出完全相同；不同 seed 边界不同但重排后重组字节与原 payload 完全一致；xorshift64* 可重复"
+  },
+  "new_dependencies": ["sha2 0.10（testkit fixture hash；已在 T08 记录同族依赖）", "serde_json 1"],
+  "artifacts": [
+    {"path": "impl/crates/interop-testkit/src/clock.rs"},
+    {"path": "impl/crates/interop-testkit/src/peer.rs"},
+    {"path": "impl/crates/interop-testkit/src/evidence.rs"},
+    {"path": "impl/crates/interop-testkit/tests/fixtures/sample.bin（自制：i-th byte=(i*31+7)%256, len=2048）"},
+    {"path": "impl/crates/interop-testkit/tests/fixtures/fixtures.index.json"},
+    {"path": "evidence/run.schema.json"},
+    {"path": "tools/test_run_manifests.py"}
+  ],
+  "credentials_redacted": true,
+  "license_route_approved": false,
+  "notes": "证据等级 build-verified（全部为 agent 本机真实命令；kind=manual——非模拟对通、非真机互通）。run.schema.json 同时成为 lab 全部历史 run manifest 的校验器（本 task 为存量 manifest 补 kind 字段）。fixture 为自制内容，无第三方向量复制。"
+}

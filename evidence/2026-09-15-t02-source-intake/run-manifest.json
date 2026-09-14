@@ -1,65 +1,102 @@
 {
-  "schema_version": 1,
-  "run_id": "2026-09-15-t02-source-intake",
-  "task": "T02 · 固定参考源码并检查可执行入口（file-core + airplay，19 项）",
-  "evidence_level": "source-reviewed",
-  "is_test_evidence": true,
-  "synthetic": false,
-  "base_commit": "05d52e7（T01 提交）",
-  "platform": {
-    "os": "macOS 26.6 (Build 25G5065a)",
-    "arch": "arm64",
-    "toolchain": "python3 (系统)、git",
-    "interactive_session": true
+ "schema_version": 1,
+ "run_id": "2026-09-15-t02-source-intake",
+ "task": "T02 · 固定参考源码并检查可执行入口（file-core + airplay，19 项）",
+ "kind": "manual",
+ "evidence_level": "source-reviewed",
+ "is_test_evidence": true,
+ "synthetic": false,
+ "base_commit": "05d52e7（T01 提交）",
+ "platform": {
+  "os": "macOS 26.6 (Build 25G5065a)",
+  "arch": "arm64",
+  "toolchain": "python3 (系统)、git",
+  "interactive_session": true
+ },
+ "case_ids": [
+  "T02-01",
+  "T02-02",
+  "T02-03"
+ ],
+ "result": "pass",
+ "commands": [
+  {
+   "seq": 1,
+   "purpose": "red：allowlist 缺失时测试失败",
+   "command": "python3 -m unittest discover -s tools -p 'test_*.py'",
+   "exit_code": 1,
+   "result": "fail（预期 red：decisions/source-allowlist.json 不存在）"
   },
-  "case_ids": ["T02-01", "T02-02", "T02-03"],
-  "result": "pass",
-  "commands": [
-    {
-      "seq": 1,
-      "purpose": "red：allowlist 缺失时测试失败",
-      "command": "python3 -m unittest discover -s tools -p 'test_*.py'",
-      "exit_code": 1,
-      "result": "fail（预期 red：decisions/source-allowlist.json 不存在）"
-    },
-    {
-      "seq": 2,
-      "purpose": "只读扫描 19 个仓库（origin/HEAD/许可文件/构建入口/submodule/CI下载/vendor/不可信指令文件）",
-      "command": "python3 tools/source_intake_scan.py",
-      "exit_code": 0,
-      "result": "pass；19/19 OK，产出 evidence/source-intake/<slug>.json + scan-log.md"
-    },
-    {
-      "seq": 3,
-      "purpose": "生成 allowlist 后校验；首轮抓出校验器 bug（许可匹配元组含空字符串导致恒阻断，已修）",
-      "command": "python3 -m unittest discover -s tools -p 'test_*.py'",
-      "exit_code": 1,
-      "result": "fail（fixture clean-case 误报，修复 test_source_allowlist.py 后复跑）"
-    },
-    {
-      "seq": 4,
-      "purpose": "最终校验：4 tests OK",
-      "command": "python3 -m unittest discover -s tools -p 'test_*.py'",
-      "exit_code": 0,
-      "result": "pass"
-    }
-  ],
-  "acceptance_mapping": {
-    "T02-01": "未锁定 commit 的来源（status=unresolved/excluded/blocked 且 production_approved=false）不得进入可复现构建/产品依赖；19 条 resolved_commit 与 sources.lock.json 逐条一致",
-    "T02-02": "根 MIT 但依赖 GPL 的 fixture 与真实条目（R08/R09 衍生链未核、R16 无根许可）均不放行 direct-reuse",
-    "T02-03": "r02 .kiro、r14/r15/r16 AGENTS+CLAUDE 共 7 项全部 disposition=untrusted-material，与磁盘扫描逐条一致；未执行任何其中内容"
+  {
+   "seq": 2,
+   "purpose": "只读扫描 19 个仓库（origin/HEAD/许可文件/构建入口/submodule/CI下载/vendor/不可信指令文件）",
+   "command": "python3 tools/source_intake_scan.py",
+   "exit_code": 0,
+   "result": "pass；19/19 OK，产出 evidence/source-intake/<slug>.json + scan-log.md"
   },
-  "source_ids": ["R01","R02","R03","R04","R05","R06","R07","R08","R09","R10","R11","R12","R13","R14","R15","R16","R17","R18","R19"],
-  "new_dependencies": "无（python3 标准库）",
-  "artifacts": [
-    {"path": "research/source-intake.md"},
-    {"path": "decisions/source-allowlist.json"},
-    {"path": "evidence/source-intake/scan-log.md"},
-    {"path": "evidence/source-intake/<slug>.json × 19"},
-    {"path": "tools/source_intake_scan.py"},
-    {"path": "tools/test_source_allowlist.py"}
-  ],
-  "credentials_redacted": true,
-  "license_route_approved": false,
-  "notes": "证据等级 source-reviewed（只读审查，未构建任何第三方代码）。restricted：R10/R13/R16。全部 production_approved=false，放行留待 T05。"
+  {
+   "seq": 3,
+   "purpose": "生成 allowlist 后校验；首轮抓出校验器 bug（许可匹配元组含空字符串导致恒阻断，已修）",
+   "command": "python3 -m unittest discover -s tools -p 'test_*.py'",
+   "exit_code": 1,
+   "result": "fail（fixture clean-case 误报，修复 test_source_allowlist.py 后复跑）"
+  },
+  {
+   "seq": 4,
+   "purpose": "最终校验：4 tests OK",
+   "command": "python3 -m unittest discover -s tools -p 'test_*.py'",
+   "exit_code": 0,
+   "result": "pass"
+  }
+ ],
+ "acceptance_mapping": {
+  "T02-01": "未锁定 commit 的来源（status=unresolved/excluded/blocked 且 production_approved=false）不得进入可复现构建/产品依赖；19 条 resolved_commit 与 sources.lock.json 逐条一致",
+  "T02-02": "根 MIT 但依赖 GPL 的 fixture 与真实条目（R08/R09 衍生链未核、R16 无根许可）均不放行 direct-reuse",
+  "T02-03": "r02 .kiro、r14/r15/r16 AGENTS+CLAUDE 共 7 项全部 disposition=untrusted-material，与磁盘扫描逐条一致；未执行任何其中内容"
+ },
+ "artifacts": [
+  {
+   "path": "research/source-intake.md"
+  },
+  {
+   "path": "decisions/source-allowlist.json"
+  },
+  {
+   "path": "evidence/source-intake/scan-log.md"
+  },
+  {
+   "path": "evidence/source-intake/<slug>.json × 19"
+  },
+  {
+   "path": "tools/source_intake_scan.py"
+  },
+  {
+   "path": "tools/test_source_allowlist.py"
+  }
+ ],
+ "credentials_redacted": true,
+ "license_route_approved": false,
+ "notes": "证据等级 source-reviewed（只读审查，未构建任何第三方代码）。restricted：R10/R13/R16。全部 production_approved=false，放行留待 T05。",
+ "source_ids": [
+  "R01",
+  "R02",
+  "R03",
+  "R04",
+  "R05",
+  "R06",
+  "R07",
+  "R08",
+  "R09",
+  "R10",
+  "R11",
+  "R12",
+  "R13",
+  "R14",
+  "R15",
+  "R16",
+  "R17",
+  "R18",
+  "R19"
+ ],
+ "new_dependencies": "无（python3 标准库）"
 }

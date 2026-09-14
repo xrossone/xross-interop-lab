@@ -1,0 +1,6 @@
+{
+ "name": "sample.bin",
+ "generation": "i-th byte = (i*31+7) mod 256, length 2048（自制，无第三方向量）",
+ "sha256": "7c7272c96bd53928d659650ce0d351531ccca5b7ce618d14f48ec5c8ffd4919f",
+ "license": "项目自有（生成算法公开可复现）"
+}

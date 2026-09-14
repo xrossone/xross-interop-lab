@@ -1,0 +1,49 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://xross.interop/lab/evidence/run.schema.json",
+  "title": "Xross Interop lab run manifest",
+  "description": "evidence/<run-id>/run-manifest.json 的结构（T14）。kind 决定 evidence_level：simulated/manual 不得升级为 device-verified；device 必须携带 device_attestation 指向 device-run 证据 ID。",
+  "type": "object",
+  "required": ["schema_version", "run_id", "kind", "evidence_level", "result", "commands", "credentials_redacted"],
+  "properties": {
+    "schema_version": { "const": 1 },
+    "run_id": { "type": "string", "minLength": 1 },
+    "task": { "type": "string" },
+    "kind": { "enum": ["simulated", "device", "manual"] },
+    "evidence_level": {
+      "enum": ["catalogued", "source-reviewed", "build-verified", "simulated", "device-verified", "release-qualified", "blocked", "manual", "not-run"]
+    },
+    "device_attestation": {
+      "type": ["string", "null"],
+      "description": "kind=device 时必填：指向已登记的 device-run 证据 ID"
+    },
+    "result": { "enum": ["pass", "fail", "blocked", "not-run"] },
+    "case_ids": { "type": "array", "items": { "type": "string" } },
+    "commands": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["command", "exit_code"],
+        "properties": {
+          "command": { "type": "string" },
+          "exit_code": { "type": "integer" },
+          "purpose": { "type": "string" }
+        }
+      }
+    },
+    "artifacts": { "type": "array", "items": { "type": "string" } },
+    "credentials_redacted": { "type": "boolean" },
+    "license_route_approved": { "type": "boolean" },
+    "notes": { "type": "string" }
+  },
+  "allOf": [
+    {
+      "if": { "properties": { "kind": { "const": "device" } }, "required": ["kind"] },
+      "then": { "required": ["device_attestation"] }
+    },
+    {
+      "if": { "properties": { "kind": { "const": "simulated" } }, "required": ["kind"] },
+      "then": { "properties": { "evidence_level": { "const": "simulated" } } }
+    }
+  ]
+}

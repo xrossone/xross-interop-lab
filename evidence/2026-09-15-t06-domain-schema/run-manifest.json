@@ -1,34 +1,72 @@
 {
-  "schema_version": 1,
-  "run_id": "2026-09-15-t06-domain-schema",
-  "task": "T06 · 实现领域schema与能力版本协商",
-  "evidence_level": "build-verified",
-  "is_test_evidence": true,
-  "synthetic": false,
-  "base_commit": "760d8a4（T05 提交）",
-  "case_ids": ["T06-01", "T06-02", "T06-03"],
-  "result": "pass",
-  "commands": [
-    {"seq": 1, "purpose": "red：ids/capability/offer/media/error 模块不存在", "command": "cargo test --manifest-path impl/Cargo.toml -p interop-contract", "exit_code": 101, "result": "fail（E0432 unresolved imports，预期 red）"},
-    {"seq": 2, "purpose": "实现后全量测试", "command": "cargo test --manifest-path impl/Cargo.toml", "exit_code": 0, "result": "pass：16 tests（T01 卫生 3 + T06 验收 10 + golden/schema 3）"},
-    {"seq": 3, "purpose": "静态检查", "command": "cargo clippy --manifest-path impl/Cargo.toml -p interop-contract --all-targets", "exit_code": 0, "result": "pass：0 warnings"}
-  ],
-  "acceptance_mapping": {
-    "T06-01": "U64(9007199254740993)（2^53+1）序列化为 \"9007199254740993\" 字符串，往返精确；JSON number 形式被拒绝（string-only）；ShareOffer.total_bytes/declared_size 全结构往返",
-    "T06-02": "MediaForm::from_wire(\"holographic-stream\") → Err(code=unsupported-feature)；Capability JSON 含未知 media_form 反序列化拒绝；未知 error code（\"warp-field-failure\"）反序列化拒绝",
-    "T06-03": "Capability{role:receive}.matches(\"localsend.v2\", Send) == false；同 profile 同 role 才匹配；available=false 不匹配"
+ "schema_version": 1,
+ "run_id": "2026-09-15-t06-domain-schema",
+ "task": "T06 · 实现领域schema与能力版本协商",
+ "kind": "manual",
+ "evidence_level": "build-verified",
+ "is_test_evidence": true,
+ "synthetic": false,
+ "base_commit": "760d8a4（T05 提交）",
+ "case_ids": [
+  "T06-01",
+  "T06-02",
+  "T06-03"
+ ],
+ "result": "pass",
+ "commands": [
+  {
+   "seq": 1,
+   "purpose": "red：ids/capability/offer/media/error 模块不存在",
+   "command": "cargo test --manifest-path impl/Cargo.toml -p interop-contract",
+   "exit_code": 101,
+   "result": "fail（E0432 unresolved imports，预期 red）"
   },
-  "review_fixes": "独立复核修正：移除公共结构 deny_unknown_fields（docs/05 §1 事件新字段允许忽略，仅 critical 枚举 fail-closed；INT-06 前向兼容）——schema additionalProperties=false 约束本方发出的产物；declared_size schema 断言改 $ref 兼容；clippy result_large_err 显式 allow 并记录理由（域错误 unboxed 人机工学）",
-  "source_ids": ["设计包 docs/01 §2、docs/05 §1-§4（契约拟议字段/枚举）"],
-  "new_dependencies": ["serde 1 (derive) —— contract core 层序列化依赖（docs/04 §3 允许的基本序列化）", "serde_json 1 (dev-dependency)"],
-  "artifacts": [
-    {"path": "impl/crates/interop-contract/src/{lib,ids,capability,offer,media,error,wire_int}.rs"},
-    {"path": "impl/schemas/interop-api.schema.json"},
-    {"path": "impl/crates/interop-contract/tests/t06_acceptance.rs"},
-    {"path": "impl/crates/interop-contract/tests/contract_schema.rs"},
-    {"path": "impl/crates/interop-contract/tests/golden/*.json ×4"}
-  ],
-  "credentials_redacted": true,
-  "license_route_approved": false,
-  "notes": "证据等级 build-verified（本机 cargo test/clippy 通过）。版本协商语义：0.x minor 精确相等；stable 同 major 取较小 minor；跨 major 不可协商。路径穿越组件在 offer.validate() 域层拒绝（落盘防线在 T08 interop-file）。"
+  {
+   "seq": 2,
+   "purpose": "实现后全量测试",
+   "command": "cargo test --manifest-path impl/Cargo.toml",
+   "exit_code": 0,
+   "result": "pass：16 tests（T01 卫生 3 + T06 验收 10 + golden/schema 3）"
+  },
+  {
+   "seq": 3,
+   "purpose": "静态检查",
+   "command": "cargo clippy --manifest-path impl/Cargo.toml -p interop-contract --all-targets",
+   "exit_code": 0,
+   "result": "pass：0 warnings"
+  }
+ ],
+ "acceptance_mapping": {
+  "T06-01": "U64(9007199254740993)（2^53+1）序列化为 \"9007199254740993\" 字符串，往返精确；JSON number 形式被拒绝（string-only）；ShareOffer.total_bytes/declared_size 全结构往返",
+  "T06-02": "MediaForm::from_wire(\"holographic-stream\") → Err(code=unsupported-feature)；Capability JSON 含未知 media_form 反序列化拒绝；未知 error code（\"warp-field-failure\"）反序列化拒绝",
+  "T06-03": "Capability{role:receive}.matches(\"localsend.v2\", Send) == false；同 profile 同 role 才匹配；available=false 不匹配"
+ },
+ "artifacts": [
+  {
+   "path": "impl/crates/interop-contract/src/{lib,ids,capability,offer,media,error,wire_int}.rs"
+  },
+  {
+   "path": "impl/schemas/interop-api.schema.json"
+  },
+  {
+   "path": "impl/crates/interop-contract/tests/t06_acceptance.rs"
+  },
+  {
+   "path": "impl/crates/interop-contract/tests/contract_schema.rs"
+  },
+  {
+   "path": "impl/crates/interop-contract/tests/golden/*.json ×4"
+  }
+ ],
+ "credentials_redacted": true,
+ "license_route_approved": false,
+ "notes": "证据等级 build-verified（本机 cargo test/clippy 通过）。版本协商语义：0.x minor 精确相等；stable 同 major 取较小 minor；跨 major 不可协商。路径穿越组件在 offer.validate() 域层拒绝（落盘防线在 T08 interop-file）。",
+ "review_fixes": "独立复核修正：移除公共结构 deny_unknown_fields（docs/05 §1 事件新字段允许忽略，仅 critical 枚举 fail-closed；INT-06 前向兼容）——schema additionalProperties=false 约束本方发出的产物；declared_size schema 断言改 $ref 兼容；clippy result_large_err 显式 allow 并记录理由（域错误 unboxed 人机工学）",
+ "source_ids": [
+  "设计包 docs/01 §2、docs/05 §1-§4（契约拟议字段/枚举）"
+ ],
+ "new_dependencies": [
+  "serde 1 (derive) —— contract core 层序列化依赖（docs/04 §3 允许的基本序列化）",
+  "serde_json 1 (dev-dependency)"
+ ]
 }

@@ -1,40 +1,85 @@
 {
-  "schema_version": 1,
-  "run_id": "2026-09-15-t04-dossiers",
-  "task": "T04 · 建立逐profile的事实dossier与证据状态（F01/F02/M01/M05/M07/M08）",
-  "evidence_level": "source-reviewed",
-  "is_test_evidence": true,
-  "synthetic": false,
-  "base_commit": "a11fe51（T03 提交）",
-  "case_ids": ["T04-01", "T04-02", "T04-03"],
-  "result": "pass",
-  "commands": [
-    {"seq": 1, "purpose": "red：dossiers/index 缺失", "command": "python3 -m unittest discover -s tools -p 'test_*.py'", "exit_code": 1, "result": "fail（预期 red）"},
-    {"seq": 2, "purpose": "产物齐备后全量校验（中途修复：m01 evidence_refs 混入不支撑 device-verified 的 user-observation→移入正文；KIND_MAX_LEVEL 阶梯化测试规则；lock commit 前缀匹配）", "command": "python3 -m unittest discover -s tools -p 'test_*.py'", "exit_code": 0, "result": "pass：15 tests OK（4 T02 + 6 T03 + 5 T04）"}
-  ],
-  "acceptance_mapping": {
-    "T04-01": "KIND_MAX_LEVEL 强制：page-review/source-tree 最多 source-reviewed，user-observation 最多 catalogued；device-verified 断言必须引用 run-manifest/device-run 且登记在 evidence/index.json",
-    "T04-02": "方向独立单列（M01 receive=device-verified+blocked 障碍列表，send=catalogued；M08 三方向分列）；f02 receive 不得因 r19 可运行而升级",
-    "T04-03": "unknown_fields 每项必须引用存在的 probe（范围排除项显式 probe=null）；每个 probe 有 question+method"
+ "schema_version": 1,
+ "run_id": "2026-09-15-t04-dossiers",
+ "task": "T04 · 建立逐profile的事实dossier与证据状态（F01/F02/M01/M05/M07/M08）",
+ "kind": "manual",
+ "evidence_level": "source-reviewed",
+ "is_test_evidence": true,
+ "synthetic": false,
+ "base_commit": "a11fe51（T03 提交）",
+ "case_ids": [
+  "T04-01",
+  "T04-02",
+  "T04-03"
+ ],
+ "result": "pass",
+ "commands": [
+  {
+   "seq": 1,
+   "purpose": "red：dossiers/index 缺失",
+   "command": "python3 -m unittest discover -s tools -p 'test_*.py'",
+   "exit_code": 1,
+   "result": "fail（预期 red）"
   },
-  "artifacts": [
-    {"path": "research/f01-localsend/dossier.md"},
-    {"path": "research/f02-quickshare-lan/dossier.md"},
-    {"path": "research/m01-airplay-legacy-mirror/dossier.md"},
-    {"path": "research/m05-miracast-wfd/dossier.md"},
-    {"path": "research/m07-dlna-upnp-av/dossier.md"},
-    {"path": "research/m08-cast-media-control/dossier.md"},
-    {"path": "evidence/index.json"},
-    {"path": "specs-reviewed/f01-localsend.md"},
-    {"path": "specs-reviewed/m01-airplay-legacy-mirror.md"},
-    {"path": "specs-reviewed/f02-quickshare-lan.md"},
-    {"path": "specs-reviewed/m05-miracast-wfd.md"},
-    {"path": "specs-reviewed/m07-dlna-upnp-av.md"},
-    {"path": "specs-reviewed/m08-cast-media-control.md"},
-    {"path": "tools/test_dossiers.py"}
-  ],
-  "evidence_folding": "M01 按 goal 要求折算 docs/research/airplay-research.md：真机 POC 登记为 device-run-2026-09-15-airplay-poc（iPad Pro 12.9 iPad13,8 ↔ MacBook Pro macOS 26.6）；transient 链路=device-verified 但 capability_status=blocked（画质/音频/PIN 三障碍）；用户观察保留 user-observed/unpinned=catalogued 不得升级",
-  "credentials_redacted": true,
-  "license_route_approved": false,
-  "notes": "F01/M01 specs-reviewed 为实质审查骨架；F02/M05/M07/M08 为 review-pending（probe 关闭前不作为 wire spec）。blocked 项按 Gate D1 要求实现任务停在 probe 阶段。"
+  {
+   "seq": 2,
+   "purpose": "产物齐备后全量校验（中途修复：m01 evidence_refs 混入不支撑 device-verified 的 user-observation→移入正文；KIND_MAX_LEVEL 阶梯化测试规则；lock commit 前缀匹配）",
+   "command": "python3 -m unittest discover -s tools -p 'test_*.py'",
+   "exit_code": 0,
+   "result": "pass：15 tests OK（4 T02 + 6 T03 + 5 T04）"
+  }
+ ],
+ "acceptance_mapping": {
+  "T04-01": "KIND_MAX_LEVEL 强制：page-review/source-tree 最多 source-reviewed，user-observation 最多 catalogued；device-verified 断言必须引用 run-manifest/device-run 且登记在 evidence/index.json",
+  "T04-02": "方向独立单列（M01 receive=device-verified+blocked 障碍列表，send=catalogued；M08 三方向分列）；f02 receive 不得因 r19 可运行而升级",
+  "T04-03": "unknown_fields 每项必须引用存在的 probe（范围排除项显式 probe=null）；每个 probe 有 question+method"
+ },
+ "artifacts": [
+  {
+   "path": "research/f01-localsend/dossier.md"
+  },
+  {
+   "path": "research/f02-quickshare-lan/dossier.md"
+  },
+  {
+   "path": "research/m01-airplay-legacy-mirror/dossier.md"
+  },
+  {
+   "path": "research/m05-miracast-wfd/dossier.md"
+  },
+  {
+   "path": "research/m07-dlna-upnp-av/dossier.md"
+  },
+  {
+   "path": "research/m08-cast-media-control/dossier.md"
+  },
+  {
+   "path": "evidence/index.json"
+  },
+  {
+   "path": "specs-reviewed/f01-localsend.md"
+  },
+  {
+   "path": "specs-reviewed/m01-airplay-legacy-mirror.md"
+  },
+  {
+   "path": "specs-reviewed/f02-quickshare-lan.md"
+  },
+  {
+   "path": "specs-reviewed/m05-miracast-wfd.md"
+  },
+  {
+   "path": "specs-reviewed/m07-dlna-upnp-av.md"
+  },
+  {
+   "path": "specs-reviewed/m08-cast-media-control.md"
+  },
+  {
+   "path": "tools/test_dossiers.py"
+  }
+ ],
+ "credentials_redacted": true,
+ "license_route_approved": false,
+ "notes": "F01/M01 specs-reviewed 为实质审查骨架；F02/M05/M07/M08 为 review-pending（probe 关闭前不作为 wire spec）。blocked 项按 Gate D1 要求实现任务停在 probe 阶段。",
+ "evidence_folding": "M01 按 goal 要求折算 docs/research/airplay-research.md：真机 POC 登记为 device-run-2026-09-15-airplay-poc（iPad Pro 12.9 iPad13,8 ↔ MacBook Pro macOS 26.6）；transient 链路=device-verified 但 capability_status=blocked（画质/音频/PIN 三障碍）；用户观察保留 user-observed/unpinned=catalogued 不得升级"
 }

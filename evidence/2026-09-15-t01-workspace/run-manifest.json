@@ -1,53 +1,78 @@
 {
-  "schema_version": 1,
-  "run_id": "2026-09-15-t01-workspace",
-  "task": "T01 · 建立隔离lab与最小实现workspace（lab impl/ 收尾）",
-  "evidence_level": "build-verified",
-  "is_test_evidence": true,
-  "synthetic": false,
-  "profile_id": null,
-  "role": null,
-  "base_commit": "f4e82d085512bdb48addbe443cd096a24989a0e5",
-  "implementation_commit": "见提交本文件的 commit（T01: …）",
-  "platform": {
-    "os": "macOS 26.6 (Build 25G5065a)",
-    "arch": "arm64",
-    "toolchain": "rustc 1.98.0 (88d9e12ae 2026-08-18), rustup stable-aarch64-apple-darwin",
-    "interactive_session": true
+ "schema_version": 1,
+ "run_id": "2026-09-15-t01-workspace",
+ "task": "T01 · 建立隔离lab与最小实现workspace（lab impl/ 收尾）",
+ "kind": "manual",
+ "evidence_level": "build-verified",
+ "is_test_evidence": true,
+ "synthetic": false,
+ "profile_id": null,
+ "role": null,
+ "base_commit": "f4e82d085512bdb48addbe443cd096a24989a0e5",
+ "implementation_commit": "见提交本文件的 commit（T01: …）",
+ "platform": {
+  "os": "macOS 26.6 (Build 25G5065a)",
+  "arch": "arm64",
+  "toolchain": "rustc 1.98.0 (88d9e12ae 2026-08-18), rustup stable-aarch64-apple-darwin",
+  "interactive_session": true
+ },
+ "case_ids": [
+  "T01-01",
+  "T01-02"
+ ],
+ "result": "pass",
+ "commands": [
+  {
+   "seq": 1,
+   "purpose": "red：T01-01/T01-02 在缺 rust-toolchain.toml 与 impl/README.md 时失败（T01-02 首轮还暴露扫描器 run-count bug：alnum 计数取自文件头而非命中位置，已修复并补自检）",
+   "command": "cargo test --manifest-path impl/Cargo.toml -p interop-contract",
+   "exit_code": 101,
+   "result": "fail（预期 red）"
   },
-  "case_ids": ["T01-01", "T01-02"],
-  "result": "pass",
-  "commands": [
-    {
-      "seq": 1,
-      "purpose": "red：T01-01/T01-02 在缺 rust-toolchain.toml 与 impl/README.md 时失败（T01-02 首轮还暴露扫描器 run-count bug：alnum 计数取自文件头而非命中位置，已修复并补自检）",
-      "command": "cargo test --manifest-path impl/Cargo.toml -p interop-contract",
-      "exit_code": 101,
-      "result": "fail（预期 red）"
-    },
-    {
-      "seq": 2,
-      "purpose": "green：补齐 rust-toolchain.toml（channel=1.98.0）与 impl/README.md 后全部通过",
-      "command": "cargo test --manifest-path impl/Cargo.toml -p interop-contract",
-      "exit_code": 0,
-      "stdout_summary": "3 passed; 0 failed（t01_01_dependency_graph_is_clean, t01_02_lab_index_is_clean, scanners_detect_seeded_violations）",
-      "result": "pass"
-    }
-  ],
-  "acceptance_mapping": {
-    "T01-01": "t01_01_dependency_graph_is_clean：workspace 依赖图无 Xross 账号/GUI 依赖（任何层）、无网络栈（core 层）、无 git 来源依赖、无逃逸 impl/ 的路径依赖；工具链锁 1.98.0；fixture 自检证明扫描器能发现 tokio/tauri/路径逃逸",
-    "T01-02": "t01_02_lab_index_is_clean：git ls-files 全索引无 pcap/pcapng/har/.env/pem/p12/mobileconfig 路径、无 vendor|captures|references/external 树、内容无 PEM/AWS/GitHub/Slack/sk- 高置信 token 形状；自检用 AWS 文档示例 key 与分段 PEM 头证明可检出"
+  {
+   "seq": 2,
+   "purpose": "green：补齐 rust-toolchain.toml（channel=1.98.0）与 impl/README.md 后全部通过",
+   "command": "cargo test --manifest-path impl/Cargo.toml -p interop-contract",
+   "exit_code": 0,
+   "stdout_summary": "3 passed; 0 failed（t01_01_dependency_graph_is_clean, t01_02_lab_index_is_clean, scanners_detect_seeded_violations）",
+   "result": "pass"
+  }
+ ],
+ "acceptance_mapping": {
+  "T01-01": "t01_01_dependency_graph_is_clean：workspace 依赖图无 Xross 账号/GUI 依赖（任何层）、无网络栈（core 层）、无 git 来源依赖、无逃逸 impl/ 的路径依赖；工具链锁 1.98.0；fixture 自检证明扫描器能发现 tokio/tauri/路径逃逸",
+  "T01-02": "t01_02_lab_index_is_clean：git ls-files 全索引无 pcap/pcapng/har/.env/pem/p12/mobileconfig 路径、无 vendor|captures|references/external 树、内容无 PEM/AWS/GitHub/Slack/sk- 高置信 token 形状；自检用 AWS 文档示例 key 与分段 PEM 头证明可检出"
+ },
+ "artifacts": [
+  {
+   "path": "impl/Cargo.toml",
+   "sha256": "b686da660f2ab52f05a0538d5d00714758a46bd856e8ef16a07b634cc4fdf119"
   },
-  "artifacts": [
-    {"path": "impl/Cargo.toml", "sha256": "b686da660f2ab52f05a0538d5d00714758a46bd856e8ef16a07b634cc4fdf119"},
-    {"path": "impl/crates/interop-contract/Cargo.toml", "sha256": "e81daca0f6d96d41e691aa6cb2d8817428cd3064868f61994830c123ab0716d3"},
-    {"path": "impl/crates/interop-contract/src/lib.rs", "sha256": "710693c30ad035d123929664edc5671597388ffe05ee735faa081402a391db7e"},
-    {"path": "impl/crates/interop-contract/tests/t01_workspace_hygiene.rs", "sha256": "8363bea18bd58ff826e0fb9190a3cc30e4b5a55684bcb1b3224496d132e81235"},
-    {"path": "impl/rust-toolchain.toml", "sha256": "8f6b8393117d142cdfc4837c001aa36b60656983699b237077af4da5c337cdbd"},
-    {"path": "impl/README.md", "sha256": "87415c2cd5cc20e3565e887a07d4c0c870af62d76d30175ac3a6a269d567d99f"},
-    {"path": "impl/Cargo.lock", "sha256": "7cac745551de95d8794bae29584aad3a2753943d3e9a1ed60dab2eea279238bc"}
-  ],
-  "credentials_redacted": true,
-  "license_route_approved": false,
-  "notes": "证据等级仅为 build-verified（本机 cargo test 通过）。contract crate 当前零依赖；T06 引入 serde/serde_json 时需按分层白名单更新测试。未做任何真机/协议验证。"
+  {
+   "path": "impl/crates/interop-contract/Cargo.toml",
+   "sha256": "e81daca0f6d96d41e691aa6cb2d8817428cd3064868f61994830c123ab0716d3"
+  },
+  {
+   "path": "impl/crates/interop-contract/src/lib.rs",
+   "sha256": "710693c30ad035d123929664edc5671597388ffe05ee735faa081402a391db7e"
+  },
+  {
+   "path": "impl/crates/interop-contract/tests/t01_workspace_hygiene.rs",
+   "sha256": "8363bea18bd58ff826e0fb9190a3cc30e4b5a55684bcb1b3224496d132e81235"
+  },
+  {
+   "path": "impl/rust-toolchain.toml",
+   "sha256": "8f6b8393117d142cdfc4837c001aa36b60656983699b237077af4da5c337cdbd"
+  },
+  {
+   "path": "impl/README.md",
+   "sha256": "87415c2cd5cc20e3565e887a07d4c0c870af62d76d30175ac3a6a269d567d99f"
+  },
+  {
+   "path": "impl/Cargo.lock",
+   "sha256": "7cac745551de95d8794bae29584aad3a2753943d3e9a1ed60dab2eea279238bc"
+  }
+ ],
+ "credentials_redacted": true,
+ "license_route_approved": false,
+ "notes": "证据等级仅为 build-verified（本机 cargo test 通过）。contract crate 当前零依赖；T06 引入 serde/serde_json 时需按分层白名单更新测试。未做任何真机/协议验证。"
 }

@@ -6,6 +6,7 @@ members = [
     "crates/interop-policy",
     "crates/interop-ipc",
     "crates/interop-runtime",
+    "crates/interop-testkit",
     "adapters/standalone-host",
     "apps/interopd",
 ]
