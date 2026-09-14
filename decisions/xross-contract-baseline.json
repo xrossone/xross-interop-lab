@@ -1,0 +1,196 @@
+{
+ "schema_version": 1,
+ "generated_at": "2026-09-14T21:41:48+00:00",
+ "xross_dev": {
+  "path": "/Volumes/Portable2TB/ExtDev/xross-dev",
+  "branch": "content-plane-0044",
+  "commit": "099b6c723b901b67b60c5cfc369587d76295c8fc",
+  "toolchain": "stable",
+  "workspace": "92 crates 按 contract/kernel/runtime/service/adapter/platform/probe/testkit/app 分层；分层依赖由 scripts/check-boundaries.ts 强制；无动态插件",
+  "read_only": true,
+  "note": "xross-dev 工具链 pin 1.97.1；interop impl/ pin 1.98.0——两者互不依赖，仅经 wire/JSON 契约对接。注意：该 checkout 为用户活跃工作区（基线锚定 099b6c72，扫描期间 HEAD 曾从 4dcebc20 前移）；集成实现开始前需用 tools/test_xross_baseline.py 复核 anchors 仍然有效。"
+ },
+ "anchors": [
+  "crates/adapter/xross-adapter-localsend/src/lib.rs",
+  "crates/adapter/xross-adapter-localsend/src/server.rs",
+  "crates/adapter/xross-adapter-localsend/src/consent.rs",
+  "crates/adapter/xross-adapter-localsend/tests/localsend_over_the_wire.rs",
+  "crates/app/xrossd/src/localsend.rs",
+  "crates/contract/xross-transfer-contract/src/protocol.rs",
+  "crates/service/xross-svc-transfer/src/consent.rs",
+  "crates/service/xross-svc-transfer/src/publish.rs",
+  "crates/runtime/xross-node-runtime/src/lease.rs",
+  "crates/contract/xross-shelf-contract/src/lib.rs",
+  "crates/service/xross-svc-shelf/src/model.rs",
+  "crates/service/xross-svc-shelf/src/host.rs",
+  "crates/contract/xross-contract-core/src/audience.rs",
+  "crates/contract/xross-content/src/lib.rs",
+  "crates/adapter/xross-adapter-files-http/src/lib.rs",
+  "crates/adapter/xross-adapter-files-http/src/lease.rs",
+  "crates/contract/xross-control-api/src/transport.rs",
+  "crates/contract/xross-control-api/src/auth.rs",
+  "crates/contract/xross-control-api/src/methods.rs",
+  "crates/app/xrossd/src/events.rs",
+  "crates/contract/xross-service-host/src/lib.rs",
+  "crates/runtime/xross-node-runtime/src/registry.rs",
+  "crates/contract/xross-capability-registry/src/lib.rs",
+  "crates/kernel/xross-fabric/src/identity.rs",
+  "crates/kernel/xross-fabric/src/endpoint.rs",
+  "crates/service/xross-svc-devices/src/directory.rs",
+  "crates/service/xross-svc-devices/src/route.rs",
+  "proto/xross/control/v1/control.proto",
+  "proto/xross/fabric/v1/wire.proto",
+  "docs/handbook/00-north-star.md"
+ ],
+ "localsend": {
+  "status": "reuse-first",
+  "reusable_modules": [
+   "xross-adapter-localsend::server（接收 HTTP：/api/localsend/v2 prepare-upload/upload/cancel）",
+   "xross-adapter-localsend::discovery（UDP multicast announce/listen）",
+   "xross-adapter-localsend::scan（LanScanner TCP 探测）",
+   "xross-adapter-localsend::send（LanSender/LanUpload/SendProgress）",
+   "xross-adapter-localsend::receive::manifest_for（prepare-upload→接收清单）",
+   "xross-adapter-localsend::consent（PendingRequest/TransferDecision，400 vs 403 语义）",
+   "vendored localsend-rs 协议实现（TLS 指纹证书等）"
+  ],
+  "regression_tests": [
+   "crates/adapter/xross-adapter-localsend/tests/localsend_over_the_wire.rs",
+   "crates/adapter/xross-adapter-localsend/tests/localsend_receive.rs",
+   "crates/adapter/xross-adapter-localsend/tests/localsend_scan.rs",
+   "crates/adapter/xross-adapter-localsend/tests/localsend_send.rs",
+   "crates/adapter/xross-adapter-localsend/tests/localsend_tls.rs",
+   "crates/adapter/xross-adapter-localsend/tests/localsend_web_share.rs"
+  ],
+  "vendored": {
+   "submodule_path": "vendors/localsend-rs",
+   "origin": "https://github.com/CrossCopy/localsend-rs.git",
+   "commit": "428981a012c77404e2605ae7b630b50bcbe8ce0f"
+  },
+  "user_copy": {
+   "path": "/Volumes/Portable2TB/ExtDev/localsend-rs",
+   "origin": "https://github.com/CrossCopy/localsend-rs.git",
+   "commit": "4f46cc1a684404e81facb088fc156fb47d61e928",
+   "note": "与 vendored 同 upstream 不同 commit；本阶段不修改两者"
+  },
+  "conclusion": "不写替代品：interop 层的 LocalSend provider 复用主仓 adapter 模式；mock 闭环用自有 fake peer，真机互通回归以主仓 6 个测试为门槛（INT-04）"
+ },
+ "transfer": {
+  "wire": "crates/contract/xross-transfer-contract/src/protocol.rs — SERVICE_ID=xross.transfer.v1；TransferOffer/OfferedPayload::{File,Tree}；TransferEvent{Started{verified_bytes,total_bytes},Progress,Published,Failed,Cancelled}；resume 语义=Started.verified_bytes",
+  "service": "crates/service/xross-svc-transfer — ConsentTable(admit/decide, PENDING_LEASE=300s)、publish Staging→Published、ReceiveWatcher/WatchTable",
+  "lease": "crates/runtime/xross-node-runtime/src/lease.rs — Lease/LeaseState{Open,Completed,Cancelled,TimedOut,Failed}/LeaseStore(operations.json, TTL 24h, MAX 1000)；取消=terminalize+关闭 channel",
+  "verbs": "SEND_START/SEND_FOLLOW/SEND_CANCEL/RECEIVE_WATCH/RECEIVE_CANCEL/RECEIVE_PIN（protocol.rs:29-163）",
+  "interop_rule": "外部 provider 的 offer 一律进 ConsentTable，不绕过；进度投影到 TransferEvent，不造第二套历史（FILE-10）"
+ },
+ "shelf": {
+  "wire": "crates/contract/xross-shelf-contract — SERVICE_ID=xross.shelf.v1；WATCH/ADD/REMOVE/…/SHARE/AUDIENCE/PULL；CAPABILITY 与 SHARE_CAPABILITY 分离（ADR 0114）",
+  "model": "crates/service/xross-svc-shelf/src/model.rs — Shelf/ShelfEntry/ShelfView/Materialization；audience 语义在 xross-contract-core/src/audience.rs（Audience/ReaderIdentity）+ ShelfVisibility",
+  "finding": "主仓无泛化 Offer 类型：offer/accept/reject 语义在 transfer（TransferOffer+ConsentTable）；interop 的 ShareOffer 投影到 TransferOffer/ConsentTable，不建平行 Offer 模型（INT-03）"
+ },
+ "content": {
+  "identity": "crates/contract/xross-content — ContentObject/Representation/ContentHash(xr2:)/BlobDigest(b3:)，冻结域",
+  "leases": "不存在 ContentLease/LeaseId 类型；三个实际概念：node-runtime 操作 Lease（写授权）、files-http HttpLease（读授权）、xross-content 内容同一性",
+  "materialize": "svc-transfer publish + xross-safe-fs（pinned root 下安全落盘）；blob 读授权在 xross-blob-bridge（per operation/channel）",
+  "interop_rule": "interop 的 ContentWritePort/ContentReadPort 映射到 LeaseStore + publish/safe-fs + HttpLease 模式；不新造 ContentLease 抽象"
+ },
+ "local_control": {
+  "transport": "gRPC(tonic) over Unix domain socket — crates/contract/xross-control-api/src/transport.rs（ControlAddress/peer_uid 校验）；非 JSON-RPC",
+  "auth": "UDS 0600 + peer-UID + ControlToken bearer（auth.rs）；凭据经 CredentialStore（credentials.rs）",
+  "api": "control.proto 135 个 RPC；方法→能力表 methods.rs（~45 个 xross.control.v1:* 能力，MethodSpec 编译期强制）",
+  "events": "xrossd/src/events.rs EventBus — publish 带序号、replay_from、broadcast；Subscribe 流（control.proto:841）；transfer 另有 RECEIVE_WATCH 专用流",
+  "interop_rule": "interopd 作为 ControlServiceClient 客户端接入；events.subscribe 的 sequence/replay 语义与 interop 事件契约（T10 bounded replay）对齐"
+ },
+ "media": {
+  "stability": "absent",
+  "evidence": [
+   "全仓 grep MediaSession/MediaGraph 为空（crates/ + proto/）",
+   "docs/handbook/00-north-star.md:241 旧 MVP 明确划掉 'Remote Desktop / screen capture / media codecs'（narrowed 2026-08-19）",
+   "相邻物：xross-adapter-files-http（播放器可 seek 的本地 HTTP URL，M6）、xross-capture-contract（截屏能力）、xross-crossflow（活跃开发）、xross-displays"
+  ],
+  "integration": {
+   "status": "blocked-dependency",
+   "mock_host_first": true,
+   "reason": "主仓无稳定媒体接口可对接（INT-05 的 Media Graph 不存在）；interop 先以 null/file sink + mock host 完成 T07–T14 全部契约闭环，真机媒体呈现经 interop 独立 native player（docs/04 §8），待主仓媒体接口出现后再映射 MediaHostPort"
+  }
+ },
+ "profile_runtime": {
+  "finding": "无 provider/protocol 插件系统；'profile' 在主仓语义=账号 profile（control.proto ListProfiles）",
+  "seam": "编译期注册：xross-service-host（ServiceChannel/ServiceDescriptor）+ node-runtime ServiceRegistry::register_*；原生能力走 capability-registry + platform-bridge（Surface E）+ platform-head supervisor",
+  "interop_rule": "interop provider 不伪装成主仓服务；interopd 是独立 daemon，经 ControlServiceClient 驱动主仓，经自有 ServiceRegistry（T07）编排 provider"
+ },
+ "identity": {
+  "fabric": "crates/kernel/xross-fabric — DeviceIdentity::load_or_create、Fabric::bind_with、FABRIC_ALPN、PeerAuthorizer/pairing permits",
+  "devices": "crates/service/xross-svc-devices — DeviceDirectory（apply_lan/reconcile_fabric/watch）、DeviceKey、route.rs choose_route（LocalSend vs fabric 选路）",
+  "interop_rule": "interop 不创建第二套设备身份/账号（INT-02）：EndpointId 是本地观察标识，用户显式 alias 才可关联 Xross DeviceDirectory 条目"
+ },
+ "host_port_mapping": [
+  {
+   "port": "AdmissionPort",
+   "xross_entry": "xross-svc-transfer::consent::ConsentTable",
+   "stability": "stable",
+   "note": "外部 offer 经 admit/decide；standalone 用本地策略"
+  },
+  {
+   "port": "ContentReadPort",
+   "xross_entry": "xross-service-host BlobReadAccess/FetchService + files-http HttpLease 模式",
+   "stability": "stable",
+   "note": "scoped、过期、单 entry"
+  },
+  {
+   "port": "ContentWritePort",
+   "xross_entry": "node-runtime LeaseStore + svc-transfer publish + xross-safe-fs",
+   "stability": "stable",
+   "note": "pinned root、原子发布"
+  },
+  {
+   "port": "HistoryPort",
+   "xross_entry": "TransferEvent + RECEIVE_WATCH（ReceiveWatcher/WatchTable）",
+   "stability": "stable",
+   "note": "不建第二套历史"
+  },
+  {
+   "port": "MediaHostPort",
+   "xross_entry": "无（media.absent）",
+   "stability": "absent",
+   "note": "mock host 先行；blocked-dependency"
+  },
+  {
+   "port": "IdentityLinkPort",
+   "xross_entry": "svc-devices DeviceDirectory（用户显式 alias）",
+   "stability": "stable",
+   "note": "IP/名称不自动合并"
+  },
+  {
+   "port": "NetworkPolicyPort",
+   "xross_entry": "xrossd localsend.rs 组装点 + control.proto LocalSend 开关",
+   "stability": "stable",
+   "note": "监听启停/接口选择走既有控制面"
+  }
+ ],
+ "adapter_seam": {
+  "name": "XrossHostAdapter：以 ControlServiceClient（gRPC/UDS + ControlToken）为唯一 xrossd 接入点",
+  "rationale": "主仓唯一受支持的本地正门是 daemon 控制面（control.proto + action broker）；媒体等缺失接口经 mock host 先行。唯一 seam = interop 侧只实现这一个 adapter trait，主仓升级只影响该 adapter；不建平行 Offer/Lease/身份模型"
+ },
+ "scope_conflicts": [
+  {
+   "id": "SC-1",
+   "conflict": "xross-dev north-star（2026-08-19 narrowed）把 media codecs/投屏划出 MVP；用户 Xross Interop 目标（2026-09-15）明确要求 AirPlay/Miracast/Cast 媒体互操作",
+   "resolution": "keep-in-scope",
+   "scope_source": "user-goal",
+   "note": "媒体协议保留在 interop 计划内，先 lab/standalone 闭环；不因主仓 MVP 收窄而砍协议，也不反向往主仓塞未定接口"
+  },
+  {
+   "id": "SC-2",
+   "conflict": "设计包 docs/05 拟议本地 IPC 为『长度前缀 + JSON-RPC』；主仓真实控制面是 gRPC over UDS（135 RPC）",
+   "resolution": "keep-in-scope",
+   "scope_source": "user-goal",
+   "note": "interop 内部契约（T09）按设计包实现；与 xrossd 的对接经 XrossHostAdapter 说 gRPC，两者不混同"
+  },
+  {
+   "id": "SC-3",
+   "conflict": "设计包拟议 ContentLease/HostPorts 抽象在主仓无同名物（实际是 Lease/HttpLease/ConsentTable 三概念）",
+   "resolution": "keep-in-scope",
+   "scope_source": "user-goal",
+   "note": "interop 侧保留拟议抽象用于 standalone 模式；映射表注明与主仓真实类型的对应，不要求主仓改名"
+  }
+ ]
+}
