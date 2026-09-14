@@ -8,8 +8,8 @@
 | provider | route | 发布单元 | 组合审查 | 放行状态 |
 |---|---|---|---|---|
 | UxPlay | worker（外部二进制 oracle/fallback） | external-binary（GPL-3.0 义务保留） | pending | pending-user-review |
-| shairplay-rust | worker（库进独立 airplay-worker） | airplay-worker-lgpl | pending（Rust×LGPL 链接方式待定） | pending-user-review |
-| LocalSend | reuse（自有实现 + 主仓 adapter） | interop 核心 | 不适用（宽松许可） | pending（localsend-rs LICENSE 文件缺失，待用户补/确认） |
+| shairplay-rust | **independent（仅协议事实参考）** | airplay-worker（自有实现） | 不适用（不链接） | **已裁决**（用户 2026-09-15：质量不达标仅参考） |
+| LocalSend | reuse（**主仓 adapter**；用户自有 localsend-rs 不属本项目） | interop 核心 | 不适用（宽松许可） | pending（F01 profile 范围与 reuse 路线待用户确认） |
 | QuickShare 参考 | independent（事实/规范 → 独立 Rust 实现） | interop 核心 | 不适用 | pending（wire spec 未固化） |
 | GStreamer | reuse（运行时依赖，media-worker 内部） | media-worker | pending（插件许可矩阵未审） | pending-user-review |
 | WinRT Miracast | independent（系统 API 直接用） | windows native provider | 不适用 | pending（windows-rs 依赖 intake 未做） |
@@ -22,13 +22,14 @@
    不允许把逻辑翻译成 Rust——`/pair-setup-pin` 的实现将按协议事实独立编写（specs-reviewed/m01
    已固化 plist/SRP 步骤事实），这属于"规范/事实 → 独立实现"路线，与逐行翻译的区别在
    review 时按 docs/06 §1 标准复核。
-2. **shairplay-rust**：LGPL-3.0 是四条路线里最干净的强能力选项（纯 Rust、可审计、Gate 1 已过）。
-   隔离方式选 worker 进程 + 独立发布单元，而不是链接进主 daemon。**不把 socket 包装当成许可
-   隔离定理**（T05-02）：composition_review 留 pending，等 T15+ 定了链接形态（动态加载/独立
-   进程参数化）再按 GNU FAQ 因素（通信机制、语义耦合、组合紧密度）完成审查。
-3. **LocalSend**：唯一接近放行项。阻碍不是许可实质而是形式：用户自有 localsend-rs 的
-   Cargo.toml/README 声明 MIT，但仓库里没有 LICENSE 文件。已列为 pending-user-confirmation
-   （用户补文件即可 approved）。R13 协议文档仓无许可 → restricted，只用事实。
+2. **shairplay-rust**：初稿曾定 worker 链接路线（LGPL 独立单元）。**用户 2026-09-15 决议推翻**：
+   真机 POC 实测无音频、视频多缺陷、质量远不如 UxPlay（14 stars，成熟度不足）→ 仅作协议事实
+   参考（行级引用注明 commit+行），不链接、不复用；AirPlay 接收走独立实现 + UxPlay oracle/fallback。
+   LGPL 组合审查问题随之消失。
+3. **LocalSend**：复用目标是**主仓既有 adapter**（xross-adapter-localsend + 其 vendored
+   vendors/localsend-rs，MIT，6 回归测试）。**用户 2026-09-15 澄清**：`~/Dev/localsend-rs`
+   属另一项目，不作为本项目输入——已从复用候选与 approved-inputs 移除。R13 协议文档仓
+   无许可 → restricted，只用事实。
 4. **QuickShare 参考**：全组未形成 wire spec（P-F02-1/2 未关）。此刻任何"复用"都无从谈起；
    走 independent 路线积累事实。rquickshare（GPL）只允许结构思想参考——T05-01 否决情景
    （把 GPL Rust 库改改就说自有）在此预设禁止。

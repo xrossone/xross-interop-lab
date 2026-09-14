@@ -64,7 +64,8 @@ tools/                          # 仓库检查脚本与测试（python3 -m unitt
   [tools/test_dossiers.py](tools/test_dossiers.py) 强制）；M01 折算 airplay-research.md：
   transient 链路 device-verified 但 `capability_status=blocked`（画质/音频/PIN 三障碍）。
 - **T05 许可路线**：[decisions/provider-adoption.json](decisions/provider-adoption.json)——
-  UxPlay→worker(外部二进制)、shairplay-rust→worker(LGPL 独立单元)、LocalSend→reuse、
+  UxPlay→worker(外部二进制 oracle/fallback)、shairplay-rust→仅参考（用户实测质量不达标，不链接）、
+  LocalSend→reuse（主仓 adapter；用户自有 localsend-rs 属另一项目不引入）、
   QuickShare 参考→independent、GStreamer→worker、WinRT→independent、**FairPlay→永久 vendor-gated**；
   全部 `production_approved=false`（放行权保留给用户）。
 - **T01/T06–T10/T14 实现**：`impl/` 7 个 crate + 1 adapter + 1 app；

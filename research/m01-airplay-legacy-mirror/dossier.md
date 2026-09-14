@@ -11,11 +11,11 @@
       "capability_status": "blocked",
       "evidence_refs": ["device-run-2026-09-15-airplay-poc"],
       "obstacles": [
-        "shairplay-rust transient 链路视频画质扭曲：根因未定（openh264 用法 vs 数据 vs 解密），P-M01-1 一锤定音",
-        "音频无声：ALAC 流已建立，--resample 后仍无声，P-M01-2",
-        "PIN 配对 /pair-setup-pin 未实现（v0.10.0 404）：需按 UxPlay 移植 legacy SRP，P-M01-3"
+        "自研接收实现尚未存在（T15+）：本阶段无任何自有解码/渲染管线代码",
+        "PIN 配对 /pair-setup-pin（binary plist 三步 legacy SRP）需独立实现（P-M01-3）",
+        "画质/音频无既成证据：参考实现 shairplay-rust 实测画质扭曲、无声；用户 2026-09-15 决议其质量不达标——仅参考、不链接"
       ],
-      "reeval_conditions": "P-M01-1 分辨数据/解码器责任；音频每秒计数日志定位；pair-setup-pin 移植后 iPad PIN 直连"
+      "reeval_conditions": "P-M01-3 关闭 + 自研管线落地后，按 catalog M01 真机矩阵验收（UxPlay 为行为 oracle，20 次重连）"
     },
     "send": {
       "evidence_level": "catalogued",
@@ -26,7 +26,7 @@
   },
   "sources": [
     {"id": "R01", "name": "FDH2/UxPlay", "commit": "d9791de116b8", "license": "GPL-3.0（文件级混合）", "usage": "参考 oracle + pair-setup-pin 事实来源（raop_handlers.h:275-430, srp.c）"},
-    {"id": "R02", "name": "metaneutrons/shairplay-rust", "commit": "2fb72b30b658", "license": "LGPL-3.0-or-later", "usage": "首选技术路线（Gate 1 审计已过）"},
+    {"id": "R02", "name": "metaneutrons/shairplay-rust", "commit": "2fb72b30b658", "license": "LGPL-3.0-or-later", "usage": "协议事实参考（行级引用；用户 2026-09-15 实测决议：无音频/视频多缺陷/质量远不如 UxPlay → 不链接、不复用；Gate 1 审计结论仍有效）"},
     {"id": "R10", "name": "openairplay/airplay-spec", "commit": "00063da0e7f1", "license": "无 LICENSE（restricted）", "usage": "事实引用，注明出处"},
     {"id": "internal", "name": "docs/research/airplay-research.md", "commit": "本仓库（2026-09-15）", "license": "自有", "usage": "真机 POC 运行记录与协议实测事实"}
   ],
@@ -38,9 +38,9 @@
     {"field": "FairPlay/DRM 后续阶段（本 profile 不声称、不触碰）", "probe": null}
   ],
   "probes": [
-    {"id": "P-M01-1", "question": "视频扭曲是数据坏还是解码器弱？", "method": "NAL 落盘 .h264 → ffplay -f h264 播放 A/B（airplay-research §7 P1 建议 4）", "status": "planned"},
-    {"id": "P-M01-2", "question": "音频在 ring→cpal 哪一段丢失？", "method": "AudioSession 回调加每秒计数日志 + RUST_LOG=shairplay=trace（§7 P2）", "status": "planned"},
-    {"id": "P-M01-3", "question": "/pair-setup-pin（binary plist 三步 legacy SRP-SHA1）移植后 iPad PIN 配对能否走通？", "method": "按 UxPlay raop_handlers.h:275-430 移植；SRP 会话状态跨 TCP 连接存活（实测每请求换连接）", "status": "planned"},
+    {"id": "P-M01-1", "question": "（参考诊断，可选）参考实现的视频扭曲归因——供自研管线避坑", "method": "NAL 落盘 .h264 → ffplay A/B（airplay-research §7 P1）；不承诺修复上游", "status": "optional"},
+    {"id": "P-M01-2", "question": "（参考诊断，可选）参考实现音频链路断点——供自研音频管线避坑", "method": "airplay-research §7 P2 计数日志/trace；不承诺修复上游", "status": "optional"},
+    {"id": "P-M01-3", "question": "/pair-setup-pin（binary plist 三步 legacy SRP-SHA1）独立实现后 iPad PIN 配对能否走通？", "method": "按 specs-reviewed/m01 已固化事实独立实现（UxPlay 行级事实为参考）；SRP 会话状态跨 TCP 连接存活（实测每请求换连接）", "status": "planned"},
     {"id": "P-M01-4", "question": "PIN 是否一次性？", "method": "配对成功后同 PIN 二次连接实验 + UxPlay 代码复读", "status": "planned"},
     {"id": "P-M01-5", "question": "feature 位/配对模式在 iPhone/iPad/Mac 各版本上的矩阵？", "method": "20 次重连 + 具名设备矩阵（catalog 验收）", "status": "planned"}
   ]
@@ -103,12 +103,16 @@
 
 ## H. Decision
 
-**路线：shairplay-rust（LGPL）独立 provider worker + UxPlay 作为外部参考 oracle**（与 T05 决议一致）。理由：Gate 1 已过、链路已通、剩解码/音频/pin 三件事各有明确 probe。独立进程隔离 LGPL 与未来 FairPlay 边界。重评条件：P-M01-1/2/3 关闭后升 simulated→真机矩阵。
+**路线：独立实现（自有 airplay-worker）+ UxPlay 作为外部行为 oracle/fallback（worker/外部二进制单元）**。
+参考实现 shairplay-rust **仅作协议事实来源**（用户 2026-09-15 决议：POC 实测无音频、视频多缺陷、
+质量远不如 UxPlay、14 stars 成熟度不足 → 不链接、不复用；LGPL 链接与组合审查问题随之消失）。
+自研实现的验收基准 = catalog M01 真机矩阵（iPhone/iPad/Mac → 受控画面声音、20 次重连），
+UxPlay 为行为对照。重评条件：P-M01-3 关闭 + 自研管线落地。
 
 ## I. Implementation input release
 
-- 允许：本 dossier、airplay-research.md、specs-reviewed/m01（固化后）、shairplay-rust（LGPL worker 单元）、UxPlay 行级事实引用（注明 commit+行）。
-- 禁止：UxPlay/PlayFair 代码复制进 impl/；FairPlay 常量/表；未固定 commit 的声明。
+- 允许：本 dossier、airplay-research.md、specs-reviewed/m01、UxPlay 与 shairplay-rust 的**行级事实引用**（注明 commit+行）。
+- 禁止：UxPlay/shairplay-rust/PlayFair 代码复制或翻译进 impl/（均不再是链接目标）；FairPlay 常量/表；未固定 commit 的声明。
 - 未关闭阻塞：P-M01-1（画质）、P-M01-2（音频）、P-M01-3（PIN）——实现任务在这三项关闭前**停在 probe 阶段**，不输出虚假 completed（Gate D1）。
 - 验收 case：catalog M01（iPhone/iPad/Mac→PC 受控画面声音；20 次重连）。
 - 负责 task：T15+ media 分卷。

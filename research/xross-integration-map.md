@@ -29,7 +29,7 @@
 | composition root | `crates/app/xrossd/src/localsend.rs`（ReceiveServer 组装 :1457，announce 周期 :76） |
 | 控制面 | `control.proto:195-241`（GetLocalSendStatus/SetLocalSendConfig/SetLocalSendEnabled/RestartLocalSend） |
 | 回归测试 | `crates/adapter/xross-adapter-localsend/tests/`：over_the_wire / receive / scan / send / tls / web_share（6 个） |
-| 结论 | **不写替代品**。interop LocalSend provider 复用该 adapter 模式；mock 闭环用自有 fake peer；真机回归以主仓 6 测试为门槛（INT-04）。用户自有 `~/Dev/localsend-rs` 与 vendored 同 upstream（CrossCopy/localsend-rs）不同 commit（`4f46cc1` vs `428981a`），本阶段都不修改。 |
+| 结论 | **不写替代品**。interop LocalSend provider 复用该 adapter 模式；mock 闭环用自有 fake peer；真机回归以主仓 6 测试为门槛（INT-04）。**用户 2026-09-15 澄清**：`~/Dev/localsend-rs` 属另一项目，不作为本项目输入（已移出复用候选）。 |
 
 ### Transfer —— 状态：稳定
 
@@ -104,7 +104,7 @@
 
 - 主仓已 vendored `CrossCopy/localsend-rs` 并有成熟 adapter + 6 回归测试：**LocalSend 协议层零重复实现**。
 - interop 基础阶段的 LocalSend 工作 = (a) mock fake peer（T14 testkit）做契约回归；(b) 经 XrossHostAdapter 的 offer/审批对接设计；(c) 真机互通门槛沿用主仓测试 + 后续 T15+ provider 接入。
-- 用户自有 `~/Dev/localsend-rs` 独立 checkout（`4f46cc1`）作为协议事实的第二参考源，不修改。
+- 结论：**不引入任何独立 localsend 库**——复用面 = 主仓 adapter；用户自有 `~/Dev/localsend-rs` 属另一项目（用户 2026-09-15 声明），不作为输入。
 
 ## 5. 范围冲突记录（T03-03）
 

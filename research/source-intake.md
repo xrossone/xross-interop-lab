@@ -18,7 +18,7 @@
   （根 MIT 但衍生链待核）、R16（Apache 声明但无根文件）、R07 shairport-sync（文件级混合）、
   R12 AirConnect（10 个 submodule 未审查）、R17 nearby（third_party 15 文件 + 34 个生成文件）、
   R04（vendored UxPlay/libplist/openssl/ffmpeg）。
-- **直接复用候选**：R14 LocalSend（Apache-2.0；复用面评估在 T03，用户自有 localsend-rs 优先）、
+- **直接复用候选**：R14 LocalSend（Apache-2.0；复用面评估在 T03，复用目标=主仓 adapter）、
   R18 ukey2（Apache-2.0 + NOTICE）、R15 NearDrop（Unlicense）、R11 pyatv（MIT，事实参考）。
 - **本阶段全部 `production_approved=false`**；正式采纳决议在 T05。
 

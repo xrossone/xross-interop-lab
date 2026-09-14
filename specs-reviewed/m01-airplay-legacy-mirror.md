@@ -1,7 +1,9 @@
 # Reviewed Wire Spec — airplay.legacy-mirror（M01）
 
 **状态**：source-reviewed + 真机部分实测（transient 链路）。**来源**：docs/research/airplay-research.md（实测），
-UxPlay @44024fe（pair-setup-pin 事实），shairplay-rust @2fb72b3。**FairPlay/DRM 不在本 spec 范围。**
+UxPlay @44024fe（pair-setup-pin 事实），shairplay-rust @2fb72b3（事实引用）。
+**实现路线（2026-09-15 决议）**：独立实现；UxPlay=外部行为 oracle/fallback；shairplay-rust 仅事实参考（不链接）。
+**FairPlay/DRM 不在本 spec 范围。**
 
 ## 发现（Discovery）
 

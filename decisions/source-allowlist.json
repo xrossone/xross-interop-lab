@@ -608,7 +608,7 @@
    ],
    "transitive_license_risks": [],
    "proposed_route": "reuse",
-   "notes": "Apache-2.0 可链接候选；复用面评估在 T03（用户自有 localsend-rs 优先）"
+   "notes": "Apache-2.0；复用目标=主仓 xross-adapter-localsend（用户 2026-09-15 澄清自有 localsend-rs 属另一项目，不引入）"
   },
   {
    "id": "R15",

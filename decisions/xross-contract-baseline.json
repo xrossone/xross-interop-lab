@@ -70,7 +70,7 @@
    "path": "/Volumes/Portable2TB/ExtDev/localsend-rs",
    "origin": "https://github.com/CrossCopy/localsend-rs.git",
    "commit": "4f46cc1a684404e81facb088fc156fb47d61e928",
-   "note": "与 vendored 同 upstream 不同 commit；本阶段不修改两者"
+   "note": "与 vendored 同 upstream 不同 commit；本阶段不修改两者。用户 2026-09-15 声明：该独立库为另一项目所建，不作为本项目输入。"
   },
   "conclusion": "不写替代品：interop 层的 LocalSend provider 复用主仓 adapter 模式；mock 闭环用自有 fake peer，真机互通回归以主仓 6 个测试为门槛（INT-04）"
  },

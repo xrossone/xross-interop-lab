@@ -1,5 +1,11 @@
 # Xross AirPlay 接收端调研记录
 
+> **2026-09-15 决议更新（后补，不改动下方原始记录）**：用户基于本 POC 实测（shairplay-rust 无音频、
+> 视频多缺陷、质量远不如 UxPlay，14 stars 成熟度不足）决议：**shairplay-rust 仅作协议事实参考，
+> 不链接、不复用**；AirPlay 接收实现路线改为**独立实现 + UxPlay 外部 oracle/fallback**。
+> 下文 §1"首选技术路线"的表述以本更新为准。详见 decisions/provider-adoption.json、
+> research/m01-airplay-legacy-mirror/dossier.md、specs-reviewed/m01。
+
 - 时间:2026-09-14 ~ 2026-09-15
 - 来源:ChatGPT 调研对话(导出件 `~/Downloads/airplay-chat.md`)+ 本地 AI 审计与真机 POC
 - 设备:iPad Pro 12.9 (iPad13,8, AirPlay/960.13.1) ↔ MacBook Pro (macOS 26.6, arm64, 有线网络, hostname `mbp-eth`)

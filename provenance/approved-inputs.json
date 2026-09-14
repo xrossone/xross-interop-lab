@@ -41,9 +41,9 @@
   {
    "id": "r02-shairplay-rust",
    "what": "~/Dev/others/r02-shairplay-rust @2fb72b3",
-   "scope": "airplay-worker（LGPL 单元）",
-   "usage": "runtime-link + 阅读",
-   "status": "approved-route-pending-packaging"
+   "scope": "协议事实参考（行级引用，注明 commit+行；不复制表达、不链接）",
+   "usage": "reference",
+   "status": "approved"
   },
   {
    "id": "r13-protocol",
@@ -58,13 +58,6 @@
    "scope": "行为参考",
    "usage": "reference",
    "status": "approved"
-  },
-  {
-   "id": "localsend-rs-user",
-   "what": "~/Dev/localsend-rs @4f46cc1（用户自有）",
-   "scope": "复用候选；MIT 已声明但 LICENSE 文件缺失待补",
-   "usage": "reuse",
-   "status": "pending-user-confirmation"
   },
   {
    "id": "r15-r17-r18-facts",
@@ -101,6 +94,8 @@
   "R13 文档文本复制",
   "FairPlay/设备认证材料（vendor-gated）",
   "R35 gated 材料",
-  "未 intake 的新依赖（含 windows-rs，SEC-07）"
+  "未 intake 的新依赖（含 windows-rs，SEC-07）",
+  "~/Dev/localsend-rs（用户 2026-09-15 声明：为另一项目所建，本项目不使用；如需复用需用户显式改口）",
+  "shairplay-rust 代码复制/翻译/链接（用户 2026-09-15：质量不达标，仅参考）"
  ]
 }

@@ -51,7 +51,7 @@
     "why": null
    },
    "recheck_conditions": "打包分发评审时放行；airplay-research Gate 4",
-   "why": "镜像接收 oracle 与应急 fallback（真机对比基准）；GPL 表达零进入自有代码"
+   "why": "镜像接收 oracle 与应急 fallback（真机对比基准）；GPL 表达零进入自有代码。2026-09-15 用户决议确认其质量基准地位（shairplay-rust 因质量不达标降为仅参考）"
   },
   {
    "id": "P-SHAIRPLAY",
@@ -60,38 +60,35 @@
    "source_ids": [
     "R02"
    ],
-   "route": "worker",
+   "route": "independent",
    "usage": {
     "copy": false,
     "reference": true,
-    "runtime": true
+    "runtime": false
    },
    "source_license": "LGPL-3.0-or-later",
    "derivation": {
     "translated_or_ported": false,
-    "notes": "库在独立 airplay-worker 进程内使用；本地 fix/pair-setup-pin 分支的修改若采用，按 LGPL-3.0 开放该 fork"
+    "notes": "仅行级事实引用（注明 commit+行）；不复制表达、不翻译、不链接。用户 2026-09-15 决议"
    },
-   "output_release_unit": "airplay-worker（独立发布单元：LGPL notice + 源码 offer + 可替换链接说明）",
-   "output_license": "LGPL-3.0-obligations（组合产物整体许可另审）",
+   "output_release_unit": "airplay-worker（自有实现；不再有 LGPL 链接义务）",
+   "output_license": "LicenseRef-Proprietary（自有实现）",
    "vendor_gated": false,
-   "composition_review": {
-    "status": "pending",
-    "note": "Rust 静态链接下 LGPL 的合规实现方式（动态加载 vs 分发目标文件 vs 独立进程）待 T15+ 定案；Gate 4 未开始"
-   },
+   "composition_review": null,
    "production_approved": false,
    "approval": {
     "status": "pending-user-review",
     "decided_by": "agent（初步）",
     "date": "2026-09-14T22:04:28+00:00",
-    "why": null
+    "why": "用户 2026-09-15 决议：POC 实测无音频、视频多缺陷、质量远不如 UxPlay（14 stars，成熟度不足）→ 仅作协议事实参考，不链接、不复用；AirPlay 接收走独立实现 + UxPlay oracle/fallback"
    },
-   "recheck_conditions": "Gate 4 商业分发 review；composition_review=passed 后才可 approved",
-   "why": "AirPlay 首选技术路线（Gate 1 供应链审计已过、transient 链路真机已通）；LGPL 边界靠独立进程+独立发布单元维持"
+   "recheck_conditions": "仅作参考；若未来用户要求改为外部 LGPL provider 单元，需重新走组合审查（T05-02）",
+   "why": "用户 2026-09-15 决议：POC 实测无音频、视频多缺陷、质量远不如 UxPlay（14 stars）→ 仅作协议事实参考；AirPlay 接收走独立实现 + UxPlay oracle/fallback"
   },
   {
    "id": "P-LOCALSEND",
    "key": "localsend",
-   "provider": "LocalSend 实现（xross-adapter-localsend / vendored localsend-rs / 用户自有 localsend-rs）",
+   "provider": "LocalSend 实现（主仓 xross-adapter-localsend + vendored variants：vendors/localsend-rs）",
    "source_ids": [
     "R13",
     "R14"
@@ -102,10 +99,10 @@
     "reference": true,
     "runtime": true
    },
-   "source_license": "R14 app=Apache-2.0；localsend-rs=MIT（Cargo.toml 声明，LICENSE 文件缺失——用户自有仓库待补）；R13 协议文档=无许可（restricted，事实引用）",
+   "source_license": "R14 app=Apache-2.0；主仓 adapter=MIT；vendored localsend-rs=随主仓（CrossCopy/localsend-rs）；R13 协议文档=无许可（restricted，事实引用）",
    "derivation": {
     "translated_or_ported": false,
-    "notes": "复用自有实现与主仓 adapter；不复制 R13 文本"
+    "notes": "复用主仓 adapter 与其 vendored 实现；不复制 R13 文本；不使用用户另一项目的 localsend-rs"
    },
    "output_release_unit": "interop 核心产物（宽松许可兼容）",
    "output_license": "随 impl/ 组件决议（当前 LicenseRef-Proprietary）",
@@ -116,9 +113,9 @@
     "status": "pending-user-review",
     "decided_by": "agent（初步）",
     "date": "2026-09-14T22:04:28+00:00",
-    "why": null
+    "why": "复用目标=主仓既有 adapter（已有 6 回归测试）；经 XrossHostAdapter 对接。用户 2026-09-15 澄清：~/Dev/localsend-rs 属另一项目，不作为本项目输入——已从复用候选移除"
    },
-   "recheck_conditions": "用户确认 localsend-rs LICENSE 文件补齐后可将 approval.status 置 approved",
+   "recheck_conditions": "用户裁决 reuse 路线（主仓 adapter）后置 approved；不涉及任何独立仓库代码",
    "why": "协议实现已成熟（主仓 6 个回归测试）；interop 只做 Offer/审批契约投影，零重复实现"
   },
   {
