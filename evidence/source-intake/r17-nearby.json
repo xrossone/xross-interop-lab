@@ -1,0 +1,32 @@
+{
+ "slug": "r17-nearby",
+ "origin_url": "https://github.com/google/nearby.git",
+ "head_commit": "2ea517eae15d9752ee189f452b05d9fe13ce23eb",
+ "head_commit_time": "2026-09-14T09:20:10-07:00",
+ "license_files_root": [
+  "LICENSE"
+ ],
+ "build_entrypoints": [
+  "CMakeLists.txt",
+  "build.gradle.kts",
+  "settings.gradle.kts"
+ ],
+ "cargo_build_surface": [],
+ "npm_lifecycle_hooks": [],
+ "submodules": [
+  "submodule.third_party/protobuf",
+  "submodule.third_party/ukey2/ukey2",
+  "submodule.third_party/smhasher/smhasher",
+  "submodule.third_party/json/json"
+ ],
+ "ci_download_surface": [],
+ "untrusted_instruction_files": [],
+ "committed_vendor_dirs": {
+  "third_party": 15
+ },
+ "generated_file_counts": {
+  "*.pb.cc": 17,
+  "*.pb.h": 17
+ },
+ "indexed_file_count": 3283
+}

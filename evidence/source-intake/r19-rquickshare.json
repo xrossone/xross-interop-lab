@@ -1,0 +1,25 @@
+{
+ "slug": "r19-rquickshare",
+ "origin_url": "https://github.com/Martichou/rquickshare.git",
+ "head_commit": "378d8ae969941bee4bf60ad34ac9cf8bb7005eb7",
+ "head_commit_time": "2025-06-16T18:04:50+02:00",
+ "license_files_root": [
+  "LICENSE"
+ ],
+ "build_entrypoints": [
+  "Cargo.toml",
+  "build.rs",
+  "package.json"
+ ],
+ "cargo_build_surface": [
+  "app/main/src-tauri/Cargo.toml: [build-dependencies]",
+  "core_lib/Cargo.toml: [build-dependencies]"
+ ],
+ "npm_lifecycle_hooks": [],
+ "submodules": [],
+ "ci_download_surface": [],
+ "untrusted_instruction_files": [],
+ "committed_vendor_dirs": {},
+ "generated_file_counts": {},
+ "indexed_file_count": 177
+}

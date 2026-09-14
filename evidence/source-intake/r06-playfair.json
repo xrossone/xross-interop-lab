@@ -1,0 +1,20 @@
+{
+ "slug": "r06-playfair",
+ "origin_url": "https://github.com/EstebanKubata/playfair.git",
+ "head_commit": "96c232ed7e65cccfbd1eae8e0d70e7179799290d",
+ "head_commit_time": "2015-04-22T17:43:29+02:00",
+ "license_files_root": [
+  "LICENSE.md"
+ ],
+ "build_entrypoints": [
+  "Makefile"
+ ],
+ "cargo_build_surface": [],
+ "npm_lifecycle_hooks": [],
+ "submodules": [],
+ "ci_download_surface": [],
+ "untrusted_instruction_files": [],
+ "committed_vendor_dirs": {},
+ "generated_file_counts": {},
+ "indexed_file_count": 11
+}

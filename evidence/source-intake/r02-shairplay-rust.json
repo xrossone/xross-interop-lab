@@ -1,0 +1,38 @@
+{
+ "slug": "r02-shairplay-rust",
+ "origin_url": "https://github.com/metaneutrons/shairplay-rust.git",
+ "head_commit": "2fb72b30b658b33f106165a5b6fbd941919bdbe5",
+ "head_commit_time": "2026-09-11T09:53:38+02:00",
+ "license_files_root": [
+  "LICENSE"
+ ],
+ "build_entrypoints": [
+  "Cargo.toml"
+ ],
+ "cargo_build_surface": [],
+ "npm_lifecycle_hooks": [],
+ "submodules": [],
+ "ci_download_surface": [
+  {
+   "file": "ci.yml",
+   "lines": [
+    "42"
+   ]
+  },
+  {
+   "file": "release.yml",
+   "lines": [
+    "108",
+    "171",
+    "173",
+    "191"
+   ]
+  }
+ ],
+ "untrusted_instruction_files": [
+  ".kiro"
+ ],
+ "committed_vendor_dirs": {},
+ "generated_file_counts": {},
+ "indexed_file_count": 122
+}

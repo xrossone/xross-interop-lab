@@ -1,0 +1,30 @@
+{
+ "slug": "r11-pyatv",
+ "origin_url": "https://github.com/postlund/pyatv.git",
+ "head_commit": "b277a4c8222ecdcbaab8a24e3e713ca44765adb4",
+ "head_commit_time": "2026-06-19T23:02:29+02:00",
+ "license_files_root": [
+  "LICENSE.md"
+ ],
+ "build_entrypoints": [
+  "pyproject.toml",
+  "setup.py"
+ ],
+ "cargo_build_surface": [],
+ "npm_lifecycle_hooks": [],
+ "submodules": [],
+ "ci_download_surface": [
+  {
+   "file": "release.yml",
+   "lines": [
+    "115"
+   ]
+  }
+ ],
+ "untrusted_instruction_files": [],
+ "committed_vendor_dirs": {},
+ "generated_file_counts": {
+  "*_pb2.py": 77
+ },
+ "indexed_file_count": 555
+}

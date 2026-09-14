@@ -1,0 +1,21 @@
+{
+ "slug": "r03-rpiplay",
+ "origin_url": "https://github.com/FD-/RPiPlay.git",
+ "head_commit": "64d0341ed3bef098c940c9ed0675948870a271f9",
+ "head_commit_time": "2022-03-14T10:57:03-07:00",
+ "license_files_root": [
+  "LICENSE"
+ ],
+ "build_entrypoints": [
+  "CMakeLists.txt",
+  "autogen.sh"
+ ],
+ "cargo_build_surface": [],
+ "npm_lifecycle_hooks": [],
+ "submodules": [],
+ "ci_download_surface": [],
+ "untrusted_instruction_files": [],
+ "committed_vendor_dirs": {},
+ "generated_file_counts": {},
+ "indexed_file_count": 515
+}

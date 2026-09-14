@@ -1,0 +1,21 @@
+{
+ "slug": "r05-shairplay",
+ "origin_url": "https://github.com/juhovh/shairplay.git",
+ "head_commit": "096b61ad14c90169f438e690d096e3fcf87e504e",
+ "head_commit_time": "2018-08-24T12:43:03+03:00",
+ "license_files_root": [
+  "LICENSE"
+ ],
+ "build_entrypoints": [
+  "autogen.sh",
+  "configure"
+ ],
+ "cargo_build_surface": [],
+ "npm_lifecycle_hooks": [],
+ "submodules": [],
+ "ci_download_surface": [],
+ "untrusted_instruction_files": [],
+ "committed_vendor_dirs": {},
+ "generated_file_counts": {},
+ "indexed_file_count": 185
+}

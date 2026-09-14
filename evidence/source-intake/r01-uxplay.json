@@ -1,0 +1,20 @@
+{
+ "slug": "r01-uxplay",
+ "origin_url": "https://github.com/FDH2/UxPlay.git",
+ "head_commit": "d9791de116b8c728216d25a584b37f0982ecc686",
+ "head_commit_time": "2026-09-14T15:12:45-04:00",
+ "license_files_root": [
+  "LICENSE"
+ ],
+ "build_entrypoints": [
+  "CMakeLists.txt"
+ ],
+ "cargo_build_surface": [],
+ "npm_lifecycle_hooks": [],
+ "submodules": [],
+ "ci_download_surface": [],
+ "untrusted_instruction_files": [],
+ "committed_vendor_dirs": {},
+ "generated_file_counts": {},
+ "indexed_file_count": 96
+}

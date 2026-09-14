@@ -1,0 +1,16 @@
+{
+ "slug": "r13-protocol",
+ "origin_url": "https://github.com/localsend/protocol.git",
+ "head_commit": "62bd3406ec80d62f2ed46269cdc06c4dcc391083",
+ "head_commit_time": "2026-08-08T00:23:57+02:00",
+ "license_files_root": [],
+ "build_entrypoints": [],
+ "cargo_build_surface": [],
+ "npm_lifecycle_hooks": [],
+ "submodules": [],
+ "ci_download_surface": [],
+ "untrusted_instruction_files": [],
+ "committed_vendor_dirs": {},
+ "generated_file_counts": {},
+ "indexed_file_count": 7
+}

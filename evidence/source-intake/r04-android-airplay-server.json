@@ -1,0 +1,29 @@
+{
+ "slug": "r04-android-airplay-server",
+ "origin_url": "https://github.com/jqssun/android-airplay-server.git",
+ "head_commit": "c8defdd70d7e6a04f4f1b71d353653682d594106",
+ "head_commit_time": "2026-08-23T18:22:34+01:00",
+ "license_files_root": [
+  "LICENSE"
+ ],
+ "build_entrypoints": [
+  "CMakeLists.txt",
+  "build.gradle.kts",
+  "settings.gradle.kts"
+ ],
+ "cargo_build_surface": [],
+ "npm_lifecycle_hooks": [],
+ "submodules": [
+  "submodule.app/src/main/cpp/third_party/UxPlay",
+  "submodule.app/src/main/cpp/third_party/libplist",
+  "submodule.app/src/main/cpp/third_party/openssl-cmake",
+  "submodule.app/src/main/cpp/third_party/ffmpeg"
+ ],
+ "ci_download_surface": [],
+ "untrusted_instruction_files": [],
+ "committed_vendor_dirs": {
+  "third_party": 4
+ },
+ "generated_file_counts": {},
+ "indexed_file_count": 100
+}

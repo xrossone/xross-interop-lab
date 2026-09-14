@@ -1,0 +1,19 @@
+{
+ "slug": "r07-shairport-sync",
+ "origin_url": "https://github.com/mikebrady/shairport-sync.git",
+ "head_commit": "7bad231c18368dbd26f298577f6210e36e4b0797",
+ "head_commit_time": "2026-09-09T11:58:23+01:00",
+ "license_files_root": [
+  "LICENSES",
+  "COPYING"
+ ],
+ "build_entrypoints": [],
+ "cargo_build_surface": [],
+ "npm_lifecycle_hooks": [],
+ "submodules": [],
+ "ci_download_surface": [],
+ "untrusted_instruction_files": [],
+ "committed_vendor_dirs": {},
+ "generated_file_counts": {},
+ "indexed_file_count": 212
+}

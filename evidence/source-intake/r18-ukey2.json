@@ -1,0 +1,21 @@
+{
+ "slug": "r18-ukey2",
+ "origin_url": "https://github.com/google/ukey2.git",
+ "head_commit": "10fc737aa901e873a3367e7e26b88eb01cd55d69",
+ "head_commit_time": "2026-01-20T17:38:42-05:00",
+ "license_files_root": [
+  "LICENSE",
+  "NOTICE"
+ ],
+ "build_entrypoints": [
+  "build.gradle"
+ ],
+ "cargo_build_surface": [],
+ "npm_lifecycle_hooks": [],
+ "submodules": [],
+ "ci_download_surface": [],
+ "untrusted_instruction_files": [],
+ "committed_vendor_dirs": {},
+ "generated_file_counts": {},
+ "indexed_file_count": 96
+}

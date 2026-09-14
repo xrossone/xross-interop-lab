@@ -1,0 +1,33 @@
+{
+ "slug": "r12-airconnect",
+ "origin_url": "https://github.com/philippe44/AirConnect.git",
+ "head_commit": "11d9c53892af246d763022f33476dbc28b400453",
+ "head_commit_time": "2026-09-06T12:57:59+02:00",
+ "license_files_root": [
+  "LICENSE"
+ ],
+ "build_entrypoints": [
+  "Makefile"
+ ],
+ "cargo_build_surface": [],
+ "npm_lifecycle_hooks": [],
+ "submodules": [
+  "submodule.common/dmap-parser",
+  "submodule.aircast/nanopb",
+  "submodule.aircast/libjansson",
+  "submodule.common/libpupnp",
+  "submodule.common/libopenssl",
+  "submodule.common/libmdns",
+  "submodule.common/libcodecs",
+  "submodule.common/crosstools",
+  "submodule.common/libraop",
+  "submodule.common/libpthreads4w"
+ ],
+ "ci_download_surface": [],
+ "untrusted_instruction_files": [],
+ "committed_vendor_dirs": {},
+ "generated_file_counts": {
+  "*.pb.h": 1
+ },
+ "indexed_file_count": 53
+}

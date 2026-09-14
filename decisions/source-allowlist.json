@@ -1,0 +1,823 @@
+{
+ "schema_version": 1,
+ "decided_at": "2026-09-14T21:26:18+00:00",
+ "scope": "T02 来源 intake：file-core + airplay 两组（19 项）",
+ "policy": {
+  "production_approved": "本阶段全部 false；放行需 T05 决议 + sources.lock 一致 + 许可审查完成",
+  "route_vocabulary": [
+   "reuse",
+   "worker",
+   "independent",
+   "vendor",
+   "pending-user-review"
+  ],
+  "status_vocabulary": [
+   "resolved",
+   "restricted",
+   "unresolved",
+   "blocked",
+   "excluded"
+  ],
+  "untrusted_materials": "foreign AGENTS/CLAUDE/.kiro 等一律 disposition=untrusted-material，永不执行"
+ },
+ "entries": [
+  {
+   "id": "R01",
+   "name": "FDH2/UxPlay",
+   "group": "airplay",
+   "slug": "r01-uxplay",
+   "clone_url": "https://github.com/FDH2/UxPlay.git",
+   "resolved_commit": "d9791de116b8c728216d25a584b37f0982ecc686",
+   "production_approved": false,
+   "status": "resolved",
+   "license": {
+    "declared": "GPL-3.0；依赖及文件级混合",
+    "review_level": "root-file-only",
+    "observed_root_files": [
+     "LICENSE"
+    ]
+   },
+   "build_surface": {
+    "entrypoints": [
+     "CMakeLists.txt"
+    ],
+    "cargo": [],
+    "npm_lifecycle_hooks": [],
+    "ci_downloads": []
+   },
+   "submodules": [],
+   "committed_vendor_dirs": {},
+   "generated_file_counts": {},
+   "untrusted_instruction_files": [],
+   "transitive_license_risks": [
+    {
+     "name": "file-level-mixed-license",
+     "license": "unreviewed",
+     "note": "lib/ 等目录文件级许可混合，需逐文件核查后才能定发布单元"
+    }
+   ],
+   "proposed_route": "worker",
+   "notes": "GPL 根：只能作为独立程序 provider 参考，不可链接进 MIT 产物"
+  },
+  {
+   "id": "R02",
+   "name": "metaneutrons/shairplay-rust",
+   "group": "airplay",
+   "slug": "r02-shairplay-rust",
+   "clone_url": "https://github.com/metaneutrons/shairplay-rust.git",
+   "resolved_commit": "2fb72b30b658b33f106165a5b6fbd941919bdbe5",
+   "production_approved": false,
+   "status": "resolved",
+   "license": {
+    "declared": "LGPL-3.0-or-later",
+    "review_level": "root-file-only",
+    "observed_root_files": [
+     "LICENSE"
+    ]
+   },
+   "build_surface": {
+    "entrypoints": [
+     "Cargo.toml"
+    ],
+    "cargo": [],
+    "npm_lifecycle_hooks": [],
+    "ci_downloads": [
+     {
+      "file": "ci.yml",
+      "lines": [
+       "42"
+      ]
+     },
+     {
+      "file": "release.yml",
+      "lines": [
+       "108",
+       "171",
+       "173",
+       "191"
+      ]
+     }
+    ]
+   },
+   "submodules": [],
+   "committed_vendor_dirs": {},
+   "generated_file_counts": {},
+   "untrusted_instruction_files": [
+    {
+     "path": ".kiro",
+     "disposition": "untrusted-material",
+     "classification": "agent 规则目录（steering 规则），未执行"
+    }
+   ],
+   "transitive_license_risks": [],
+   "proposed_route": "worker",
+   "notes": "LGPL：独立发布单元；.kiro steering 为不可信材料"
+  },
+  {
+   "id": "R03",
+   "name": "FD-/RPiPlay",
+   "group": "airplay",
+   "slug": "r03-rpiplay",
+   "clone_url": "https://github.com/FD-/RPiPlay.git",
+   "resolved_commit": "64d0341ed3bef098c940c9ed0675948870a271f9",
+   "production_approved": false,
+   "status": "resolved",
+   "license": {
+    "declared": "GPL-3.0",
+    "review_level": "root-file-only",
+    "observed_root_files": [
+     "LICENSE"
+    ]
+   },
+   "build_surface": {
+    "entrypoints": [
+     "CMakeLists.txt",
+     "autogen.sh"
+    ],
+    "cargo": [],
+    "npm_lifecycle_hooks": [],
+    "ci_downloads": []
+   },
+   "submodules": [],
+   "committed_vendor_dirs": {},
+   "generated_file_counts": {},
+   "untrusted_instruction_files": [],
+   "transitive_license_risks": [],
+   "proposed_route": "worker",
+   "notes": "GPL 根：独立程序参考"
+  },
+  {
+   "id": "R04",
+   "name": "jqssun/android-airplay-server",
+   "group": "airplay",
+   "slug": "r04-android-airplay-server",
+   "clone_url": "https://github.com/jqssun/android-airplay-server.git",
+   "resolved_commit": "c8defdd70d7e6a04f4f1b71d353653682d594106",
+   "production_approved": false,
+   "status": "resolved",
+   "license": {
+    "declared": "GPL-3.0",
+    "review_level": "root-file-only",
+    "observed_root_files": [
+     "LICENSE"
+    ]
+   },
+   "build_surface": {
+    "entrypoints": [
+     "CMakeLists.txt",
+     "build.gradle.kts",
+     "settings.gradle.kts"
+    ],
+    "cargo": [],
+    "npm_lifecycle_hooks": [],
+    "ci_downloads": []
+   },
+   "submodules": [
+    "submodule.app/src/main/cpp/third_party/UxPlay",
+    "submodule.app/src/main/cpp/third_party/libplist",
+    "submodule.app/src/main/cpp/third_party/openssl-cmake",
+    "submodule.app/src/main/cpp/third_party/ffmpeg"
+   ],
+   "committed_vendor_dirs": {
+    "third_party": 4
+   },
+   "generated_file_counts": {},
+   "untrusted_instruction_files": [],
+   "transitive_license_risks": [
+    {
+     "name": "ffmpeg",
+     "license": "LGPL/GPL 混合",
+     "note": "submodule 第三方；未逐项审查"
+    },
+    {
+     "name": "vendored-third_party",
+     "license": "unreviewed",
+     "note": "third_party 4 项 submodule（UxPlay/libplist/openssl/ffmpeg）"
+    }
+   ],
+   "proposed_route": "worker",
+   "notes": "Android 参考实现，vendored 子模块多"
+  },
+  {
+   "id": "R05",
+   "name": "juhovh/shairplay",
+   "group": "airplay",
+   "slug": "r05-shairplay",
+   "clone_url": "https://github.com/juhovh/shairplay.git",
+   "resolved_commit": "096b61ad14c90169f438e690d096e3fcf87e504e",
+   "production_approved": false,
+   "status": "resolved",
+   "license": {
+    "declared": "LGPL/GPL 混合",
+    "review_level": "root-file-only",
+    "observed_root_files": [
+     "LICENSE"
+    ]
+   },
+   "build_surface": {
+    "entrypoints": [
+     "autogen.sh",
+     "configure"
+    ],
+    "cargo": [],
+    "npm_lifecycle_hooks": [],
+    "ci_downloads": []
+   },
+   "submodules": [],
+   "committed_vendor_dirs": {},
+   "generated_file_counts": {},
+   "untrusted_instruction_files": [],
+   "transitive_license_risks": [
+    {
+     "name": "playfair-linkage",
+     "license": "GPL-2.0",
+     "note": "shairplay 链接 playfair（PlayFair 曲线密钥材料）；混合发布边界未定"
+    }
+   ],
+   "proposed_route": "worker",
+   "notes": "raop 实现参考"
+  },
+  {
+   "id": "R06",
+   "name": "EstebanKubata/playfair",
+   "group": "airplay",
+   "slug": "r06-playfair",
+   "clone_url": "https://github.com/EstebanKubata/playfair.git",
+   "resolved_commit": "96c232ed7e65cccfbd1eae8e0d70e7179799290d",
+   "production_approved": false,
+   "status": "resolved",
+   "license": {
+    "declared": "GPL 及密码材料来源待核查",
+    "review_level": "root-file-only",
+    "observed_root_files": [
+     "LICENSE.md"
+    ]
+   },
+   "build_surface": {
+    "entrypoints": [
+     "Makefile"
+    ],
+    "cargo": [],
+    "npm_lifecycle_hooks": [],
+    "ci_downloads": []
+   },
+   "submodules": [],
+   "committed_vendor_dirs": {},
+   "generated_file_counts": {},
+   "untrusted_instruction_files": [],
+   "transitive_license_risks": [
+    {
+     "name": "crypto-key-material-origin",
+     "license": "unreviewed",
+     "note": "曲线参数来源需文件级核查；只提取事实，不复制实现"
+    }
+   ],
+   "proposed_route": "independent",
+   "notes": "只作协议事实来源"
+  },
+  {
+   "id": "R07",
+   "name": "mikebrady/shairport-sync",
+   "group": "airplay",
+   "slug": "r07-shairport-sync",
+   "clone_url": "https://github.com/mikebrady/shairport-sync.git",
+   "resolved_commit": "7bad231c18368dbd26f298577f6210e36e4b0797",
+   "production_approved": false,
+   "status": "resolved",
+   "license": {
+    "declared": "混合（LICENSES 目录 SPDX 风格）",
+    "review_level": "per-file-needed",
+    "observed_root_files": [
+     "LICENSES",
+     "COPYING"
+    ]
+   },
+   "build_surface": {
+    "entrypoints": [],
+    "cargo": [],
+    "npm_lifecycle_hooks": [],
+    "ci_downloads": []
+   },
+   "submodules": [],
+   "committed_vendor_dirs": {},
+   "generated_file_counts": {},
+   "untrusted_instruction_files": [],
+   "transitive_license_risks": [
+    {
+     "name": "per-file-mixed",
+     "license": "unreviewed",
+     "note": "文件级许可混合，逐文件审查前不可复用表达"
+    }
+   ],
+   "proposed_route": "worker",
+   "notes": "成熟参考，构建入口需补查（Makefile 经 autoconf 生成）"
+  },
+  {
+   "id": "R08",
+   "name": "SteeBono/airplayreceiver",
+   "group": "airplay",
+   "slug": "r08-airplayreceiver",
+   "clone_url": "https://github.com/SteeBono/airplayreceiver.git",
+   "resolved_commit": "806fd39ef263a2b38bdd7c8e636a9fd804a94c4e",
+   "production_approved": false,
+   "status": "resolved",
+   "license": {
+    "declared": "MIT（根声明）",
+    "review_level": "root-file-only",
+    "observed_root_files": [
+     "LICENSE"
+    ]
+   },
+   "build_surface": {
+    "entrypoints": [],
+    "cargo": [],
+    "npm_lifecycle_hooks": [],
+    "ci_downloads": []
+   },
+   "submodules": [],
+   "committed_vendor_dirs": {},
+   "generated_file_counts": {},
+   "untrusted_instruction_files": [],
+   "transitive_license_risks": [
+    {
+     "name": "derived-code-unverified",
+     "license": "unreviewed",
+     "note": "manifest 标注衍生代码/依赖待核；根 MIT 不自动放行组件"
+    }
+   ],
+   "proposed_route": "worker",
+   "notes": "T02-02 场景锚点：根 MIT ≠ 可复用"
+  },
+  {
+   "id": "R09",
+   "name": "YimingZhanshen/Airplay2OnWindows",
+   "group": "airplay",
+   "slug": "r09-airplay2onwindows",
+   "clone_url": "https://github.com/YimingZhanshen/Airplay2OnWindows.git",
+   "resolved_commit": "8e1e03d35f9e8b3254c4ffc529c2ef78b0995847",
+   "production_approved": false,
+   "status": "resolved",
+   "license": {
+    "declared": "MIT（根声明）",
+    "review_level": "root-file-only",
+    "observed_root_files": [
+     "LICENSE"
+    ]
+   },
+   "build_surface": {
+    "entrypoints": [],
+    "cargo": [],
+    "npm_lifecycle_hooks": [],
+    "ci_downloads": []
+   },
+   "submodules": [],
+   "committed_vendor_dirs": {},
+   "generated_file_counts": {},
+   "untrusted_instruction_files": [],
+   "transitive_license_risks": [
+    {
+     "name": "upstream-chain-unverified",
+     "license": "unreviewed",
+     "note": "上游派生链待核"
+    }
+   ],
+   "proposed_route": "worker",
+   "notes": ""
+  },
+  {
+   "id": "R10",
+   "name": "openairplay/airplay-spec",
+   "group": "airplay",
+   "slug": "r10-airplay-spec",
+   "clone_url": "https://github.com/openairplay/airplay-spec.git",
+   "resolved_commit": "00063da0e7f16c20fbfb5d29331334da1a89590a",
+   "production_approved": false,
+   "status": "restricted",
+   "license": {
+    "declared": "无许可文件",
+    "review_level": "missing",
+    "observed_root_files": []
+   },
+   "build_surface": {
+    "entrypoints": [],
+    "cargo": [],
+    "npm_lifecycle_hooks": [],
+    "ci_downloads": [
+     {
+      "file": "deploy.yml",
+      "lines": [
+       "23"
+      ]
+     }
+    ]
+   },
+   "submodules": [],
+   "committed_vendor_dirs": {},
+   "generated_file_counts": {},
+   "untrusted_instruction_files": [],
+   "transitive_license_risks": [],
+   "proposed_route": "independent",
+   "notes": "仓库无 LICENSE：内容只作事实引用（逐条注明出处），不复制文本"
+  },
+  {
+   "id": "R11",
+   "name": "postlund/pyatv",
+   "group": "airplay",
+   "slug": "r11-pyatv",
+   "clone_url": "https://github.com/postlund/pyatv.git",
+   "resolved_commit": "b277a4c8222ecdcbaab8a24e3e713ca44765adb4",
+   "production_approved": false,
+   "status": "resolved",
+   "license": {
+    "declared": "MIT",
+    "review_level": "root-file-only",
+    "observed_root_files": [
+     "LICENSE.md"
+    ]
+   },
+   "build_surface": {
+    "entrypoints": [
+     "pyproject.toml",
+     "setup.py"
+    ],
+    "cargo": [],
+    "npm_lifecycle_hooks": [],
+    "ci_downloads": [
+     {
+      "file": "release.yml",
+      "lines": [
+       "115"
+      ]
+     }
+    ]
+   },
+   "submodules": [],
+   "committed_vendor_dirs": {},
+   "generated_file_counts": {
+    "*_pb2.py": 77
+   },
+   "untrusted_instruction_files": [],
+   "transitive_license_risks": [],
+   "proposed_route": "independent",
+   "notes": "Python 参考实现；*_pb2.py 为生成文件（协议 proto 的佐证）"
+  },
+  {
+   "id": "R12",
+   "name": "philippe44/AirConnect",
+   "group": "airplay",
+   "slug": "r12-airconnect",
+   "clone_url": "https://github.com/philippe44/AirConnect.git",
+   "resolved_commit": "11d9c53892af246d763022f33476dbc28b400453",
+   "production_approved": false,
+   "status": "resolved",
+   "license": {
+    "declared": "多许可/上游待核",
+    "review_level": "per-file-needed",
+    "observed_root_files": [
+     "LICENSE"
+    ]
+   },
+   "build_surface": {
+    "entrypoints": [
+     "Makefile"
+    ],
+    "cargo": [],
+    "npm_lifecycle_hooks": [],
+    "ci_downloads": []
+   },
+   "submodules": [
+    "submodule.common/dmap-parser",
+    "submodule.aircast/nanopb",
+    "submodule.aircast/libjansson",
+    "submodule.common/libpupnp",
+    "submodule.common/libopenssl",
+    "submodule.common/libmdns",
+    "submodule.common/libcodecs",
+    "submodule.common/crosstools",
+    "submodule.common/libraop",
+    "submodule.common/libpthreads4w"
+   ],
+   "committed_vendor_dirs": {},
+   "generated_file_counts": {
+    "*.pb.h": 1
+   },
+   "untrusted_instruction_files": [],
+   "transitive_license_risks": [
+    {
+     "name": "10-submodules",
+     "license": "unreviewed",
+     "note": "nanopb/jansson/pupnp/openssl/mdnsd/codecs/raop 等 submodule 许可未逐项审查"
+    }
+   ],
+   "proposed_route": "worker",
+   "notes": ""
+  },
+  {
+   "id": "R13",
+   "name": "localsend/protocol",
+   "group": "file-core",
+   "slug": "r13-protocol",
+   "clone_url": "https://github.com/localsend/protocol.git",
+   "resolved_commit": "62bd3406ec80d62f2ed46269cdc06c4dcc391083",
+   "production_approved": false,
+   "status": "restricted",
+   "license": {
+    "declared": "无许可文件",
+    "review_level": "missing",
+    "observed_root_files": []
+   },
+   "build_surface": {
+    "entrypoints": [],
+    "cargo": [],
+    "npm_lifecycle_hooks": [],
+    "ci_downloads": []
+   },
+   "submodules": [],
+   "committed_vendor_dirs": {},
+   "generated_file_counts": {},
+   "untrusted_instruction_files": [],
+   "transitive_license_risks": [],
+   "proposed_route": "independent",
+   "notes": "LocalSend 协议文档仓：无 LICENSE，事实引用须注明出处；协议事实另有 r14 app 源码佐证"
+  },
+  {
+   "id": "R14",
+   "name": "localsend/localsend",
+   "group": "file-core",
+   "slug": "r14-localsend",
+   "clone_url": "https://github.com/localsend/localsend.git",
+   "resolved_commit": "230fb692962668ca22ce0e61a8f53ce1cfd32102",
+   "production_approved": false,
+   "status": "resolved",
+   "license": {
+    "declared": "Apache-2.0",
+    "review_level": "root-file-only",
+    "observed_root_files": [
+     "LICENSE"
+    ]
+   },
+   "build_surface": {
+    "entrypoints": [
+     "CMakeLists.txt",
+     "Cargo.toml",
+     "build.gradle",
+     "build.rs",
+     "settings.gradle"
+    ],
+    "cargo": [
+     "cli/Cargo.toml: [build-dependencies]"
+    ],
+    "npm_lifecycle_hooks": [],
+    "ci_downloads": [
+     {
+      "file": "release.yml",
+      "lines": [
+       "95",
+       "135",
+       "158",
+       "181",
+       "201",
+       "221",
+       "249",
+       "269",
+       "289",
+       "309",
+       "326",
+       "343",
+       "363"
+      ]
+     }
+    ]
+   },
+   "submodules": [
+    "submodule.support/submodules/flutter"
+   ],
+   "committed_vendor_dirs": {},
+   "generated_file_counts": {},
+   "untrusted_instruction_files": [
+    {
+     "path": "AGENTS.md",
+     "disposition": "untrusted-material",
+     "classification": "AI 贡献政策声明"
+    },
+    {
+     "path": "CLAUDE.md",
+     "disposition": "untrusted-material",
+     "classification": "构建工具指引（fvm flutter），未执行"
+    }
+   ],
+   "transitive_license_risks": [],
+   "proposed_route": "reuse",
+   "notes": "Apache-2.0 可链接候选；复用面评估在 T03（用户自有 localsend-rs 优先）"
+  },
+  {
+   "id": "R15",
+   "name": "grishka/NearDrop",
+   "group": "file-core",
+   "slug": "r15-neardrop",
+   "clone_url": "https://github.com/grishka/NearDrop.git",
+   "resolved_commit": "8f1fdc7d5cbca4f540ff4fa87edcd578613be65f",
+   "production_approved": false,
+   "status": "resolved",
+   "license": {
+    "declared": "Unlicense",
+    "review_level": "root-file-only",
+    "observed_root_files": [
+     "UNLICENSE"
+    ]
+   },
+   "build_surface": {
+    "entrypoints": [],
+    "cargo": [],
+    "npm_lifecycle_hooks": [],
+    "ci_downloads": []
+   },
+   "submodules": [],
+   "committed_vendor_dirs": {},
+   "generated_file_counts": {},
+   "untrusted_instruction_files": [
+    {
+     "path": "AGENTS.md",
+     "disposition": "untrusted-material",
+     "classification": "拒绝 AI 参与的项目声明（劝阻性指令，不构成本任务授权变更）"
+    },
+    {
+     "path": "CLAUDE.md",
+     "disposition": "untrusted-material",
+     "classification": "同 AGENTS.md 的重复声明"
+    }
+   ],
+   "transitive_license_risks": [],
+   "proposed_route": "independent",
+   "notes": "公共域；AGENTS/CLAUDE 含拒绝 AI 参与声明——记录为不可信材料，不构成对本任务授权的变更"
+  },
+  {
+   "id": "R16",
+   "name": "kyujin-cho/Bada",
+   "group": "file-core",
+   "slug": "r16-bada",
+   "clone_url": "https://github.com/kyujin-cho/Bada.git",
+   "resolved_commit": "9fba4ee696b5404e431ee0000e3fb9e685b0a619",
+   "production_approved": false,
+   "status": "restricted",
+   "license": {
+    "declared": "Apache-2.0（项目/模块声明，无根 LICENSE 文件）",
+    "review_level": "missing",
+    "observed_root_files": []
+   },
+   "build_surface": {
+    "entrypoints": [
+     "build.gradle.kts",
+     "settings.gradle.kts"
+    ],
+    "cargo": [],
+    "npm_lifecycle_hooks": [],
+    "ci_downloads": []
+   },
+   "submodules": [],
+   "committed_vendor_dirs": {},
+   "generated_file_counts": {},
+   "untrusted_instruction_files": [
+    {
+     "path": "AGENTS.md",
+     "disposition": "untrusted-material",
+     "classification": "agent 开发指引（项目结构/命令）"
+    },
+    {
+     "path": "CLAUDE.md",
+     "disposition": "untrusted-material",
+     "classification": "同 AGENTS.md 的重复声明"
+    }
+   ],
+   "transitive_license_risks": [
+    {
+     "name": "per-module-license-unreviewed",
+     "license": "unreviewed",
+     "note": "无根许可文件；模块级 Apache 声明需逐模块核实"
+    }
+   ],
+   "proposed_route": "pending-user-review",
+   "notes": "Quick Share Android 端参考；放行前需用户决议"
+  },
+  {
+   "id": "R17",
+   "name": "google/nearby",
+   "group": "file-core",
+   "slug": "r17-nearby",
+   "clone_url": "https://github.com/google/nearby.git",
+   "resolved_commit": "2ea517eae15d9752ee189f452b05d9fe13ce23eb",
+   "production_approved": false,
+   "status": "resolved",
+   "license": {
+    "declared": "Apache-2.0",
+    "review_level": "root-file-only",
+    "observed_root_files": [
+     "LICENSE"
+    ]
+   },
+   "build_surface": {
+    "entrypoints": [
+     "CMakeLists.txt",
+     "build.gradle.kts",
+     "settings.gradle.kts"
+    ],
+    "cargo": [],
+    "npm_lifecycle_hooks": [],
+    "ci_downloads": []
+   },
+   "submodules": [
+    "submodule.third_party/protobuf",
+    "submodule.third_party/ukey2/ukey2",
+    "submodule.third_party/smhasher/smhasher",
+    "submodule.third_party/json/json"
+   ],
+   "committed_vendor_dirs": {
+    "third_party": 15
+   },
+   "generated_file_counts": {
+    "*.pb.cc": 17,
+    "*.pb.h": 17
+   },
+   "untrusted_instruction_files": [],
+   "transitive_license_risks": [
+    {
+     "name": "third_party-submodules",
+     "license": "unreviewed",
+     "note": "protobuf/smhasher/json/ukey2 submodule；*.pb.{cc,h} 生成文件 34 个"
+    }
+   ],
+   "proposed_route": "worker",
+   "notes": "Nearby 协议官方参考"
+  },
+  {
+   "id": "R18",
+   "name": "google/ukey2",
+   "group": "file-core",
+   "slug": "r18-ukey2",
+   "clone_url": "https://github.com/google/ukey2.git",
+   "resolved_commit": "10fc737aa901e873a3367e7e26b88eb01cd55d69",
+   "production_approved": false,
+   "status": "resolved",
+   "license": {
+    "declared": "Apache-2.0",
+    "review_level": "root-file-only",
+    "observed_root_files": [
+     "LICENSE",
+     "NOTICE"
+    ]
+   },
+   "build_surface": {
+    "entrypoints": [
+     "build.gradle"
+    ],
+    "cargo": [],
+    "npm_lifecycle_hooks": [],
+    "ci_downloads": []
+   },
+   "submodules": [],
+   "committed_vendor_dirs": {},
+   "generated_file_counts": {},
+   "untrusted_instruction_files": [],
+   "transitive_license_risks": [],
+   "proposed_route": "independent",
+   "notes": "UKEY2 握手规范+实现；Rust 侧为独立实现，规范事实可引用"
+  },
+  {
+   "id": "R19",
+   "name": "Martichou/rquickshare",
+   "group": "file-core",
+   "slug": "r19-rquickshare",
+   "clone_url": "https://github.com/Martichou/rquickshare.git",
+   "resolved_commit": "378d8ae969941bee4bf60ad34ac9cf8bb7005eb7",
+   "production_approved": false,
+   "status": "resolved",
+   "license": {
+    "declared": "GPL-3.0",
+    "review_level": "root-file-only",
+    "observed_root_files": [
+     "LICENSE"
+    ]
+   },
+   "build_surface": {
+    "entrypoints": [
+     "Cargo.toml",
+     "build.rs",
+     "package.json"
+    ],
+    "cargo": [
+     "app/main/src-tauri/Cargo.toml: [build-dependencies]",
+     "core_lib/Cargo.toml: [build-dependencies]"
+    ],
+    "npm_lifecycle_hooks": [],
+    "ci_downloads": []
+   },
+   "submodules": [],
+   "committed_vendor_dirs": {},
+   "generated_file_counts": {},
+   "untrusted_instruction_files": [],
+   "transitive_license_risks": [],
+   "proposed_route": "worker",
+   "notes": "GPL 根：core_lib 结构可作架构参考；实现只能独立进程/独立实现"
+  }
+ ]
+}
