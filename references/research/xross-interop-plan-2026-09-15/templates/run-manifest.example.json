@@ -1,0 +1,38 @@
+{
+  "synthetic": true,
+  "is_test_evidence": false,
+  "schema_version": 1,
+  "run_id": "template-only",
+  "profile_id": "airplay.legacy-mirror",
+  "role": "receive",
+  "evidence_level": "not-run",
+  "implementation_commit": null,
+  "reference_commit": null,
+  "binary_sha256": null,
+  "platform": {
+    "os": null,
+    "build": null,
+    "arch": null,
+    "interactive_session": null
+  },
+  "device": {
+    "model": null,
+    "os_build": null,
+    "sender_app": null,
+    "sender_app_version": null,
+    "rom_region": null
+  },
+  "network": {
+    "transport": null,
+    "interface": null,
+    "subnet_policy": null,
+    "radio_changes_approved": false
+  },
+  "case_ids": [],
+  "result": "not-run",
+  "commands": [],
+  "artifacts": [],
+  "credentials_redacted": false,
+  "license_route_approved": false,
+  "notes": "Template; null fields must be populated by actual observations, never inferred."
+}

@@ -1,0 +1,759 @@
+{
+  "schema_version": 1,
+  "scope": "candidate_profiles_not_all_wire_protocols",
+  "profiles": [
+    {
+      "id": "F01",
+      "name": "LocalSend v2.x",
+      "category": "files",
+      "roles": [
+        "send",
+        "receive"
+      ],
+      "priority": "P0",
+      "implementation_route": "复用 Xross 现有实现；只抽边界和补规范/回归",
+      "reference_ids": [
+        "R13",
+        "R14"
+      ],
+      "blocker": "不要混入未确认的 v3；不可把 UDP discovery 改成仅 mDNS",
+      "acceptance_probe": "库存 macOS/Android/Windows 客户端各双向，拒绝、部分选择、取消、Unicode与同名处理",
+      "status": "catalogued",
+      "production_approved": false
+    },
+    {
+      "id": "F02",
+      "name": "Google Quick Share LAN/QR",
+      "category": "files",
+      "roles": [
+        "send",
+        "receive"
+      ],
+      "priority": "P1",
+      "implementation_route": "NearDrop/Bada/google Nearby 对照；独立 Rust core 或合法外部 provider",
+      "reference_ids": [
+        "R15",
+        "R16",
+        "R17",
+        "R18",
+        "R19",
+        "R20"
+      ],
+      "blocker": "发现机制和 stock Android 状态影响方向；global Quick Share不等于中国互传",
+      "acceptance_probe": "Android→Mac 收件；Mac→Android二维码/显式可发现；对端确认码一致，10GiB流式受控传输",
+      "status": "catalogued",
+      "production_approved": false
+    },
+    {
+      "id": "F03",
+      "name": "Quick Share BLE/P2P transport upgrade",
+      "category": "files",
+      "roles": [
+        "send",
+        "receive"
+      ],
+      "priority": "P2",
+      "implementation_route": "F02 已稳定后增加平台 radio backend，保持同一 transfer",
+      "reference_ids": [
+        "R16",
+        "R17",
+        "R19",
+        "R63"
+      ],
+      "blocker": "BLE central库不代表能发任意广播；macOS公开P2P限制；链路升级授权",
+      "acceptance_probe": "Wi-Fi LAN→P2P阶段切换；失败回退不丢/重写文件；无线调度不影响当前联网",
+      "status": "catalogued",
+      "production_approved": false
+    },
+    {
+      "id": "F04",
+      "name": "Apple AirDrop",
+      "category": "files",
+      "roles": [
+        "send",
+        "receive"
+      ],
+      "priority": "Research",
+      "implementation_route": "OpenDrop/owl 只读研究；来源清楚的协议事实 +当前真机验证",
+      "reference_ids": [
+        "R21",
+        "R22"
+      ],
+      "blocker": "AWDL、系统版本、可见模式、身份和许可；不承诺 contacts-only；不依赖私有密钥滥用",
+      "acceptance_probe": "获用户批准的可发现模式下明确版本双向；确认对话、重名与大小限制；不可用输出 blocker",
+      "status": "catalogued",
+      "production_approved": false
+    },
+    {
+      "id": "F05",
+      "name": "Windows Nearby Sharing / NearShare",
+      "category": "files",
+      "roles": [
+        "send",
+        "receive"
+      ],
+      "priority": "P2",
+      "implementation_route": "读取 MS-CDP + Android 实现；独立适配到 Offer",
+      "reference_ids": [
+        "R23",
+        "S28"
+      ],
+      "blocker": "和Quick Share完全不同；身份/BT/LAN与Windows版本需固定",
+      "acceptance_probe": "Windows原生分享→独立节点，反向也需独立证据；拒绝与不受信任对端",
+      "status": "catalogued",
+      "production_approved": false
+    },
+    {
+      "id": "F06",
+      "name": "互传联盟 / MDFE",
+      "category": "files",
+      "roles": [
+        "send",
+        "receive"
+      ],
+      "priority": "Research",
+      "implementation_route": "厂商公开资料 +受控设备观察 +合作申请",
+      "reference_ids": [
+        "S14"
+      ],
+      "blocker": "本轮未找到完整公开wire spec+可复用library；必须先通过资料/授权 gate",
+      "acceptance_probe": "至少两品牌中国ROM相互基线成功，再研究Xross端；任何未知字段标未证实",
+      "status": "catalogued",
+      "production_approved": false
+    },
+    {
+      "id": "F07",
+      "name": "Huawei Share / Share Engine",
+      "category": "files",
+      "roles": [
+        "send",
+        "receive"
+      ],
+      "priority": "Vendor",
+      "implementation_route": "合法SDK适配独立worker；开源实现仅另行许可通过后研究",
+      "reference_ids": [
+        "S11",
+        "S12",
+        "S13"
+      ],
+      "blocker": "旧EMUI文档不代表新鸿蒙；SDK申请、分发许可、硬件与平台支持",
+      "acceptance_probe": "取得SDK哈希/授权；Huawei手机→Win/Linux测试，Mac与新鸿蒙分别probe",
+      "status": "catalogued",
+      "production_approved": false
+    },
+    {
+      "id": "F08",
+      "name": "KDE Connect Share",
+      "category": "files",
+      "roles": [
+        "send",
+        "receive"
+      ],
+      "priority": "P2",
+      "implementation_route": "有限协议子集/合法daemon bridge；只share plugin",
+      "reference_ids": [
+        "R24",
+        "R25"
+      ],
+      "blocker": "配对身份与Xross隔离；GPL组合边界；不要打开runcommand/input",
+      "acceptance_probe": "KDE库存客户端与Xross双向，pair/revoke，文本/URL/文件，不可调用其他插件",
+      "status": "catalogued",
+      "production_approved": false
+    },
+    {
+      "id": "F09",
+      "name": "Bluetooth OBEX / OPP",
+      "category": "files",
+      "roles": [
+        "send",
+        "receive"
+      ],
+      "priority": "P3",
+      "implementation_route": "调用系统OBEX服务优先；Rust仅封装契约",
+      "reference_ids": [
+        "R61",
+        "S21"
+      ],
+      "blocker": "移动OS公开API和设备profile差异；不是所有iPhone支持OPP",
+      "acceptance_probe": "Android↔Linux/受支持Windows的公开路径；拒绝认证/文件名攻击；低速显示真实",
+      "status": "catalogued",
+      "production_approved": false
+    },
+    {
+      "id": "F10",
+      "name": "Browser HTTPS / QR share",
+      "category": "files",
+      "roles": [
+        "serve",
+        "upload",
+        "download"
+      ],
+      "priority": "P1",
+      "implementation_route": "复用Xross现有HTTP gateway；临时资源grant和受限网页",
+      "reference_ids": [
+        "S27",
+        "R13"
+      ],
+      "blocker": "浏览器安全上下文/TLS信任/CORS/CSRF；不能绕过确认",
+      "acceptance_probe": "陌生浏览器扫码下载一文件；上传受限目录；过期和撤销后403/410；Range版本一致",
+      "status": "catalogued",
+      "production_approved": false
+    },
+    {
+      "id": "F11",
+      "name": "WebDAV",
+      "category": "files",
+      "roles": [
+        "client",
+        "server"
+      ],
+      "priority": "P3",
+      "implementation_route": "只读优先适配Xross Remote Files；成熟库选型单独审计",
+      "reference_ids": [
+        "S25"
+      ],
+      "blocker": "不是nearby协议；写/锁/属性语义复杂；必须沿用host ACL",
+      "acceptance_probe": "库存WebDAV client只看授权root；PROPFIND深度/大目录/Range/凭据错误边界",
+      "status": "catalogued",
+      "production_approved": false
+    },
+    {
+      "id": "F12",
+      "name": "SFTP",
+      "category": "files",
+      "roles": [
+        "client",
+        "server"
+      ],
+      "priority": "P3",
+      "implementation_route": "复用Xross已有SSH/SFTP引擎，禁止再造凭据库",
+      "reference_ids": [
+        "S30"
+      ],
+      "blocker": "SFTP版本和host-key策略；server是新增外部网络暴露需专门授权",
+      "acceptance_probe": "已知host key双向文件流；拒绝改变host key；shell权限不能因SFTP自动启用",
+      "status": "catalogued",
+      "production_approved": false
+    },
+    {
+      "id": "F13",
+      "name": "SMB3",
+      "category": "files",
+      "roles": [
+        "client",
+        "server"
+      ],
+      "priority": "Research",
+      "implementation_route": "优先系统/成熟服务集成，不从零实现SMB安全栈",
+      "reference_ids": [
+        "S29"
+      ],
+      "blocker": "签名/加密/认证与挂载权限；Windows服务冲突；无匿名全盘",
+      "acceptance_probe": "只授权一个share，验证authentication/signing与路径隔离；无SMB1 fallback",
+      "status": "catalogued",
+      "production_approved": false
+    },
+    {
+      "id": "F14",
+      "name": "Magic Wormhole",
+      "category": "files",
+      "roles": [
+        "send",
+        "receive"
+      ],
+      "priority": "P3",
+      "implementation_route": "合法Rust/Python库或CLI provider",
+      "reference_ids": [
+        "R28",
+        "R29"
+      ],
+      "blocker": "对端需Wormhole；rendezvous/relay与版本不是Xross同一身份",
+      "acceptance_probe": "与库存CLI双方输入短码；错误码/中断/relay不可用；不记录PAKE秘密",
+      "status": "catalogued",
+      "production_approved": false
+    },
+    {
+      "id": "F15",
+      "name": "croc",
+      "category": "files",
+      "roles": [
+        "send",
+        "receive"
+      ],
+      "priority": "P3",
+      "implementation_route": "独立Go CLI/provider做互通优先",
+      "reference_ids": [
+        "R30"
+      ],
+      "blocker": "独立产品协议，不是原生系统菜单；中继与升级耦合",
+      "acceptance_probe": "库存croc双向，密码错/中断重试行为如实映射；显式服务配置",
+      "status": "catalogued",
+      "production_approved": false
+    },
+    {
+      "id": "F16",
+      "name": "PairDrop / Snapdrop deployment",
+      "category": "files",
+      "roles": [
+        "send",
+        "receive"
+      ],
+      "priority": "P3",
+      "implementation_route": "可选网页/信令provider，不加入默认daemon",
+      "reference_ids": [
+        "R26",
+        "R27"
+      ],
+      "blocker": "页面/服务器版本是互通契约；WebRTC标准本身不定义文件分享信令",
+      "acceptance_probe": "指定版本服务器和浏览器双向；隔离房间/拒绝/过期；不广播所有Xross设备",
+      "status": "catalogued",
+      "production_approved": false
+    },
+    {
+      "id": "F17",
+      "name": "Syncthing BEP interoperability",
+      "category": "sync",
+      "roles": [
+        "peer"
+      ],
+      "priority": "Research",
+      "implementation_route": "仅建立协议/商业边界研究；复用成熟实现优于重做sync",
+      "reference_ids": [
+        "R31"
+      ],
+      "blocker": "continuous sync不是单次offer；双写/conflict/删除语义不同",
+      "acceptance_probe": "先dossier与scope裁决；不得把Syncthing数据库当Xross/Shelf authority",
+      "status": "catalogued",
+      "production_approved": false
+    },
+    {
+      "id": "M01",
+      "name": "AirPlay legacy screen mirroring",
+      "category": "screen",
+      "roles": [
+        "receive",
+        "send"
+      ],
+      "priority": "P0→P2",
+      "implementation_route": "先外部UxPlay接收基线；Rust receiver独立合法路线；sender另开子任务",
+      "reference_ids": [
+        "R01",
+        "R02",
+        "R03",
+        "R04",
+        "R08",
+        "R09",
+        "R10"
+      ],
+      "blocker": "FairPlay/来源；receiver≠sender；不声称DRM；codec/旋转依赖真机",
+      "acceptance_probe": "iPhone/iPad/Mac→PC受控画面声音；20次重连；反向投AppleTV另验收",
+      "status": "catalogued",
+      "production_approved": false
+    },
+    {
+      "id": "M02",
+      "name": "AirPlay classic audio / RAOP",
+      "category": "audio",
+      "roles": [
+        "receive",
+        "send"
+      ],
+      "priority": "P2",
+      "implementation_route": "库/sidecar互通；沿用平台音频后端",
+      "reference_ids": [
+        "R02",
+        "R05",
+        "R07",
+        "R11",
+        "R12"
+      ],
+      "blocker": "音频加密与访问认证要分开；多房间不是自动能力",
+      "acceptance_probe": "库存sender→null/native audio；反向→已授权AirPlay sink，采样率切换",
+      "status": "catalogued",
+      "production_approved": false
+    },
+    {
+      "id": "M03",
+      "name": "AirPlay 2 audio",
+      "category": "audio",
+      "roles": [
+        "receive",
+        "send"
+      ],
+      "priority": "P2",
+      "implementation_route": "shairplay-rust/Shairport Sync对照，buffered/realtime分profile",
+      "reference_ids": [
+        "R02",
+        "R07",
+        "R10"
+      ],
+      "blocker": "HomeKit pairing/时钟/多房间状态；不把README自测当产品证明",
+      "acceptance_probe": "具名设备persistent/transient各测；音画/多声道profile另验收",
+      "status": "catalogued",
+      "production_approved": false
+    },
+    {
+      "id": "M04",
+      "name": "AirPlay media URL/HLS/photo",
+      "category": "media-url",
+      "roles": [
+        "receive",
+        "send"
+      ],
+      "priority": "P2",
+      "implementation_route": "URL session + host FetchPolicy；兼容app逐项列",
+      "reference_ids": [
+        "R01",
+        "R10",
+        "R11"
+      ],
+      "blocker": "YouTube受支持不代表全部网页视频/DRM；照片与视频不同模式",
+      "acceptance_probe": "自有合法HLS/静态照片；重定向/语言轨/停止；恶意file://和私网跳转失败",
+      "status": "catalogued",
+      "production_approved": false
+    },
+    {
+      "id": "M05",
+      "name": "Miracast / Wi-Fi Display",
+      "category": "screen",
+      "roles": [
+        "receive",
+        "send"
+      ],
+      "priority": "P1→P2",
+      "implementation_route": "Windows native receiver优先；Linux source/sink与Rust WFD core分别probe",
+      "reference_ids": [
+        "R32",
+        "R33",
+        "R34",
+        "R37",
+        "R41",
+        "S04",
+        "S05",
+        "S24"
+      ],
+      "blocker": "WiFiP2P/驱动/用户会话；Mac/普通手机App权限；source不从MiracleCast误推",
+      "acceptance_probe": "Samsung/Huawei/Win+K→Windows native source；Linux收发分别；无网卡时清晰不可用",
+      "status": "catalogued",
+      "production_approved": false
+    },
+    {
+      "id": "M06",
+      "name": "Miracast over infrastructure / MS-MICE",
+      "category": "screen",
+      "roles": [
+        "receive",
+        "send"
+      ],
+      "priority": "P2",
+      "implementation_route": "在M05后增加Microsoft公开扩展适配",
+      "reference_ids": [
+        "S06"
+      ],
+      "blocker": "仍有无线初始发现约束；不是纯LAN万能替代",
+      "acceptance_probe": "受支持Windows与sink采用基础设施路径；拒绝证书/路由失败按契约回退",
+      "status": "catalogued",
+      "production_approved": false
+    },
+    {
+      "id": "M07",
+      "name": "DLNA / UPnP AV",
+      "category": "media-url",
+      "roles": [
+        "renderer",
+        "controller",
+        "server"
+      ],
+      "priority": "P1",
+      "implementation_route": "SSDP+SOAP+event+AVTransport；DMC/DMR/DMS单独能力",
+      "reference_ids": [
+        "R46",
+        "R47",
+        "R48",
+        "R49"
+      ],
+      "blocker": "非实时screen；电视codec/DLNA profiles；SSRF/XXE/事件回调风险",
+      "acceptance_probe": "DMC推文件到TV；DMR接库存app URL；DMS只发布授权目录，三种角色各测",
+      "status": "catalogued",
+      "production_approved": false
+    },
+    {
+      "id": "M08",
+      "name": "Google Cast media control / URL sender",
+      "category": "media-url",
+      "roles": [
+        "send",
+        "control"
+      ],
+      "priority": "P1",
+      "implementation_route": "libcast/pychromecast对照；合法CAF/默认media receiver",
+      "reference_ids": [
+        "R42",
+        "R43",
+        "R44",
+        "R45",
+        "S07",
+        "S08",
+        "S09"
+      ],
+      "blocker": "sender controller不自动拥有本地media服务；codec与app ID校验",
+      "acceptance_probe": "Xross选择本地文件→有限HTTP URL→Chromecast；load/play/pause/seek/stop",
+      "status": "catalogued",
+      "production_approved": false
+    },
+    {
+      "id": "M09",
+      "name": "Google Cast real-time streaming source",
+      "category": "screen",
+      "roles": [
+        "send"
+      ],
+      "priority": "P2",
+      "implementation_route": "Open Screen streaming sender基线；capture/encode独立",
+      "reference_ids": [
+        "R42"
+      ],
+      "blocker": "设备认证/receiver app/codec/capture；不是M08多一个URL字段",
+      "acceptance_probe": "桌面测试图+声音→指定Cast receiver；分辨率与拥塞，浏览器回环不算TV通过",
+      "status": "catalogued",
+      "production_approved": false
+    },
+    {
+      "id": "M10",
+      "name": "Google Cast-compatible generic receiver",
+      "category": "screen",
+      "roles": [
+        "receive"
+      ],
+      "priority": "Research",
+      "implementation_route": "Open Screen receiver demo+stock sender认证probe",
+      "reference_ids": [
+        "R42",
+        "R43",
+        "R45"
+      ],
+      "blocker": "自有demo证书成功不代表Pixel/Chrome承认；授权/设备认证是gate",
+      "acceptance_probe": "先自有demo互通，再stock Pixel/Chrome→PC；分别记录认证、launch、媒体三个阶段",
+      "status": "catalogued",
+      "production_approved": false
+    },
+    {
+      "id": "M11",
+      "name": "Huawei Cast+ / Cast Engine",
+      "category": "screen",
+      "roles": [
+        "receive",
+        "send"
+      ],
+      "priority": "Vendor",
+      "implementation_route": "官方SDK可用且授权通过时wrapper；不伪造设备认证",
+      "reference_ids": [
+        "S10",
+        "R39"
+      ],
+      "blocker": "商业权限/设备代际/SDK受支持平台",
+      "acceptance_probe": "SDK许可与运行matrix通过后华为手机→合法receiver；反向独立验证",
+      "status": "catalogued",
+      "production_approved": false
+    },
+    {
+      "id": "M12",
+      "name": "OpenHarmony CastEngine integration",
+      "category": "screen",
+      "roles": [
+        "receive",
+        "send"
+      ],
+      "priority": "Research",
+      "implementation_route": "开放系统源码的编译/依赖probe；native provider",
+      "reference_ids": [
+        "R37",
+        "R38",
+        "R39",
+        "R40"
+      ],
+      "blocker": "OpenHarmony系统集成与普通HarmonyOS App是不同部署；不自动互通华为商用",
+      "acceptance_probe": "定制OpenHarmony设备闭环；再尝试普通App API，失败保留system-only标记",
+      "status": "catalogued",
+      "production_approved": false
+    },
+    {
+      "id": "M13",
+      "name": "RTSP / RTP / MPEG-TS",
+      "category": "stream",
+      "roles": [
+        "publish",
+        "subscribe",
+        "serve"
+      ],
+      "priority": "P2",
+      "implementation_route": "标准stream adapter；GStreamer/MediaMTX/gortsplib对照",
+      "reference_ids": [
+        "R50",
+        "R51",
+        "R52",
+        "R53",
+        "S26"
+      ],
+      "blocker": "RTSP1/2和ANNOUNCE/RECORD支持分开；RTP无加密时必须披露",
+      "acceptance_probe": "VLC/GStreamer指定codec双向；丢包/RTCP/序号回绕/会话断开与恢复",
+      "status": "catalogued",
+      "production_approved": false
+    },
+    {
+      "id": "M14",
+      "name": "WebRTC / WHIP / WHEP",
+      "category": "stream",
+      "roles": [
+        "publish",
+        "subscribe"
+      ],
+      "priority": "P2",
+      "implementation_route": "优先复用Xross选定WebRTC栈；WHIP按RFC9725",
+      "reference_ids": [
+        "R50",
+        "R54",
+        "S22"
+      ],
+      "blocker": "WebRTC没有单一信令；WHEP按具体规范/实现版本，不能冒称已同样成为RFC",
+      "acceptance_probe": "浏览器与daemon互通；WHIP POST/PATCH/DELETE；TURN失败/证书/ICE restart",
+      "status": "catalogued",
+      "production_approved": false
+    },
+    {
+      "id": "M15",
+      "name": "SRT",
+      "category": "stream",
+      "roles": [
+        "caller",
+        "listener",
+        "rendezvous"
+      ],
+      "priority": "P3",
+      "implementation_route": "libsrt合法FFI/provider；默认仅caller/listener",
+      "reference_ids": [
+        "R50",
+        "R55"
+      ],
+      "blocker": "媒体容器/加密/流ID与会话权限独立；不是投屏菜单发现协议",
+      "acceptance_probe": "OBS/GStreamer对端MPEGTS；延迟窗口/丢包/口令错/重连",
+      "status": "catalogued",
+      "production_approved": false
+    },
+    {
+      "id": "M16",
+      "name": "RTMP / RTMPS",
+      "category": "stream",
+      "roles": [
+        "publish",
+        "receive"
+      ],
+      "priority": "P3",
+      "implementation_route": "合法媒体服务provider优先",
+      "reference_ids": [
+        "R50",
+        "R59",
+        "R60"
+      ],
+      "blocker": "RTMPS与明文显式选择；enhanced codecs不默认支持",
+      "acceptance_probe": "OBS发布到受限stream key，Xross输出到测试服务器；密钥错与停止清理",
+      "status": "catalogued",
+      "production_approved": false
+    },
+    {
+      "id": "M17",
+      "name": "HLS delivery / playback",
+      "category": "stream",
+      "roles": [
+        "serve",
+        "play"
+      ],
+      "priority": "P2",
+      "implementation_route": "媒体URL能力复用manifest/segment/token服务",
+      "reference_ids": [
+        "R50",
+        "R52",
+        "R60"
+      ],
+      "blocker": "不是设备发现协议；buffered高延迟不当交互镜像baseline",
+      "acceptance_probe": "自有HLS播放器与服务；seek/live窗口/语言轨/子请求授权",
+      "status": "catalogued",
+      "production_approved": false
+    },
+    {
+      "id": "M18",
+      "name": "scrcpy / authorized ADB",
+      "category": "screen",
+      "roles": [
+        "receive",
+        "control"
+      ],
+      "priority": "P3",
+      "implementation_route": "独立scrcpy provider，不归入零安装原生投屏",
+      "reference_ids": [
+        "R56"
+      ],
+      "blocker": "设备debugging授权和版本匹配；控制另授权",
+      "acceptance_probe": "用户确认ADB后显示Android画面；撤销调试立即断开；read-only profile无输入",
+      "status": "catalogued",
+      "production_approved": false
+    },
+    {
+      "id": "M19",
+      "name": "GameStream / Sunshine / Moonlight",
+      "category": "screen",
+      "roles": [
+        "host",
+        "client"
+      ],
+      "priority": "P3",
+      "implementation_route": "高性能后续provider，GPL边界清楚",
+      "reference_ids": [
+        "R57",
+        "R58"
+      ],
+      "blocker": "输入、编码、配对与安全大范围；不阻塞文件/基础投屏",
+      "acceptance_probe": "库存Sunshine/Moonlight互通，视频与输入分别授权，游戏优化另里程碑",
+      "status": "catalogued",
+      "production_approved": false
+    },
+    {
+      "id": "M20",
+      "name": "NDI",
+      "category": "stream",
+      "roles": [
+        "send",
+        "receive"
+      ],
+      "priority": "Vendor",
+      "implementation_route": "先获取SDK/条款/再适配，不承诺纯Rust wire",
+      "reference_ids": [
+        "S31"
+      ],
+      "blocker": "专有SDK与分发条件；本包没有已核可直接克隆实现",
+      "acceptance_probe": "SDK许可、Linux/Mac/Win兼容、video/audio格式和网络范围证据",
+      "status": "catalogued",
+      "production_approved": false
+    },
+    {
+      "id": "M21",
+      "name": "DIAL / Tizen / webOS / Roku control",
+      "category": "control",
+      "roles": [
+        "discover",
+        "launch",
+        "control"
+      ],
+      "priority": "Research",
+      "implementation_route": "将具体厂商profile作为辅助控制，逐一API研究",
+      "reference_ids": [
+        "R43",
+        "S07"
+      ],
+      "blocker": "发现/launch app不等于media或screen流；不假定控制权限",
+      "acceptance_probe": "只在受支持型号launch指定测试app；未经pair不可调用控制；不伪装mirror支持",
+      "status": "catalogued",
+      "production_approved": false
+    }
+  ]
+}

@@ -1,0 +1,4439 @@
+{
+  "schema_version": 1,
+  "status": "IMPLEMENTATION_PLAN_NOT_EXECUTED",
+  "task_count": 80,
+  "tasks": [
+    {
+      "id": "T01",
+      "title": "建立隔离lab与最小实现workspace",
+      "depends_on": [],
+      "files": [
+        "lab/README.md",
+        "lab/references/repositories.json",
+        "lab/.gitignore",
+        "xross-interop/Cargo.toml",
+        "xross-interop/README.md",
+        "xross-interop/crates/interop-contract/src/lib.rs"
+      ],
+      "requirements": [
+        "CORE-01",
+        "CORE-08",
+        "SEC-02",
+        "SEC-10",
+        "INT-08"
+      ],
+      "references": [
+        "S16",
+        "S17"
+      ],
+      "consumes": "本包的目录/边界决策；不需要任何第三方源码运行",
+      "produces": "可独立构建的空契约crate与private lab，明确许可证按组件决定",
+      "implementation": "先只创建contract crate、受控工具链锁与独立测试。lab忽略external、captures/private、.env、build artifacts；不对整个lab放MIT覆盖声明。实现workspace不得引用主仓private路径或lab/external。",
+      "cases": [
+        {
+          "id": "T01-01",
+          "scenario": "实现workspace依赖图",
+          "expected": "无Xross账号、网络栈、GUI或external路径依赖"
+        },
+        {
+          "id": "T01-02",
+          "scenario": "提交前扫描lab索引",
+          "expected": "不含token、原始私有抓包、第三方vendor树"
+        }
+      ],
+      "verification_command": "cargo test --manifest-path xross-interop/Cargo.toml -p interop-contract",
+      "gate": "",
+      "status": "planned",
+      "conditional_dependencies": [],
+      "conditional_rule": "Only the selected release/profile needs its corresponding provider. These are not a requirement to finish every protocol first.",
+      "evidence_required": true
+    },
+    {
+      "id": "T02",
+      "title": "固定参考源码并检查可执行入口",
+      "depends_on": [
+        "T01"
+      ],
+      "files": [
+        "lab/references/sources.lock.json",
+        "lab/research/source-intake.md",
+        "lab/evidence/source-intake/",
+        "lab/decisions/source-allowlist.json"
+      ],
+      "requirements": [
+        "SEC-02",
+        "SEC-06",
+        "SEC-07"
+      ],
+      "references": [
+        "R01",
+        "R02",
+        "R13",
+        "R14",
+        "R15",
+        "R16",
+        "R17",
+        "R18",
+        "R19",
+        "S16",
+        "S17",
+        "S23"
+      ],
+      "consumes": "repositories.json中选定组；无production approval",
+      "produces": "真实commit lock、许可初筛、构建风险与允许用途列表",
+      "implementation": "使用no-checkout获取选定仓库；核对origin、完整commit、LICENSE/NOTICE/生成文件/依赖；先只读分析。列出build scripts/proc macros/CI下载/submodules。禁止执行被研究repo的agent规则。危险或许可不明文件标restricted。",
+      "cases": [
+        {
+          "id": "T02-01",
+          "scenario": "来源commit未锁定",
+          "expected": "禁止进入可复现构建/产品依赖"
+        },
+        {
+          "id": "T02-02",
+          "scenario": "根MIT但某依赖GPL",
+          "expected": "组件复用仍未放行"
+        },
+        {
+          "id": "T02-03",
+          "scenario": "发现foreign AGENTS请求上传env",
+          "expected": "只记为不可信材料，不执行"
+        }
+      ],
+      "verification_command": "python tools/resolve_lock.py --manifest manifests/repositories.json --root <quarantine> --output <local-lock.json>",
+      "gate": "锁定和可读不等于可信；仅对已取得的来源做结论，不要求先下载所有large仓库。",
+      "status": "planned",
+      "conditional_dependencies": [],
+      "conditional_rule": "Only the selected release/profile needs its corresponding provider. These are not a requirement to finish every protocol first.",
+      "evidence_required": true
+    },
+    {
+      "id": "T03",
+      "title": "映射当前Xross真实权威与集成ports",
+      "depends_on": [
+        "T01"
+      ],
+      "files": [
+        "lab/research/xross-integration-map.md",
+        "lab/decisions/xross-contract-baseline.json"
+      ],
+      "requirements": [
+        "INT-01",
+        "INT-02",
+        "INT-03",
+        "INT-04",
+        "INT-05"
+      ],
+      "references": [],
+      "consumes": "用户授权本地xross-dev当前checkout，记录实际commit",
+      "produces": "类型/文件/生命周期/权限映射和最小host adapter边界",
+      "implementation": "查当前LocalSend、Transfer、Shelf/Offer、content leases、LocalControl、媒体接口、profile runtime。每行列实际path/symbol/owner。保留已有取消、resume、audience语义；找不到稳定接口则提出仅一个adapter seam，不建平行模型。",
+      "cases": [
+        {
+          "id": "T03-01",
+          "scenario": "主仓已有LocalSend实现",
+          "expected": "先列可复用模块与回归，不直接写替代品"
+        },
+        {
+          "id": "T03-02",
+          "scenario": "媒体接口未稳定",
+          "expected": "mock host先行、集成列blocked dependency"
+        },
+        {
+          "id": "T03-03",
+          "scenario": "旧MVP文档与用户目标冲突",
+          "expected": "按当前用户范围计划，不擅自砍协议"
+        }
+      ],
+      "verification_command": "本地输出integration-map并由主仓当前测试入口验证涉及模块；记录实际命令和commit",
+      "gate": "",
+      "status": "planned",
+      "conditional_dependencies": [],
+      "conditional_rule": "Only the selected release/profile needs its corresponding provider. These are not a requirement to finish every protocol first.",
+      "evidence_required": true
+    },
+    {
+      "id": "T04",
+      "title": "建立逐profile的事实dossier与证据状态",
+      "depends_on": [
+        "T01",
+        "T02"
+      ],
+      "files": [
+        "lab/research/<profile>/dossier.md",
+        "lab/evidence/index.json",
+        "lab/specs-reviewed/<profile>.md"
+      ],
+      "requirements": [
+        "CORE-02",
+        "CORE-03",
+        "APP-05",
+        "APP-08",
+        "SEC-06"
+      ],
+      "references": [
+        "R10",
+        "R13",
+        "S24"
+      ],
+      "consumes": "协议目录、已锁来源、dossier模板",
+      "produces": "每个准备实现的profile有字段/状态/平台/来源/未知项和明确probe",
+      "implementation": "先处理F01/F02/M01/M05/M07/M08，其余逐项加入；不能要求全部38项研究完成才开始。把上游声明与独立观察分开。源/汇/控制方向单列；冲突字段保留来源与实验选择。",
+      "cases": [
+        {
+          "id": "T04-01",
+          "scenario": "只有README写supported",
+          "expected": "状态最多catalogued，不是device-verified"
+        },
+        {
+          "id": "T04-02",
+          "scenario": "只有sender demo可运行",
+          "expected": "receiver保持未验证"
+        },
+        {
+          "id": "T04-03",
+          "scenario": "规范有未确定必需握手字段",
+          "expected": "新增probe而非AI补常量"
+        }
+      ],
+      "verification_command": "对照templates/protocol-dossier.md人工审核必要字段；运行本包validate_pack验证目录引用",
+      "gate": "",
+      "status": "planned",
+      "conditional_dependencies": [],
+      "conditional_rule": "Only the selected release/profile needs its corresponding provider. These are not a requirement to finish every protocol first.",
+      "evidence_required": true
+    },
+    {
+      "id": "T05",
+      "title": "为首批provider选择许可与实现路线",
+      "depends_on": [
+        "T02",
+        "T04"
+      ],
+      "files": [
+        "lab/decisions/provider-adoption.json",
+        "lab/provenance/approved-inputs.json",
+        "lab/provenance/review-log.md"
+      ],
+      "requirements": [
+        "SEC-06",
+        "SEC-07",
+        "SEC-10",
+        "APP-07"
+      ],
+      "references": [
+        "S01",
+        "S02",
+        "S03",
+        "S20",
+        "S23"
+      ],
+      "consumes": "具体源码/依赖/构建产物及拟议链接方式",
+      "produces": "每provider一份reuse/worker/independent/vendor决议",
+      "implementation": "先分别裁决UxPlay、shairplay、LocalSend、QuickShare参考、GStreamer、WinRT。记录copy/reference/runtime用途，不用语言替代许可判断。GPL产物独立目录和发布单元；独立实现输入经来源复核。",
+      "cases": [
+        {
+          "id": "T05-01",
+          "scenario": "GPL C自动翻译Rust",
+          "expected": "不得默认标MIT"
+        },
+        {
+          "id": "T05-02",
+          "scenario": "socket包装内部函数",
+          "expected": "需要组合性质审查，不自动放行"
+        },
+        {
+          "id": "T05-03",
+          "scenario": "未获得厂商SDK分发权",
+          "expected": "只能保留vendor-gated"
+        }
+      ],
+      "verification_command": "来源/依赖/产物决议review；无许可结论的profile构建应被release feature manifest拒绝",
+      "gate": "",
+      "status": "planned",
+      "conditional_dependencies": [],
+      "conditional_rule": "Only the selected release/profile needs its corresponding provider. These are not a requirement to finish every protocol first.",
+      "evidence_required": true
+    },
+    {
+      "id": "T06",
+      "title": "实现领域schema与能力版本协商",
+      "depends_on": [
+        "T01"
+      ],
+      "files": [
+        "crates/interop-contract/src/ids.rs",
+        "crates/interop-contract/src/capability.rs",
+        "crates/interop-contract/src/offer.rs",
+        "crates/interop-contract/src/media.rs",
+        "crates/interop-contract/src/error.rs",
+        "schemas/interop-api.schema.json",
+        "tests/contract/schema.rs"
+      ],
+      "requirements": [
+        "CORE-01",
+        "CORE-02",
+        "CORE-03",
+        "CORE-08",
+        "FILE-06",
+        "MEDIA-01",
+        "MEDIA-02",
+        "INT-06"
+      ],
+      "references": [],
+      "consumes": "docs/01与05的拟议字段和枚举",
+      "produces": "版本化Capability/Offer/Transfer/Media/Error的Rust类型与JSON Schema",
+      "implementation": "定义opaque ID新类型；大整数JSON字符串；未知关键枚举拒绝；公共schema与Rust序列化golden一致。能力按profile+role+platform+evidence声明，不设一个万能supports_cast布尔值。",
+      "cases": [
+        {
+          "id": "T06-01",
+          "scenario": "size=9007199254740993 JSON往返",
+          "expected": "保持精确字符串"
+        },
+        {
+          "id": "T06-02",
+          "scenario": "未知critical media form",
+          "expected": "unsupported-feature"
+        },
+        {
+          "id": "T06-03",
+          "scenario": "role=receive查询send路由",
+          "expected": "不得匹配"
+        }
+      ],
+      "verification_command": "cargo test -p interop-contract",
+      "gate": "",
+      "status": "planned",
+      "conditional_dependencies": [],
+      "conditional_rule": "Only the selected release/profile needs its corresponding provider. These are not a requirement to finish every protocol first.",
+      "evidence_required": true
+    },
+    {
+      "id": "T07",
+      "title": "实现HostPorts与scoped grant",
+      "depends_on": [
+        "T03",
+        "T06"
+      ],
+      "files": [
+        "crates/interop-policy/src/grant.rs",
+        "crates/interop-runtime/src/host.rs",
+        "adapters/standalone-host/src/lib.rs",
+        "tests/contract/host_ports.rs"
+      ],
+      "requirements": [
+        "CORE-05",
+        "FILE-02",
+        "FILE-08",
+        "FILE-09",
+        "SEC-01",
+        "SEC-05",
+        "INT-02"
+      ],
+      "references": [],
+      "consumes": "契约类型和Xross integration-map",
+      "produces": "Admission/ContentRead/ContentWrite/Publish/History/Media/Network ports与fake host",
+      "implementation": "先实现内存fake authority和显式standalone本地policy，grant绑定session/provider/entry/direction/预算/expiry。默认拒绝跨scope请求。integrated模式只接受host ports，不创建自己的账号/iroh实例。",
+      "cases": [
+        {
+          "id": "T07-01",
+          "scenario": "receive grant用于read arbitrary file",
+          "expected": "auth-denied"
+        },
+        {
+          "id": "T07-02",
+          "scenario": "offer批准60秒后到期",
+          "expected": "offer-expired且不落最终文件"
+        },
+        {
+          "id": "T07-03",
+          "scenario": "QuickShare认证成功请求Vault",
+          "expected": "auth-denied"
+        }
+      ],
+      "verification_command": "cargo test -p interop-policy; cargo test -p interop-runtime host_ports",
+      "gate": "",
+      "status": "planned",
+      "conditional_dependencies": [],
+      "conditional_rule": "Only the selected release/profile needs its corresponding provider. These are not a requirement to finish every protocol first.",
+      "evidence_required": true
+    },
+    {
+      "id": "T08",
+      "title": "实现受限流式存储与原子commit",
+      "depends_on": [
+        "T06",
+        "T07"
+      ],
+      "files": [
+        "crates/interop-file/src/path.rs",
+        "crates/interop-file/src/spool.rs",
+        "crates/interop-file/src/integrity.rs",
+        "tests/contract/storage.rs"
+      ],
+      "requirements": [
+        "FILE-02",
+        "FILE-05",
+        "FILE-06",
+        "FILE-07",
+        "FILE-08",
+        "SEC-03"
+      ],
+      "references": [],
+      "consumes": "ContentWriteLease与受控目录handle",
+      "produces": "begin/write/commit/abort语义、可恢复临时文件、hash receipt",
+      "implementation": "所有文件I/O在host存储边界；provider只有entry/lease。独占临时文件，checked offsets，总字节预算，验证后原子发布；source读lease校验版本token。跨文件系统策略明确而非假原子。",
+      "cases": [
+        {
+          "id": "T08-01",
+          "scenario": "名称../../secret或C:\\Windows\\x",
+          "expected": "拒绝并无目录外写入"
+        },
+        {
+          "id": "T08-02",
+          "scenario": "审批后目录替换symlink",
+          "expected": "无目录外写入"
+        },
+        {
+          "id": "T08-03",
+          "scenario": "声明1KiB却写2KiB",
+          "expected": "resource-limit且临时文件终止"
+        },
+        {
+          "id": "T08-04",
+          "scenario": "hash不符",
+          "expected": "integrity-failed、不发布"
+        },
+        {
+          "id": "T08-05",
+          "scenario": "源文件中途替换",
+          "expected": "source-changed"
+        }
+      ],
+      "verification_command": "cargo test -p interop-file",
+      "gate": "",
+      "status": "planned",
+      "conditional_dependencies": [],
+      "conditional_rule": "Only the selected release/profile needs its corresponding provider. These are not a requirement to finish every protocol first.",
+      "evidence_required": true
+    },
+    {
+      "id": "T09",
+      "title": "实现本地RPC framing与认证",
+      "depends_on": [
+        "T06",
+        "T07"
+      ],
+      "files": [
+        "crates/interop-ipc/src/frame.rs",
+        "crates/interop-ipc/src/server.rs",
+        "crates/interop-ipc/src/auth.rs",
+        "apps/interopd/src/main.rs",
+        "tests/contract/ipc.rs"
+      ],
+      "requirements": [
+        "CORE-01",
+        "SEC-05",
+        "APP-01",
+        "INT-06"
+      ],
+      "references": [
+        "S18"
+      ],
+      "consumes": "JSON-RPC framing/错误/角色scope",
+      "produces": "UDS/NamedPipe受限控制端点与client库",
+      "implementation": "长度prefix最大256KiB，hello先认证，再接受allowlisted方法。配置peer校验与scoped tokens；拒绝远程pipe。不要带HTTP公网listener。写schema/golden和分片测试，再实现读写循环及deadline。",
+      "cases": [
+        {
+          "id": "T09-01",
+          "scenario": "每字节分片的两帧粘包",
+          "expected": "返回两个准确请求"
+        },
+        {
+          "id": "T09-02",
+          "scenario": "长度0xffffffff",
+          "expected": "分配前拒绝"
+        },
+        {
+          "id": "T09-03",
+          "scenario": "无hello调用offers.decide",
+          "expected": "auth-denied"
+        },
+        {
+          "id": "T09-04",
+          "scenario": "major不兼容",
+          "expected": "版本拒绝并关闭"
+        }
+      ],
+      "verification_command": "cargo test -p interop-ipc",
+      "gate": "",
+      "status": "planned",
+      "conditional_dependencies": [],
+      "conditional_rule": "Only the selected release/profile needs its corresponding provider. These are not a requirement to finish every protocol first.",
+      "evidence_required": true
+    },
+    {
+      "id": "T10",
+      "title": "实现会话注册表、事件与取消",
+      "depends_on": [
+        "T06",
+        "T07",
+        "T09"
+      ],
+      "files": [
+        "crates/interop-runtime/src/session.rs",
+        "crates/interop-runtime/src/events.rs",
+        "crates/interop-runtime/src/limits.rs",
+        "tests/contract/lifecycle.rs"
+      ],
+      "requirements": [
+        "CORE-06",
+        "CORE-07",
+        "CORE-10",
+        "FILE-04",
+        "APP-06"
+      ],
+      "references": [],
+      "consumes": "已定义状态机、grants、控制请求",
+      "produces": "幂等任务、snapshot/watch、bounded replay、worker crash隔离",
+      "implementation": "一个session actor序列化decide/expire/cancel；终态不可逆。事件instance_id+sequence；4096条/16MiB双上限，gap返回快照建议。回收任务/租约有absolute deadline。",
+      "cases": [
+        {
+          "id": "T10-01",
+          "scenario": "accept与expire同时发生",
+          "expected": "恰好一个有效终态"
+        },
+        {
+          "id": "T10-02",
+          "scenario": "重复cancel100次",
+          "expected": "一次资源清理、结果一致"
+        },
+        {
+          "id": "T10-03",
+          "scenario": "cursor已被淘汰",
+          "expected": "event-gap而非空成功"
+        },
+        {
+          "id": "T10-04",
+          "scenario": "worker崩溃",
+          "expected": "对应session失败、其他会话继续"
+        }
+      ],
+      "verification_command": "cargo test -p interop-runtime lifecycle",
+      "gate": "",
+      "status": "planned",
+      "conditional_dependencies": [],
+      "conditional_rule": "Only the selected release/profile needs its corresponding provider. These are not a requirement to finish every protocol first.",
+      "evidence_required": true
+    },
+    {
+      "id": "T11",
+      "title": "实现多发现源与endpoint registry",
+      "depends_on": [
+        "T06",
+        "T10"
+      ],
+      "files": [
+        "crates/interop-platform/src/discovery.rs",
+        "crates/interop-runtime/src/endpoints.rs",
+        "crates/interop-runtime/src/routing.rs",
+        "tests/contract/discovery.rs"
+      ],
+      "requirements": [
+        "CORE-04",
+        "CORE-05",
+        "CORE-09",
+        "SEC-01",
+        "SEC-09"
+      ],
+      "references": [
+        "R13",
+        "R62",
+        "R63"
+      ],
+      "consumes": "EndpointObservation、profile capabilities与接口policy",
+      "produces": "过期/去重/路由registry与mDNS/SSDP/UDP不同provider边界",
+      "implementation": "起步fake discovery，随后选定接口的mDNS和LocalSend独立multicast接入。不要按名称/IP跨协议提升信任；用户alias仅UI聚合。路由检查purpose、方向、安全、格式、platform状态。",
+      "cases": [
+        {
+          "id": "T11-01",
+          "scenario": "两个协议同名同IP但identity不同",
+          "expected": "两个独立授权主体"
+        },
+        {
+          "id": "T11-02",
+          "scenario": "旧接口断开",
+          "expected": "地址候选过期不可发送"
+        },
+        {
+          "id": "T11-03",
+          "scenario": "明文fallback违反用户策略",
+          "expected": "auth-denied/无可用路由"
+        },
+        {
+          "id": "T11-04",
+          "scenario": "只支持URL的TV请求screen",
+          "expected": "unsupported-feature"
+        }
+      ],
+      "verification_command": "cargo test -p interop-runtime discovery",
+      "gate": "",
+      "status": "planned",
+      "conditional_dependencies": [],
+      "conditional_rule": "Only the selected release/profile needs its corresponding provider. These are not a requirement to finish every protocol first.",
+      "evidence_required": true
+    },
+    {
+      "id": "T12",
+      "title": "实现只读platform probe和无线lease模型",
+      "depends_on": [
+        "T06",
+        "T11"
+      ],
+      "files": [
+        "crates/interop-platform/src/probe.rs",
+        "crates/interop-platform/src/radio.rs",
+        "lab/research/platform-probes.md",
+        "tests/contract/radio.rs"
+      ],
+      "requirements": [
+        "CORE-09",
+        "SEC-09",
+        "APP-01"
+      ],
+      "references": [
+        "R32",
+        "R33",
+        "R37",
+        "R61",
+        "R63",
+        "R64",
+        "S04",
+        "S06"
+      ],
+      "consumes": "可用OS API文档、指定测试硬件",
+      "produces": "doctor结果与共享/独占radio资源请求，不自动更改网络",
+      "implementation": "逐平台报告网络接口、P2P/WFD/API、媒体输出、interactive session和许可状态。WiFi更改需要审批+rollback；没有实现的Mac WFD明确不可用。禁止probe运行第三方root脚本。",
+      "cases": [
+        {
+          "id": "T12-01",
+          "scenario": "WiFi不支持P2P",
+          "expected": "hardware-unavailable、无网络变更"
+        },
+        {
+          "id": "T12-02",
+          "scenario": "独占lease与当前连接冲突",
+          "expected": "pending approval或busy"
+        },
+        {
+          "id": "T12-03",
+          "scenario": "worker退出",
+          "expected": "回收radio lease并运行已批准rollback"
+        }
+      ],
+      "verification_command": "cargo test -p interop-platform; xinterop doctor --json",
+      "gate": "",
+      "status": "planned",
+      "conditional_dependencies": [],
+      "conditional_rule": "Only the selected release/profile needs its corresponding provider. These are not a requirement to finish every protocol first.",
+      "evidence_required": true
+    },
+    {
+      "id": "T13",
+      "title": "实现worker supervisor和真实隔离probe",
+      "depends_on": [
+        "T07",
+        "T09",
+        "T10",
+        "T12"
+      ],
+      "files": [
+        "crates/interop-runtime/src/workers.rs",
+        "workers/mock-provider/src/main.rs",
+        "policies/worker-profiles.json",
+        "tests/e2e/worker_isolation.rs"
+      ],
+      "requirements": [
+        "CORE-10",
+        "SEC-02",
+        "SEC-04",
+        "SEC-05",
+        "APP-06"
+      ],
+      "references": [
+        "S16",
+        "S17",
+        "S19"
+      ],
+      "consumes": "provider清单、scope/budget/OS平台接口",
+      "produces": "可控启动/停止/崩溃回收、isolation level证据",
+      "implementation": "固定worker binary hash/参数白名单；bootstrap通过parent继承pipe；清环境与无关FD；有限重启。使用假的canary secrets检验OS拒绝未授权访问。没有真正sandbox则明确process-only并限制可发布profile。",
+      "cases": [
+        {
+          "id": "T13-01",
+          "scenario": "worker读无授权canary",
+          "expected": "OS拒绝或标明isolation失败"
+        },
+        {
+          "id": "T13-02",
+          "scenario": "worker命令要求任意shell",
+          "expected": "auth-denied"
+        },
+        {
+          "id": "T13-03",
+          "scenario": "连续4次崩溃/5分钟",
+          "expected": "停止自动重启"
+        },
+        {
+          "id": "T13-04",
+          "scenario": "关闭supervisor",
+          "expected": "无孤儿listener/worker"
+        }
+      ],
+      "verification_command": "cargo test -p interop-runtime workers; 指定OS执行tests/e2e/worker_isolation测试",
+      "gate": "",
+      "status": "planned",
+      "conditional_dependencies": [],
+      "conditional_rule": "Only the selected release/profile needs its corresponding provider. These are not a requirement to finish every protocol first.",
+      "evidence_required": true
+    },
+    {
+      "id": "T14",
+      "title": "实现conformance testkit与证据记录",
+      "depends_on": [
+        "T06",
+        "T08",
+        "T10"
+      ],
+      "files": [
+        "crates/interop-testkit/src/clock.rs",
+        "crates/interop-testkit/src/peer.rs",
+        "crates/interop-testkit/src/evidence.rs",
+        "tests/fixtures/",
+        "lab/evidence/run.schema.json"
+      ],
+      "requirements": [
+        "CORE-03",
+        "APP-05",
+        "APP-08",
+        "SEC-08"
+      ],
+      "references": [],
+      "consumes": "已定义契约与可控fake host",
+      "produces": "fake clock、帧分片/重排注入、独立test fixtures、run manifest",
+      "implementation": "创建自制文件/测试图样fixture，记录生成算法与SHA256。fixture runner只调结构化测试driver，不能eval来自repo的脚本字符串。每个run明确simulated/device/manual及范围。支持脱敏日志与失败原始材料分开保管。",
+      "cases": [
+        {
+          "id": "T14-01",
+          "scenario": "fixture不存在或hash变化",
+          "expected": "验收失败不可静默重录"
+        },
+        {
+          "id": "T14-02",
+          "scenario": "模拟peer自对通",
+          "expected": "仅simulated不升级device-verified"
+        },
+        {
+          "id": "T14-03",
+          "scenario": "日志中出现假token",
+          "expected": "脱敏检查失败"
+        },
+        {
+          "id": "T14-04",
+          "scenario": "随机分片seed固定",
+          "expected": "可重复结果"
+        }
+      ],
+      "verification_command": "cargo test -p interop-testkit",
+      "gate": "",
+      "status": "planned",
+      "conditional_dependencies": [],
+      "conditional_rule": "Only the selected release/profile needs its corresponding provider. These are not a requirement to finish every protocol first.",
+      "evidence_required": true
+    },
+    {
+      "id": "T15",
+      "title": "冻结现有LocalSend行为并决定抽取方式",
+      "depends_on": [
+        "T03",
+        "T04",
+        "T05",
+        "T14"
+      ],
+      "files": [
+        "lab/research/localsend/reuse-map.md",
+        "tests/devices/localsend-baseline.md",
+        "adapters/xross-host/localsend-map.md"
+      ],
+      "requirements": [
+        "FILE-10",
+        "INT-03",
+        "INT-04"
+      ],
+      "references": [
+        "R13",
+        "R14"
+      ],
+      "consumes": "主仓当前LocalSend及库存客户端、官方v2.2文档",
+      "produces": "复用边界、已有通过用例、明确缺口；不重复重写",
+      "implementation": "先在主仓当前commit录双向baseline；比较listener lifecycle、fingerprint、offer/session、TLS、文件commit。若现有code可抽到library，做adapter；否则保持host-owned LocalSend，Interop只桥接事件直到有迁移证据。",
+      "cases": [
+        {
+          "id": "T15-01",
+          "scenario": "原有Android→Xross成功但新adapter失败",
+          "expected": "阻断迁移"
+        },
+        {
+          "id": "T15-02",
+          "scenario": "已有库不依赖UI",
+          "expected": "优先直接适配而非另写状态机"
+        }
+      ],
+      "verification_command": "执行integration-map中实际主仓LocalSend测试命令；记录库存客户端版本",
+      "gate": "",
+      "status": "planned",
+      "conditional_dependencies": [],
+      "conditional_rule": "Only the selected release/profile needs its corresponding provider. These are not a requirement to finish every protocol first.",
+      "evidence_required": true
+    },
+    {
+      "id": "T16",
+      "title": "接入LocalSend正确发现机制",
+      "depends_on": [
+        "T11",
+        "T15"
+      ],
+      "files": [
+        "crates/proto-localsend/src/discovery.rs",
+        "tests/contract/localsend_discovery.rs"
+      ],
+      "requirements": [
+        "CORE-04",
+        "CORE-05",
+        "INT-04"
+      ],
+      "references": [
+        "R13",
+        "R14"
+      ],
+      "consumes": "已通过复用决策的LocalSend模块与EndpointObservation",
+      "produces": "选定接口的multicast/HTTP registration adapter",
+      "implementation": "按固定版本规范接入multicast announce/response和HTTP registration；保留port可配置。fingerprint用于协议范围识别，不认定Xross身份。避免announce互相无限触发与网络切换旧地址残留。",
+      "cases": [
+        {
+          "id": "T16-01",
+          "scenario": "收到announce=false",
+          "expected": "不触发广播风暴"
+        },
+        {
+          "id": "T16-02",
+          "scenario": "自己的fingerprint",
+          "expected": "不显示自己"
+        },
+        {
+          "id": "T16-03",
+          "scenario": "multicast不可用但明确可达HTTP地址",
+          "expected": "使用合法fallback"
+        }
+      ],
+      "verification_command": "cargo test -p proto-localsend discovery",
+      "gate": "",
+      "status": "planned",
+      "conditional_dependencies": [],
+      "conditional_rule": "Only the selected release/profile needs its corresponding provider. These are not a requirement to finish every protocol first.",
+      "evidence_required": true
+    },
+    {
+      "id": "T17",
+      "title": "接入LocalSend接收与安全落盘",
+      "depends_on": [
+        "T08",
+        "T09",
+        "T10",
+        "T16"
+      ],
+      "files": [
+        "crates/proto-localsend/src/receive.rs",
+        "tests/contract/localsend_receive.rs",
+        "tests/devices/localsend-receive.md"
+      ],
+      "requirements": [
+        "FILE-01",
+        "FILE-02",
+        "FILE-03",
+        "FILE-04",
+        "FILE-05",
+        "FILE-06",
+        "FILE-09",
+        "INT-04"
+      ],
+      "references": [
+        "R13",
+        "R14"
+      ],
+      "consumes": "现有LocalSend接收器、OfferAuthority、ContentWriteLease",
+      "produces": "库存sender→统一offer/transfer/history的接收闭环",
+      "implementation": "把准备/批准/文件token绑定映射到host authority；验证token只能上传被批准的entry。支持协议允许的选择范围，wire cancellation及时释放spool。收完整并验证后才publish receipt。",
+      "cases": [
+        {
+          "id": "T17-01",
+          "scenario": "未批准entry被上传",
+          "expected": "auth-denied"
+        },
+        {
+          "id": "T17-02",
+          "scenario": "上传token换session使用",
+          "expected": "auth-denied"
+        },
+        {
+          "id": "T17-03",
+          "scenario": "同名3文件",
+          "expected": "不覆盖既有文件且返回独立receipts"
+        },
+        {
+          "id": "T17-04",
+          "scenario": "取消中断上传",
+          "expected": "无最终文件、临时资源按策略回收"
+        }
+      ],
+      "verification_command": "cargo test -p proto-localsend receive; 库存Android与Windows sender人工E2E",
+      "gate": "",
+      "status": "planned",
+      "conditional_dependencies": [],
+      "conditional_rule": "Only the selected release/profile needs its corresponding provider. These are not a requirement to finish every protocol first.",
+      "evidence_required": true
+    },
+    {
+      "id": "T18",
+      "title": "接入LocalSend发送与重试语义",
+      "depends_on": [
+        "T08",
+        "T10",
+        "T16",
+        "T17"
+      ],
+      "files": [
+        "crates/proto-localsend/src/send.rs",
+        "tests/contract/localsend_send.rs",
+        "tests/devices/localsend-send.md"
+      ],
+      "requirements": [
+        "FILE-01",
+        "FILE-03",
+        "FILE-04",
+        "FILE-06",
+        "FILE-07",
+        "FILE-08",
+        "INT-04"
+      ],
+      "references": [
+        "R13",
+        "R14"
+      ],
+      "consumes": "ContentReadLease/Endpoint registry/库存receiver",
+      "produces": "本地CLI→库存LocalSend双向完成",
+      "implementation": "发送方只有用户所选files的read leases；接收拒绝映射auth-denied；部分接受按真实reply处理。不假设原生transfer的resume能映射LocalSend，断线按已验证wire能力选择重新attempt。",
+      "cases": [
+        {
+          "id": "T18-01",
+          "scenario": "对端拒绝全部",
+          "expected": "不读取/发送payload"
+        },
+        {
+          "id": "T18-02",
+          "scenario": "源文件中途变化",
+          "expected": "source-changed"
+        },
+        {
+          "id": "T18-03",
+          "scenario": "网络断开无resume支持",
+          "expected": "retry新attempt，不显示透明续传"
+        }
+      ],
+      "verification_command": "cargo test -p proto-localsend send; 库存macOS/Android receiver人工E2E",
+      "gate": "",
+      "status": "planned",
+      "conditional_dependencies": [],
+      "conditional_rule": "Only the selected release/profile needs its corresponding provider. These are not a requirement to finish every protocol first.",
+      "evidence_required": true
+    },
+    {
+      "id": "T19",
+      "title": "建立Quick Share wire与来源gate",
+      "depends_on": [
+        "T02",
+        "T04",
+        "T05",
+        "T14"
+      ],
+      "files": [
+        "lab/research/quickshare/dossier.md",
+        "lab/specs-reviewed/quickshare-lan.md",
+        "lab/evidence/quickshare/",
+        "lab/provenance/quickshare-inputs.json"
+      ],
+      "requirements": [
+        "CORE-02",
+        "SEC-02",
+        "SEC-06",
+        "APP-08"
+      ],
+      "references": [
+        "R15",
+        "R16",
+        "R17",
+        "R18",
+        "R19",
+        "R20"
+      ],
+      "consumes": "固定NearDrop/Bada/Nearby/UKEY2源码和库存Android环境",
+      "produces": "LAN/QR profile的独立事实规范、测试向量、来源允许列表",
+      "implementation": "分别记录endpoint discovery、UKEY2、channel framing、paired-key验证、introduction、payload与cancel。为LAN接收和反向发送列不同发现前提。GPL分析只在restricted区；不得把其Rust函数翻译后当MIT新实现。",
+      "cases": [
+        {
+          "id": "T19-01",
+          "scenario": "只有对端被discover但握手失败",
+          "expected": "状态不能记transfer成功"
+        },
+        {
+          "id": "T19-02",
+          "scenario": "二维码打开可发现不等于认证",
+          "expected": "仍需确认/校验完整会话"
+        },
+        {
+          "id": "T19-03",
+          "scenario": "文档与两实现相冲突",
+          "expected": "用具名真机实验裁决并记录"
+        }
+      ],
+      "verification_command": "依据dossier模板审核并运行只读reference比较；无未证实必需字段才能进入T20",
+      "gate": "",
+      "status": "planned",
+      "conditional_dependencies": [],
+      "conditional_rule": "Only the selected release/profile needs its corresponding provider. These are not a requirement to finish every protocol first.",
+      "evidence_required": true
+    },
+    {
+      "id": "T20",
+      "title": "实现Quick Share受限安全会话核心",
+      "depends_on": [
+        "T06",
+        "T07",
+        "T10",
+        "T14",
+        "T19"
+      ],
+      "files": [
+        "crates/proto-quickshare/src/framing.rs",
+        "crates/proto-quickshare/src/handshake.rs",
+        "crates/proto-quickshare/src/session.rs",
+        "tests/contract/quickshare_crypto.rs"
+      ],
+      "requirements": [
+        "CORE-06",
+        "SEC-01",
+        "SEC-03",
+        "SEC-06"
+      ],
+      "references": [
+        "R17",
+        "R18"
+      ],
+      "consumes": "已放行spec/独立fixture和成熟密码原语crate",
+      "produces": "可离线测试的handshake/state/framing，不含UI/文件系统",
+      "implementation": "严格按已确认suite实现状态转换与key derivation，使用成熟crypto实现，不自写椭圆曲线/AES。验证每步transcript/commitment/确认码；拒绝重放、截断、未知帧类型和不合法长度。",
+      "cases": [
+        {
+          "id": "T20-01",
+          "scenario": "确认码/transcript不匹配",
+          "expected": "pairing-failed、不交付payload"
+        },
+        {
+          "id": "T20-02",
+          "scenario": "重放旧handshake frame",
+          "expected": "拒绝"
+        },
+        {
+          "id": "T20-03",
+          "scenario": "长度溢出/截断protobuf",
+          "expected": "invalid-frame，无panic"
+        },
+        {
+          "id": "T20-04",
+          "scenario": "TCP任意分片",
+          "expected": "与完整输入同结果"
+        }
+      ],
+      "verification_command": "cargo test -p proto-quickshare handshake; cargo test -p proto-quickshare framing",
+      "gate": "",
+      "status": "planned",
+      "conditional_dependencies": [],
+      "conditional_rule": "Only the selected release/profile needs its corresponding provider. These are not a requirement to finish every protocol first.",
+      "evidence_required": true
+    },
+    {
+      "id": "T21",
+      "title": "Quick Share LAN接收闭环",
+      "depends_on": [
+        "T08",
+        "T11",
+        "T19",
+        "T20"
+      ],
+      "files": [
+        "crates/proto-quickshare/src/receive.rs",
+        "crates/proto-quickshare/src/discovery.rs",
+        "tests/devices/quickshare-receive.md"
+      ],
+      "requirements": [
+        "FILE-01",
+        "FILE-02",
+        "FILE-03",
+        "FILE-04",
+        "FILE-05",
+        "FILE-06",
+        "FILE-09"
+      ],
+      "references": [
+        "R15",
+        "R16",
+        "R17"
+      ],
+      "consumes": "握手core、approved discovery facts、host grants",
+      "produces": "Android原生Quick Share→macOS/Linux独立receiver",
+      "implementation": "先选同LAN、发送端手动分享作为最小路径；会话元数据转Offer，host批准后stream写lease。校验wire payloadID与entryID绑定、块offset、长度和terminal通知；对方claim的MIME只作提示。",
+      "cases": [
+        {
+          "id": "T21-01",
+          "scenario": "两个payloadID混入同entry",
+          "expected": "拒绝且不发布"
+        },
+        {
+          "id": "T21-02",
+          "scenario": "用户拒绝",
+          "expected": "对端显示拒绝/失败、无最终文件"
+        },
+        {
+          "id": "T21-03",
+          "scenario": "10GiB合成文件/配额允许",
+          "expected": "常数级内存流式传输"
+        },
+        {
+          "id": "T21-04",
+          "scenario": "发送方伪造filename穿越",
+          "expected": "FILE-05规则拒绝"
+        }
+      ],
+      "verification_command": "cargo test -p proto-quickshare receive; Android原生QuickShare→Mac真机运行并记录hash",
+      "gate": "",
+      "status": "planned",
+      "conditional_dependencies": [],
+      "conditional_rule": "Only the selected release/profile needs its corresponding provider. These are not a requirement to finish every protocol first.",
+      "evidence_required": true
+    },
+    {
+      "id": "T22",
+      "title": "Quick Share LAN/QR发送闭环",
+      "depends_on": [
+        "T08",
+        "T11",
+        "T20",
+        "T21"
+      ],
+      "files": [
+        "crates/proto-quickshare/src/send.rs",
+        "crates/proto-quickshare/src/qr.rs",
+        "tests/devices/quickshare-send.md"
+      ],
+      "requirements": [
+        "CORE-05",
+        "FILE-01",
+        "FILE-03",
+        "FILE-04",
+        "FILE-08"
+      ],
+      "references": [
+        "R15",
+        "R16",
+        "R17"
+      ],
+      "consumes": "已验证receiver profile与发送发现方式",
+      "produces": "Mac/Linux→原生Android；二维码/手动可发现明确显示",
+      "implementation": "先实现已验证QR或用户显式打开可见状态，不要求macOS发不可用BLE广告。只选合法endpoint和read leases；错误确认码/远端拒绝不发送数据；不要把Google账户同联系人功能假装已实现。",
+      "cases": [
+        {
+          "id": "T22-01",
+          "scenario": "Android未可发现",
+          "expected": "提示正确入口/二维码而非伪造设备"
+        },
+        {
+          "id": "T22-02",
+          "scenario": "远端确认码错",
+          "expected": "pairing-failed"
+        },
+        {
+          "id": "T22-03",
+          "scenario": "取消发送",
+          "expected": "停流并清理两端会话可见状态"
+        }
+      ],
+      "verification_command": "cargo test -p proto-quickshare send; 原生Android接收真机测试",
+      "gate": "",
+      "status": "planned",
+      "conditional_dependencies": [],
+      "conditional_rule": "Only the selected release/profile needs its corresponding provider. These are not a requirement to finish every protocol first.",
+      "evidence_required": true
+    },
+    {
+      "id": "T23",
+      "title": "Quick Share BLE/P2P能力probe与可选升级",
+      "depends_on": [
+        "T12",
+        "T20",
+        "T21",
+        "T22"
+      ],
+      "files": [
+        "crates/interop-platform/src/quickshare_radio.rs",
+        "lab/research/quickshare/radio-matrix.md",
+        "tests/devices/quickshare-p2p.md"
+      ],
+      "requirements": [
+        "CORE-09",
+        "SEC-09",
+        "APP-08"
+      ],
+      "references": [
+        "R16",
+        "R17",
+        "R19",
+        "R63"
+      ],
+      "consumes": "已验证LAN transfer和radio lease",
+      "produces": "每OS的BLE bootstrap/P2P能力声明与受控fallback",
+      "implementation": "先在Android/Linux/Windows指定设备probe，macOS不能公开实现的标不可用。先证明广播与组连接，再接会话升级；验证升级与原握手身份绑定。不能关闭用户网络或自动请求管理员。",
+      "cases": [
+        {
+          "id": "T23-01",
+          "scenario": "BLE可扫描但无法所需广告",
+          "expected": "只声明scan不声明bootstrap"
+        },
+        {
+          "id": "T23-02",
+          "scenario": "P2P升级失败",
+          "expected": "保持合法LAN路径或明确失败，无数据串session"
+        },
+        {
+          "id": "T23-03",
+          "scenario": "P2P组结束",
+          "expected": "网络状态恢复证据"
+        }
+      ],
+      "verification_command": "平台fake测试+指定网卡真机probe；记录前后网络状态",
+      "gate": "没有公开API/硬件支持时交付blocked profile；LAN能力继续发布。",
+      "status": "planned",
+      "conditional_dependencies": [],
+      "conditional_rule": "Only the selected release/profile needs its corresponding provider. These are not a requirement to finish every protocol first.",
+      "evidence_required": true
+    },
+    {
+      "id": "T24",
+      "title": "浏览器HTTPS/QR临时文件网关",
+      "depends_on": [
+        "T07",
+        "T08",
+        "T09",
+        "T10"
+      ],
+      "files": [
+        "crates/interop-file/src/http_gateway.rs",
+        "apps/browser-share/",
+        "tests/e2e/browser_share.rs"
+      ],
+      "requirements": [
+        "FILE-01",
+        "FILE-05",
+        "FILE-08",
+        "SEC-05",
+        "SEC-08",
+        "APP-04",
+        "INT-03"
+      ],
+      "references": [
+        "R13",
+        "S27"
+      ],
+      "consumes": "host内容read/write lease与现有Xross HTTP gateway映射",
+      "produces": "有限时间/文件/方法的浏览器上传下载入口",
+      "implementation": "优先复用主仓已有range/version/lease逻辑，standalone实现同ports。下载URL仅作用单资源；上传要求明确授权、origin/CSRF防护和quota。TLS信任不合格时清晰说明实验条件，不关闭证书校验。",
+      "cases": [
+        {
+          "id": "T24-01",
+          "scenario": "token换资源ID",
+          "expected": "403"
+        },
+        {
+          "id": "T24-02",
+          "scenario": "URL过期或stop",
+          "expected": "410/403"
+        },
+        {
+          "id": "T24-03",
+          "scenario": "Range时源版本改变",
+          "expected": "source-changed而非拼接新旧文件"
+        },
+        {
+          "id": "T24-04",
+          "scenario": "跨域网页伪造上传/审批",
+          "expected": "被拒绝"
+        }
+      ],
+      "verification_command": "cargo test -p interop-file http_gateway; 浏览器E2E",
+      "gate": "",
+      "status": "planned",
+      "conditional_dependencies": [],
+      "conditional_rule": "Only the selected release/profile needs its corresponding provider. These are not a requirement to finish every protocol first.",
+      "evidence_required": true
+    },
+    {
+      "id": "T25",
+      "title": "Windows NearShare协议研究与adapter",
+      "depends_on": [
+        "T04",
+        "T05",
+        "T08",
+        "T14"
+      ],
+      "files": [
+        "lab/research/nearshare/dossier.md",
+        "crates/proto-nearshare/",
+        "tests/devices/nearshare.md"
+      ],
+      "requirements": [
+        "CORE-02",
+        "FILE-01",
+        "FILE-02",
+        "FILE-05",
+        "SEC-01"
+      ],
+      "references": [
+        "R23",
+        "S28"
+      ],
+      "consumes": "MS-CDP资料与固定Android实现，独立运行Windows原生对端",
+      "produces": "经认证的NearShare→Offer adapter或有证据blocker",
+      "implementation": "先确认公开规范/上层NearShare消息、发现介质、配对、证书和Windows版本，输出reviewed spec后实现。测试direction分别记录；所有received files仍通过同一个storage lease。",
+      "cases": [
+        {
+          "id": "T25-01",
+          "scenario": "Windows Share入口发现不到Xross",
+          "expected": "先记录discovery blocker，不写文件解析伪装完成"
+        },
+        {
+          "id": "T25-02",
+          "scenario": "未配对发送文件",
+          "expected": "需要审批/身份规则"
+        },
+        {
+          "id": "T25-03",
+          "scenario": "完成后hash不一致",
+          "expected": "integrity-failed"
+        }
+      ],
+      "verification_command": "来源gate后cargo test -p proto-nearshare；Windows原生Share双向设备测试",
+      "gate": "",
+      "status": "planned",
+      "conditional_dependencies": [],
+      "conditional_rule": "Only the selected release/profile needs its corresponding provider. These are not a requirement to finish every protocol first.",
+      "evidence_required": true
+    },
+    {
+      "id": "T26",
+      "title": "KDE Connect仅share子集",
+      "depends_on": [
+        "T04",
+        "T05",
+        "T07",
+        "T08",
+        "T14"
+      ],
+      "files": [
+        "lab/research/kdeconnect/dossier.md",
+        "workers/kdeconnect/",
+        "tests/devices/kdeconnect-share.md"
+      ],
+      "requirements": [
+        "FILE-01",
+        "FILE-02",
+        "SEC-01",
+        "SEC-04"
+      ],
+      "references": [
+        "R24",
+        "R25"
+      ],
+      "consumes": "库存KDE Connect和选择的合法实现路线",
+      "produces": "只包含pair/discovery/share的provider",
+      "implementation": "先external daemon或来源审查后独立实现；协议pairing identity单独store；capability whitelist只share/必需metadata。远端其他plugin requests默认unsupported，不将host全部插件接上。",
+      "cases": [
+        {
+          "id": "T26-01",
+          "scenario": "share配对后请求runcommand",
+          "expected": "unsupported-feature/auth-denied"
+        },
+        {
+          "id": "T26-02",
+          "scenario": "撤销配对后新文件",
+          "expected": "要求重新批准"
+        },
+        {
+          "id": "T26-03",
+          "scenario": "文本URL与文件",
+          "expected": "分别映射合适offer"
+        }
+      ],
+      "verification_command": "独立provider tests + 库存KDE/GSConnect双向share测试",
+      "gate": "",
+      "status": "planned",
+      "conditional_dependencies": [],
+      "conditional_rule": "Only the selected release/profile needs its corresponding provider. These are not a requirement to finish every protocol first.",
+      "evidence_required": true
+    },
+    {
+      "id": "T27",
+      "title": "Bluetooth OPP系统接口接收/发送",
+      "depends_on": [
+        "T04",
+        "T05",
+        "T08",
+        "T12"
+      ],
+      "files": [
+        "lab/research/obex/dossier.md",
+        "workers/obex/",
+        "tests/devices/obex.md"
+      ],
+      "requirements": [
+        "CORE-09",
+        "FILE-01",
+        "FILE-02",
+        "FILE-05"
+      ],
+      "references": [
+        "R61",
+        "S21"
+      ],
+      "consumes": "所选OS的公开OBEX服务和指定设备",
+      "produces": "OPP能力probe与有限文件share provider",
+      "implementation": "Linux优先使用系统BlueZ/obex服务接口；别把蓝牙配对当任意文件接受。Windows/mobile对公开API和系统profile逐项probe；不可用的平台显示对应限制。",
+      "cases": [
+        {
+          "id": "T27-01",
+          "scenario": "未批准OBEX push",
+          "expected": "无最终文件"
+        },
+        {
+          "id": "T27-02",
+          "scenario": "低速/未知总大小",
+          "expected": "显示真实bytes不假百分比"
+        },
+        {
+          "id": "T27-03",
+          "scenario": "蓝牙中断",
+          "expected": "明确失败/重试新attempt"
+        }
+      ],
+      "verification_command": "platform接口测试+Android↔受支持PC真机OPP测试",
+      "gate": "",
+      "status": "planned",
+      "conditional_dependencies": [],
+      "conditional_rule": "Only the selected release/profile needs its corresponding provider. These are not a requirement to finish every protocol first.",
+      "evidence_required": true
+    },
+    {
+      "id": "T28",
+      "title": "实现媒体形态、时钟与数据frame",
+      "depends_on": [
+        "T06",
+        "T09",
+        "T10",
+        "T14"
+      ],
+      "files": [
+        "crates/interop-media/src/descriptor.rs",
+        "crates/interop-media/src/clock.rs",
+        "crates/interop-ipc/src/media_frame.rs",
+        "tests/contract/media.rs"
+      ],
+      "requirements": [
+        "MEDIA-01",
+        "MEDIA-02",
+        "MEDIA-03",
+        "MEDIA-07",
+        "SEC-03"
+      ],
+      "references": [
+        "S05",
+        "S26"
+      ],
+      "consumes": "MediaDescriptor与36byte XMD1数据frame定义",
+      "produces": "encoded/PCM/native/resource四类typed source与有界binary通道",
+      "implementation": "实现frame尺寸/序号/format变更验证和有界队列；区分远端timebase、本地monotonic、wall time。没有PTS/DTS明确标志。native presentation只发opaque owner reference，不能序列化裸pointer。",
+      "cases": [
+        {
+          "id": "T28-01",
+          "scenario": "声明payload大于16MiB",
+          "expected": "分配前resource-limit"
+        },
+        {
+          "id": "T28-02",
+          "scenario": "timebase denominator=0",
+          "expected": "invalid-frame"
+        },
+        {
+          "id": "T28-03",
+          "scenario": "format_id变化无decoder reset",
+          "expected": "测试必须失败"
+        },
+        {
+          "id": "T28-04",
+          "scenario": "native-only source请求export",
+          "expected": "unsupported-feature"
+        }
+      ],
+      "verification_command": "cargo test -p interop-media; cargo test -p interop-ipc media_frame",
+      "gate": "",
+      "status": "planned",
+      "conditional_dependencies": [],
+      "conditional_rule": "Only the selected release/profile needs its corresponding provider. These are not a requirement to finish every protocol first.",
+      "evidence_required": true
+    },
+    {
+      "id": "T29",
+      "title": "实现null/file/native播放器sink",
+      "depends_on": [
+        "T05",
+        "T13",
+        "T28"
+      ],
+      "files": [
+        "crates/interop-media/src/sinks.rs",
+        "workers/presentation/",
+        "tests/e2e/media_sinks.rs"
+      ],
+      "requirements": [
+        "MEDIA-04",
+        "MEDIA-05",
+        "MEDIA-07",
+        "APP-02"
+      ],
+      "references": [
+        "R50",
+        "R52",
+        "R53",
+        "R60",
+        "S20"
+      ],
+      "consumes": "自制H264/PCM fixture、已审查GStreamer/native后端",
+      "produces": "无GUI可接收，图形会话可受控呈现的player",
+      "implementation": "先null sink统计frame/timebase，再file sink保存自有测试内容，最后native window。固定允许codec和插件，声卡/显示缺失不影响null/file。播放和文件输出共用同一source不重复解码不必然保证，按实际graph决定。",
+      "cases": [
+        {
+          "id": "T29-01",
+          "scenario": "无DISPLAY/无音频设备运行null",
+          "expected": "成功统计帧且不初始化UI"
+        },
+        {
+          "id": "T29-02",
+          "scenario": "44.1k PCM输出48k设备",
+          "expected": "显式resample节点，不变速"
+        },
+        {
+          "id": "T29-03",
+          "scenario": "损坏或巨大dimensions",
+          "expected": "受控失败，不拖垮supervisor"
+        }
+      ],
+      "verification_command": "cargo test -p interop-media sinks; 在无UI容器和桌面分别执行自制媒体fixture",
+      "gate": "",
+      "status": "planned",
+      "conditional_dependencies": [],
+      "conditional_rule": "Only the selected release/profile needs its corresponding provider. These are not a requirement to finish every protocol first.",
+      "evidence_required": true
+    },
+    {
+      "id": "T30",
+      "title": "UxPlay外部receiver provider闭环",
+      "depends_on": [
+        "T05",
+        "T13",
+        "T28",
+        "T29"
+      ],
+      "files": [
+        "lab/pocs/uxplay-provider/",
+        "workers/uxplay/",
+        "tests/devices/airplay-uxplay.md"
+      ],
+      "requirements": [
+        "MEDIA-01",
+        "MEDIA-02",
+        "MEDIA-04",
+        "SEC-04",
+        "APP-05"
+      ],
+      "references": [
+        "R01"
+      ],
+      "consumes": "锁定UxPlay、自有内容iPhone、独立player和worker contract",
+      "produces": "可启动/停止、可查询、可呈现的外部AirPlay provider",
+      "implementation": "先用库存binary正常窗口重现用户成功，再选择经文档验证的RTP/callback路径输出到sink。不臆造UxPlay现成JSON IPC；需要修改时修改在GPL-labelled wrapper产物中。生命周期和PIN事件不靠无限正则猜日志，必要时做明确接口patch。",
+      "cases": [
+        {
+          "id": "T30-01",
+          "scenario": "iPhone控制中心镜像",
+          "expected": "有具名设备版本和首帧证据"
+        },
+        {
+          "id": "T30-02",
+          "scenario": "拒绝PIN/停止",
+          "expected": "无持续媒体和残留监听"
+        },
+        {
+          "id": "T30-03",
+          "scenario": "worker crash",
+          "expected": "Xross/LocalSend不退出"
+        },
+        {
+          "id": "T30-04",
+          "scenario": "RTP输出无法实现目标",
+          "expected": "保留native-window形态，raw能力不标成功"
+        }
+      ],
+      "verification_command": "锁定UxPlay在隔离环境构建/运行；执行tests/devices/airplay-uxplay.md步骤",
+      "gate": "GPL wrapper与组合分发方案需T05批准；本阶段不要求独立Rust协议已完成。",
+      "status": "planned",
+      "conditional_dependencies": [],
+      "conditional_rule": "Only the selected release/profile needs its corresponding provider. These are not a requirement to finish every protocol first.",
+      "evidence_required": true
+    },
+    {
+      "id": "T31",
+      "title": "AirPlay独立实现前的规范/来源/兼容语料gate",
+      "depends_on": [
+        "T04",
+        "T05",
+        "T14",
+        "T30"
+      ],
+      "files": [
+        "lab/research/airplay/gap-analysis.md",
+        "lab/specs-reviewed/airplay-legacy-mirror.md",
+        "lab/provenance/airplay-inputs.json",
+        "lab/evidence/airplay-corpus/"
+      ],
+      "requirements": [
+        "SEC-06",
+        "SEC-10",
+        "MEDIA-05",
+        "APP-08"
+      ],
+      "references": [
+        "R01",
+        "R02",
+        "R03",
+        "R05",
+        "R06",
+        "R08",
+        "R09",
+        "R10"
+      ],
+      "consumes": "至少一个真机接收基线、多个参考实现和合法资料",
+      "produces": "分模块gap、独立fixture、可用密码兼容路线和明确法律风险",
+      "implementation": "按discovery/control/pairing/key setup/video/audio/timing/teardown拆；分清规范事实与第三方代码/常量。密码材料或受保护表达没有可用许可就不能硬写假stub通过测试；记录合法library/worker替代路径。",
+      "cases": [
+        {
+          "id": "T31-01",
+          "scenario": "视频能解密但音频未验证",
+          "expected": "两个能力分开"
+        },
+        {
+          "id": "T31-02",
+          "scenario": "FairPlay材料来源不能说明",
+          "expected": "独立permissive产物blocked，外部合规provider仍可研究"
+        },
+        {
+          "id": "T31-03",
+          "scenario": "只比较selftest",
+          "expected": "不替代iPhone真实互通"
+        }
+      ],
+      "verification_command": "按dossier和provenance模板进行审查；所有必要wire字段标注可复查来源",
+      "gate": "",
+      "status": "planned",
+      "conditional_dependencies": [],
+      "conditional_rule": "Only the selected release/profile needs its corresponding provider. These are not a requirement to finish every protocol first.",
+      "evidence_required": true
+    },
+    {
+      "id": "T32",
+      "title": "AirPlay Rust discovery/control/session核心",
+      "depends_on": [
+        "T06",
+        "T07",
+        "T11",
+        "T14",
+        "T31"
+      ],
+      "files": [
+        "crates/proto-airplay/src/discovery.rs",
+        "crates/proto-airplay/src/rtsp.rs",
+        "crates/proto-airplay/src/session.rs",
+        "tests/contract/airplay_control.rs"
+      ],
+      "requirements": [
+        "CORE-02",
+        "CORE-06",
+        "SEC-01",
+        "SEC-03",
+        "SEC-06"
+      ],
+      "references": [
+        "R10"
+      ],
+      "consumes": "获批AirPlay事实规范、许可兼容crypto provider",
+      "produces": "可测试的legacy receiver控制链、准确广告能力",
+      "implementation": "先发现和info/控制帧，严格schema/framing；再配对/密钥session；只广播已实现feature。每连接资源和端口由broker管理，认证前不得分配视频大缓冲。所有message payload来自独立/合法fixture。",
+      "cases": [
+        {
+          "id": "T32-01",
+          "scenario": "缺失/重复body长度",
+          "expected": "明确拒绝"
+        },
+        {
+          "id": "T32-02",
+          "scenario": "未完成所需会话认证请求media",
+          "expected": "不开始流"
+        },
+        {
+          "id": "T32-03",
+          "scenario": "广告HEVC但没有decoder/接收实现",
+          "expected": "构建/能力测试失败"
+        },
+        {
+          "id": "T32-04",
+          "scenario": "快速连接断开100次",
+          "expected": "session/port资源回收"
+        }
+      ],
+      "verification_command": "cargo test -p proto-airplay control",
+      "gate": "T31未批准的资料不能进入这个crate；允许保持外部provider而非强行重写。",
+      "status": "planned",
+      "conditional_dependencies": [],
+      "conditional_rule": "Only the selected release/profile needs its corresponding provider. These are not a requirement to finish every protocol first.",
+      "evidence_required": true
+    },
+    {
+      "id": "T33",
+      "title": "AirPlay legacy镜像音视频接收",
+      "depends_on": [
+        "T28",
+        "T29",
+        "T32"
+      ],
+      "files": [
+        "crates/proto-airplay/src/mirror.rs",
+        "crates/proto-airplay/src/audio.rs",
+        "crates/proto-airplay/src/timing.rs",
+        "tests/devices/airplay-rust.md"
+      ],
+      "requirements": [
+        "MEDIA-01",
+        "MEDIA-03",
+        "MEDIA-05",
+        "MEDIA-07",
+        "MEDIA-10",
+        "APP-08"
+      ],
+      "references": [
+        "R01",
+        "R02",
+        "R10"
+      ],
+      "consumes": "已授权控制session与bounded media sink",
+      "produces": "iPhone/iPad/Mac→Rust receiver的分轨输出",
+      "implementation": "保持codec config与frames、音频clock、format变化和discontinuity；第一目标H264+一个真机验证音频profile。以UxPlay行为作对照不是逐函数翻译。buffer超过预算按关键帧策略恢复，媒体停止清理cipher/session。",
+      "cases": [
+        {
+          "id": "T33-01",
+          "scenario": "横竖屏往返",
+          "expected": "format更新、画面恢复、无越界"
+        },
+        {
+          "id": "T33-02",
+          "scenario": "连续30分钟自有测试音画 =>记录drift/丢帧/内存趋势",
+          "expected": "连续30分钟自有测试音画 =>记录drift/丢帧/内存趋势"
+        },
+        {
+          "id": "T33-03",
+          "scenario": "20次断开重连",
+          "expected": "每次独立key/clock generation且资源无持续增长"
+        },
+        {
+          "id": "T33-04",
+          "scenario": "HEVC不支持",
+          "expected": "不广告该能力"
+        }
+      ],
+      "verification_command": "cargo test -p proto-airplay mirror; 与固定UxPlay基线按相同设备/网络执行真机回归",
+      "gate": "",
+      "status": "planned",
+      "conditional_dependencies": [],
+      "conditional_rule": "Only the selected release/profile needs its corresponding provider. These are not a requirement to finish every protocol first.",
+      "evidence_required": true
+    },
+    {
+      "id": "T34",
+      "title": "AP1/AP2音频与持久配对扩展",
+      "depends_on": [
+        "T28",
+        "T29",
+        "T31",
+        "T32"
+      ],
+      "files": [
+        "crates/proto-airplay/src/audio_profiles.rs",
+        "crates/proto-airplay/src/pair_store.rs",
+        "tests/devices/airplay-audio.md"
+      ],
+      "requirements": [
+        "MEDIA-03",
+        "MEDIA-05",
+        "MEDIA-06",
+        "SEC-01",
+        "SEC-08"
+      ],
+      "references": [
+        "R02",
+        "R07",
+        "R10",
+        "R11"
+      ],
+      "consumes": "音频profile独立dossier，legal provider和clock映射",
+      "produces": "AP1/AP2各方向的明确能力，buffered与realtime分别声明",
+      "implementation": "先AP1 null/native音频，再AP2配对/持久store/缓冲/实时链路；使用host受控secret store，不能重用Xross设备key。多房间/5.1/7.1/输出混音每项独立profile，通过前不广告。",
+      "cases": [
+        {
+          "id": "T34-01",
+          "scenario": "持久pairing重启",
+          "expected": "正确恢复或明确要求重配，不随机伪装同身份"
+        },
+        {
+          "id": "T34-02",
+          "scenario": "pairing撤销",
+          "expected": "旧会话不能重新获取媒体权限"
+        },
+        {
+          "id": "T34-03",
+          "scenario": "音频capture/播放rate变化",
+          "expected": "显式resample与clock重新映射"
+        },
+        {
+          "id": "T34-04",
+          "scenario": "媒体控制不支持",
+          "expected": "UI不显示可操作seek"
+        }
+      ],
+      "verification_command": "cargo test -p proto-airplay audio_profiles; 指定sender/speaker设备矩阵",
+      "gate": "",
+      "status": "planned",
+      "conditional_dependencies": [],
+      "conditional_rule": "Only the selected release/profile needs its corresponding provider. These are not a requirement to finish every protocol first.",
+      "evidence_required": true
+    },
+    {
+      "id": "T35",
+      "title": "AirPlay发送端分媒体URL/音频/镜像实现",
+      "depends_on": [
+        "T04",
+        "T05",
+        "T24",
+        "T28",
+        "T31"
+      ],
+      "files": [
+        "lab/specs-reviewed/airplay-sender.md",
+        "crates/proto-airplay/src/sender/",
+        "tests/devices/airplay-sender.md"
+      ],
+      "requirements": [
+        "CORE-02",
+        "MEDIA-01",
+        "MEDIA-05",
+        "MEDIA-06",
+        "MEDIA-09"
+      ],
+      "references": [
+        "R10",
+        "R11",
+        "R12"
+      ],
+      "consumes": "真实AirPlay sink、sender独立规范与受控内容源",
+      "produces": "URL/音频先行，mirror source单独成功后开放",
+      "implementation": "不能把receiver状态机反转当sender；先验证media URL/音频已支持路径，再用test-pattern编码镜像。捕获真实屏幕由T48负责。每profile保留设备配对、codec、授权和端到端延迟证据。",
+      "cases": [
+        {
+          "id": "T35-01",
+          "scenario": "能发送歌曲但不能镜像",
+          "expected": "只audio sender支持"
+        },
+        {
+          "id": "T35-02",
+          "scenario": "TV要求配对但未完成",
+          "expected": "pairing-failed"
+        },
+        {
+          "id": "T35-03",
+          "scenario": "停止URL会话",
+          "expected": "撤销host资源URL lease"
+        }
+      ],
+      "verification_command": "cargo test -p proto-airplay sender; 原生接收器逐profile设备测试",
+      "gate": "",
+      "status": "planned",
+      "conditional_dependencies": [],
+      "conditional_rule": "Only the selected release/profile needs its corresponding provider. These are not a requirement to finish every protocol first.",
+      "evidence_required": true
+    },
+    {
+      "id": "T36",
+      "title": "Windows Miracast native receiver可行性切片",
+      "depends_on": [
+        "T04",
+        "T05",
+        "T12",
+        "T13",
+        "T28",
+        "T29"
+      ],
+      "files": [
+        "workers/windows-miracast/",
+        "lab/research/wfd/windows-native-probe.md",
+        "tests/devices/windows-miracast.md"
+      ],
+      "requirements": [
+        "CORE-09",
+        "MEDIA-01",
+        "MEDIA-02",
+        "MEDIA-04",
+        "APP-08"
+      ],
+      "references": [
+        "R64",
+        "S04",
+        "S05"
+      ],
+      "consumes": "兼容无线网卡/Windows用户会话/WinRT API",
+      "produces": "能从Smart View/Win+K接收的native presentation或准确blocker",
+      "implementation": "先最小本地native程序查询status，按官方API先订阅MediaSourceCreated再start。记录package identity/apartment/UI线程/capability需求。owner持有MediaSource并播放；之后才probe raw/record/export，不伪造成功。",
+      "cases": [
+        {
+          "id": "T36-01",
+          "scenario": "系统报告无线不支持",
+          "expected": "hardware-unavailable"
+        },
+        {
+          "id": "T36-02",
+          "scenario": "MediaSourceCreated成功但raw导出不可用",
+          "expected": "presentation=true/export=false"
+        },
+        {
+          "id": "T36-03",
+          "scenario": "用户会话关闭",
+          "expected": "会话正确结束、无session0黑窗"
+        },
+        {
+          "id": "T36-04",
+          "scenario": "同机Wireless Display冲突",
+          "expected": "清楚提示不强停系统服务"
+        }
+      ],
+      "verification_command": "构建Windows专属worker并执行真机probe；Cargo/WinRT编译只是build-verified",
+      "gate": "",
+      "status": "planned",
+      "conditional_dependencies": [],
+      "conditional_rule": "Only the selected release/profile needs its corresponding provider. These are not a requirement to finish every protocol first.",
+      "evidence_required": true
+    },
+    {
+      "id": "T37",
+      "title": "WFD纯状态机与媒体协商",
+      "depends_on": [
+        "T04",
+        "T05",
+        "T06",
+        "T14",
+        "T28"
+      ],
+      "files": [
+        "lab/specs-reviewed/wfd.md",
+        "crates/proto-wfd/src/rtsp.rs",
+        "crates/proto-wfd/src/capabilities.rs",
+        "crates/proto-wfd/src/state.rs",
+        "tests/contract/wfd.rs"
+      ],
+      "requirements": [
+        "CORE-02",
+        "CORE-06",
+        "MEDIA-01",
+        "MEDIA-05",
+        "SEC-03"
+      ],
+      "references": [
+        "R32",
+        "R33",
+        "R34",
+        "R37",
+        "R41",
+        "S24"
+      ],
+      "consumes": "获批WFD事实/规范、角色分离的states与fixtures",
+      "produces": "不碰网卡的source/sink协商core与有界RTSP解析",
+      "implementation": "先M1/M7相关角色/请求响应事实核对，再写状态机和格式选择；双方codec交集明确。UIBC/content protection是可选且单独权限；不实现的选项不广告。测试端口参数与合法转移。",
+      "cases": [
+        {
+          "id": "T37-01",
+          "scenario": "source/sink角色收到非法顺序",
+          "expected": "protocol error不跳状态"
+        },
+        {
+          "id": "T37-02",
+          "scenario": "无共同codec",
+          "expected": "unsupported-feature"
+        },
+        {
+          "id": "T37-03",
+          "scenario": "对端要求未支持content protection",
+          "expected": "明确拒绝而非绕过"
+        },
+        {
+          "id": "T37-04",
+          "scenario": "重复PLAY/TEARDOWN",
+          "expected": "幂等或按规范拒绝，无泄漏"
+        }
+      ],
+      "verification_command": "cargo test -p proto-wfd",
+      "gate": "",
+      "status": "planned",
+      "conditional_dependencies": [],
+      "conditional_rule": "Only the selected release/profile needs its corresponding provider. These are not a requirement to finish every protocol first.",
+      "evidence_required": true
+    },
+    {
+      "id": "T38",
+      "title": "Linux Miracast sink平台闭环",
+      "depends_on": [
+        "T12",
+        "T13",
+        "T29",
+        "T37"
+      ],
+      "files": [
+        "workers/linux-wfd/src/sink.rs",
+        "lab/research/wfd/linux-radio.md",
+        "tests/devices/linux-wfd-sink.md"
+      ],
+      "requirements": [
+        "CORE-09",
+        "MEDIA-01",
+        "MEDIA-03",
+        "SEC-04",
+        "SEC-09"
+      ],
+      "references": [
+        "R32",
+        "R37"
+      ],
+      "consumes": "指定备用P2P网卡、已审批radio lease和WFD core",
+      "produces": "Android/Windows→Linux sink，必要平台依赖有回滚",
+      "implementation": "使用独立实验网卡和系统服务整合；不得照抄README在用户主机停NetworkManager。先发现/P2P组，再RTSP/RTP/TS/decoder；每阶段独立日志。root broker仅有限网络操作。",
+      "cases": [
+        {
+          "id": "T38-01",
+          "scenario": "P2P group建立失败",
+          "expected": "不启动媒体播放假进度"
+        },
+        {
+          "id": "T38-02",
+          "scenario": "worker退出",
+          "expected": "组/端口/临时网络配置回收"
+        },
+        {
+          "id": "T38-03",
+          "scenario": "其他LAN传输并行",
+          "expected": "不被无线试验隐式断开"
+        }
+      ],
+      "verification_command": "WFD core测试 + Android/Win+K→指定Linux网卡真机测试",
+      "gate": "无合适网卡/公开服务接口时blocked硬件profile，不影响LAN协议。",
+      "status": "planned",
+      "conditional_dependencies": [],
+      "conditional_rule": "Only the selected release/profile needs its corresponding provider. These are not a requirement to finish every protocol first.",
+      "evidence_required": true
+    },
+    {
+      "id": "T39",
+      "title": "Linux Miracast source平台闭环",
+      "depends_on": [
+        "T12",
+        "T13",
+        "T28",
+        "T37"
+      ],
+      "files": [
+        "workers/linux-wfd/src/source.rs",
+        "tests/devices/linux-wfd-source.md"
+      ],
+      "requirements": [
+        "CORE-02",
+        "MEDIA-01",
+        "MEDIA-05",
+        "MEDIA-07"
+      ],
+      "references": [
+        "R33",
+        "R37",
+        "R41"
+      ],
+      "consumes": "GNOME source对照、受支持TV与test-pattern encoder",
+      "produces": "Linux→TV Miracast source的具名配置",
+      "implementation": "先用自制图样与合成音频，证明source无线/协商/媒体输出；再接捕获port。TS/RTP保持时间信息，codec参数交集由core决定。与MiracleCast sink验证不能代替真实TV。",
+      "cases": [
+        {
+          "id": "T39-01",
+          "scenario": "TV只支持某H264 profile =>选择交集或明确拒绝",
+          "expected": "TV只支持某H264 profile =>选择交集或明确拒绝"
+        },
+        {
+          "id": "T39-02",
+          "scenario": "丢包/带宽降低",
+          "expected": "不无限积累输出queue"
+        },
+        {
+          "id": "T39-03",
+          "scenario": "用户停止",
+          "expected": "capture/encoder/network全部结束"
+        }
+      ],
+      "verification_command": "cargo test -p proto-wfd source; 具名TV真机播放与重连测试",
+      "gate": "",
+      "status": "planned",
+      "conditional_dependencies": [],
+      "conditional_rule": "Only the selected release/profile needs its corresponding provider. These are not a requirement to finish every protocol first.",
+      "evidence_required": true
+    },
+    {
+      "id": "T40",
+      "title": "MS-MICE基础设施传输probe",
+      "depends_on": [
+        "T12",
+        "T36",
+        "T37"
+      ],
+      "files": [
+        "lab/research/wfd/ms-mice.md",
+        "crates/proto-wfd/src/mice.rs",
+        "tests/devices/ms-mice.md"
+      ],
+      "requirements": [
+        "CORE-09",
+        "MEDIA-01",
+        "SEC-09"
+      ],
+      "references": [
+        "S06"
+      ],
+      "consumes": "Microsoft公开协议与WFD基线",
+      "produces": "仅对已验证Windows/receiver组合声明infra扩展",
+      "implementation": "分离初始发现与后续LAN路径，验证名字解析/端口/TLS等规范前提。保留普通P2P能力但不自动降级安全。实际flow符合文档才实现Rust或native provider额外控制。",
+      "cases": [
+        {
+          "id": "T40-01",
+          "scenario": "没有初始发现条件",
+          "expected": "不能声称纯网线万能MICE"
+        },
+        {
+          "id": "T40-02",
+          "scenario": "LAN路径失败",
+          "expected": "经策略允许才回退P2P"
+        },
+        {
+          "id": "T40-03",
+          "scenario": "停止infra session",
+          "expected": "资源/解析记录回收"
+        }
+      ],
+      "verification_command": "基于固定文档的frame tests + 支持MICE设备路径抓包对照",
+      "gate": "",
+      "status": "planned",
+      "conditional_dependencies": [],
+      "conditional_rule": "Only the selected release/profile needs its corresponding provider. These are not a requirement to finish every protocol first.",
+      "evidence_required": true
+    },
+    {
+      "id": "T41",
+      "title": "DLNA controller与受限media server",
+      "depends_on": [
+        "T04",
+        "T05",
+        "T11",
+        "T24",
+        "T28"
+      ],
+      "files": [
+        "crates/proto-upnp/src/ssdp.rs",
+        "crates/proto-upnp/src/dmc.rs",
+        "crates/proto-upnp/src/dms.rs",
+        "tests/devices/dlna-controller.md"
+      ],
+      "requirements": [
+        "CORE-02",
+        "MEDIA-01",
+        "MEDIA-06",
+        "MEDIA-09",
+        "FILE-08"
+      ],
+      "references": [
+        "R46",
+        "R47",
+        "R48",
+        "R49",
+        "S27"
+      ],
+      "consumes": "UPnP AV事实规范、授权resource URL、库存TV",
+      "produces": "Xross推媒体到TV与有限ContentDirectory，角色分开",
+      "implementation": "SSDP/XML/SOAP parser禁外部实体并限深度/体积；DMC发现renderer、查支持格式、设置AVTransport URL并控制。DMS只公开批准目录/资源，不自动扫描全盘；GENA回调验证地址scope。",
+      "cases": [
+        {
+          "id": "T41-01",
+          "scenario": "设备description指向恶意内网目标",
+          "expected": "fetch policy拒绝"
+        },
+        {
+          "id": "T41-02",
+          "scenario": "未知/不支持codec",
+          "expected": "禁止假装screen mirror"
+        },
+        {
+          "id": "T41-03",
+          "scenario": "ContentDirectory请求越权objectID",
+          "expected": "拒绝"
+        },
+        {
+          "id": "T41-04",
+          "scenario": "stop播放",
+          "expected": "URL lease按策略撤销"
+        }
+      ],
+      "verification_command": "cargo test -p proto-upnp; Xross→真实TV播放自有文件/seek/stop",
+      "gate": "",
+      "status": "planned",
+      "conditional_dependencies": [],
+      "conditional_rule": "Only the selected release/profile needs its corresponding provider. These are not a requirement to finish every protocol first.",
+      "evidence_required": true
+    },
+    {
+      "id": "T42",
+      "title": "DLNA renderer接收媒体URL",
+      "depends_on": [
+        "T29",
+        "T41"
+      ],
+      "files": [
+        "crates/proto-upnp/src/dmr.rs",
+        "tests/devices/dlna-renderer.md"
+      ],
+      "requirements": [
+        "MEDIA-01",
+        "MEDIA-02",
+        "MEDIA-06",
+        "MEDIA-09"
+      ],
+      "references": [
+        "R46",
+        "R47",
+        "R49"
+      ],
+      "consumes": "SOAP/eventcore与native player/FetchPolicy",
+      "produces": "库存DMC/app→Xross媒体URL接收与播放",
+      "implementation": "实现声明的AVTransport/RenderingControl动作和状态事件；接收到URL先走policy/用户同意，native播放状态反馈给controller。未知动作明确fault；不在UI线程直接执行网络fetch。",
+      "cases": [
+        {
+          "id": "T42-01",
+          "scenario": "SetAVTransportURI为file://",
+          "expected": "拒绝"
+        },
+        {
+          "id": "T42-02",
+          "scenario": "重复Stop",
+          "expected": "幂等结束"
+        },
+        {
+          "id": "T42-03",
+          "scenario": "live流Seek不支持",
+          "expected": "返回明确不支持状态"
+        },
+        {
+          "id": "T42-04",
+          "scenario": "外来event订阅callback越界",
+          "expected": "拒绝"
+        }
+      ],
+      "verification_command": "cargo test -p proto-upnp dmr; 库存控制器→Xross设备测试",
+      "gate": "",
+      "status": "planned",
+      "conditional_dependencies": [],
+      "conditional_rule": "Only the selected release/profile needs its corresponding provider. These are not a requirement to finish every protocol first.",
+      "evidence_required": true
+    },
+    {
+      "id": "T43",
+      "title": "Google Cast媒体URL sender",
+      "depends_on": [
+        "T04",
+        "T05",
+        "T11",
+        "T24",
+        "T28"
+      ],
+      "files": [
+        "lab/specs-reviewed/cast-sender.md",
+        "crates/proto-cast/src/controller.rs",
+        "tests/devices/cast-url.md"
+      ],
+      "requirements": [
+        "CORE-02",
+        "MEDIA-01",
+        "MEDIA-06",
+        "MEDIA-09"
+      ],
+      "references": [
+        "R42",
+        "R43",
+        "R44",
+        "R45",
+        "S07",
+        "S08",
+        "S09"
+      ],
+      "consumes": "合法receiver设备/app ID、Cast控制资料、bounded resource URL",
+      "produces": "Xross→Chromecast媒体load/control，非屏幕sender",
+      "implementation": "按认证/heartbeat/channel/app launch/media session分层；使用真实设备证书验证策略，不全局关闭TLS。媒体URL可达性来自host gateway lease，seek/volume状态由receiver回复。",
+      "cases": [
+        {
+          "id": "T43-01",
+          "scenario": "TLS/auth失败",
+          "expected": "不启动播放"
+        },
+        {
+          "id": "T43-02",
+          "scenario": "app launch失败",
+          "expected": "明确错误不是media loading"
+        },
+        {
+          "id": "T43-03",
+          "scenario": "停止或会话被receiver终止",
+          "expected": "清理URL与控制状态"
+        },
+        {
+          "id": "T43-04",
+          "scenario": "只URL可用",
+          "expected": "screen能力保持false"
+        }
+      ],
+      "verification_command": "cargo test -p proto-cast controller; 真实Chromecast/GoogleTV指定app播放自有媒体",
+      "gate": "",
+      "status": "planned",
+      "conditional_dependencies": [],
+      "conditional_rule": "Only the selected release/profile needs its corresponding provider. These are not a requirement to finish every protocol first.",
+      "evidence_required": true
+    },
+    {
+      "id": "T44",
+      "title": "Cast实时streaming sender",
+      "depends_on": [
+        "T28",
+        "T29",
+        "T43"
+      ],
+      "files": [
+        "lab/research/cast/streaming-source.md",
+        "workers/cast-streaming/",
+        "tests/devices/cast-streaming.md"
+      ],
+      "requirements": [
+        "MEDIA-01",
+        "MEDIA-03",
+        "MEDIA-05",
+        "MEDIA-07"
+      ],
+      "references": [
+        "R42"
+      ],
+      "consumes": "Open Screen streaming API/测试receiver、合法实际Cast设备",
+      "produces": "test-pattern→Cast实时sender；capture后接入",
+      "implementation": "先合规libcast provider建立双端demo，不重写成熟streaming以求形式纯Rust。分别核验官方receiver app和设备认证后再声明stock支持。记录拥塞反馈、帧时间、keyframe恢复和codec。",
+      "cases": [
+        {
+          "id": "T44-01",
+          "scenario": "自有sender/receiver demo成功",
+          "expected": "仅simulated/reference-pair证据"
+        },
+        {
+          "id": "T44-02",
+          "scenario": "真实TV可播但音频失败",
+          "expected": "仅video profile"
+        },
+        {
+          "id": "T44-03",
+          "scenario": "拥塞积压",
+          "expected": "bounded queue/合理请求关键帧"
+        }
+      ],
+      "verification_command": "libcast固定版本demo测试 + 实际Cast receiver独立qualify",
+      "gate": "",
+      "status": "planned",
+      "conditional_dependencies": [],
+      "conditional_rule": "Only the selected release/profile needs its corresponding provider. These are not a requirement to finish every protocol first.",
+      "evidence_required": true
+    },
+    {
+      "id": "T45",
+      "title": "通用Google Cast receiver可行性gate",
+      "depends_on": [
+        "T04",
+        "T05",
+        "T13",
+        "T28",
+        "T29"
+      ],
+      "files": [
+        "lab/research/cast/receiver-gate.md",
+        "lab/pocs/cast-receiver/",
+        "tests/devices/cast-receiver-auth.md"
+      ],
+      "requirements": [
+        "CORE-02",
+        "CORE-03",
+        "MEDIA-02",
+        "APP-08",
+        "SEC-10"
+      ],
+      "references": [
+        "R42",
+        "R43",
+        "R45",
+        "S07",
+        "S08",
+        "S09"
+      ],
+      "consumes": "Open Screen receiver demo、stock Pixel/Chrome、授权说明",
+      "produces": "分别认证/launch/media成功的报告或明确blocked",
+      "implementation": "先用测试credentials运行自有demo闭环，再stock sender探测；记录卡在discovery、device authentication、app namespace还是streaming。不得获取/伪造他人受限设备私钥来填补gate。公开CAF sample不被当桌面接收SDK。",
+      "cases": [
+        {
+          "id": "T45-01",
+          "scenario": "自有测试root受信但Pixel不认可",
+          "expected": "stock receiver=blocked"
+        },
+        {
+          "id": "T45-02",
+          "scenario": "只能被discover不能launch",
+          "expected": "不记录cast成功"
+        },
+        {
+          "id": "T45-03",
+          "scenario": "认证/授权路径不明",
+          "expected": "停止产品集成但保留合法demo"
+        }
+      ],
+      "verification_command": "固定Open Screen构建/测试 + Pixel/Chrome具名版本的分阶段设备probe",
+      "gate": "只有合法认证和真实stock互操作证据通过后才产生可shipping receiver provider。",
+      "status": "planned",
+      "conditional_dependencies": [],
+      "conditional_rule": "Only the selected release/profile needs its corresponding provider. These are not a requirement to finish every protocol first.",
+      "evidence_required": true
+    },
+    {
+      "id": "T46",
+      "title": "Tauri文件/发现控制台",
+      "depends_on": [
+        "T09",
+        "T10",
+        "T11",
+        "T17"
+      ],
+      "files": [
+        "apps/playground/src-tauri/src/bridge.rs",
+        "apps/playground/src/routes/devices/",
+        "apps/playground/src/routes/transfers/",
+        "apps/playground/tests/control.spec.ts"
+      ],
+      "requirements": [
+        "APP-02",
+        "APP-03",
+        "APP-04",
+        "FILE-09"
+      ],
+      "references": [
+        "S18",
+        "S19"
+      ],
+      "consumes": "已鉴权IPC client、fake/真实provider事件",
+      "produces": "只使用相同API的Devices/Offers/Transfers UI",
+      "implementation": "frontend只发typed intents；native side持有scoped client token。文件选择转read lease，目录选择转root grant；不开放通用shell/fs。处理watch gap/instance变化/worker断开；所有远端名称text渲染。",
+      "cases": [
+        {
+          "id": "T46-01",
+          "scenario": "显示名含<script>或控制符",
+          "expected": "不执行/破坏界面"
+        },
+        {
+          "id": "T46-02",
+          "scenario": "窗口关闭但用户选择后台文件接收",
+          "expected": "daemon任务继续"
+        },
+        {
+          "id": "T46-03",
+          "scenario": "无approval scope客户端点击接受",
+          "expected": "明确auth-denied"
+        },
+        {
+          "id": "T46-04",
+          "scenario": "事件gap",
+          "expected": "重新snapshot而非保留错误百分比"
+        }
+      ],
+      "verification_command": "pnpm --dir apps/playground test; pnpm --dir apps/playground exec playwright test",
+      "gate": "",
+      "status": "planned",
+      "conditional_dependencies": [],
+      "conditional_rule": "Only the selected release/profile needs its corresponding provider. These are not a requirement to finish every protocol first.",
+      "evidence_required": true
+    },
+    {
+      "id": "T47",
+      "title": "Tauri媒体与诊断测试台",
+      "depends_on": [
+        "T28",
+        "T29",
+        "T30",
+        "T46"
+      ],
+      "files": [
+        "apps/playground/src/routes/media/",
+        "apps/playground/src/routes/diagnostics/",
+        "apps/playground/src-tauri/src/presentation.rs",
+        "apps/playground/tests/media.spec.ts"
+      ],
+      "requirements": [
+        "MEDIA-02",
+        "MEDIA-04",
+        "MEDIA-06",
+        "APP-02",
+        "APP-03",
+        "APP-04",
+        "APP-05"
+      ],
+      "references": [
+        "S05",
+        "S18",
+        "S19"
+      ],
+      "consumes": "MediaDescriptor/native presentation参考、stats与evidence exporter",
+      "produces": "可选择sink/预览/停止/记录指标的媒体面板",
+      "implementation": "先显示独立native window生命周期，不强迫嵌入WebView。controls来自capability；native-only禁用record/export。stats明确测量方法，表格区分networkRTT与端到端。原始trace只在lab受控打开。",
+      "cases": [
+        {
+          "id": "T47-01",
+          "scenario": "native-only session",
+          "expected": "record/forward按钮禁用且API同样拒绝"
+        },
+        {
+          "id": "T47-02",
+          "scenario": "关闭媒体页默认stop",
+          "expected": "没有孤儿音频播放"
+        },
+        {
+          "id": "T47-03",
+          "scenario": "停止录制权限未授予",
+          "expected": "禁止创建录制文件"
+        },
+        {
+          "id": "T47-04",
+          "scenario": "诊断导出",
+          "expected": "不含token/PIN/私有文件内容"
+        }
+      ],
+      "verification_command": "Playwright mock媒体事件测试 + 本机native window生命周期E2E",
+      "gate": "",
+      "status": "planned",
+      "conditional_dependencies": [],
+      "conditional_rule": "Only the selected release/profile needs its corresponding provider. These are not a requirement to finish every protocol first.",
+      "evidence_required": true
+    },
+    {
+      "id": "T48",
+      "title": "接入真实桌面/窗口/系统音频capture",
+      "depends_on": [
+        "T07",
+        "T12",
+        "T28",
+        "T29"
+      ],
+      "files": [
+        "crates/interop-platform/src/capture.rs",
+        "workers/capture/",
+        "tests/devices/screen-capture.md"
+      ],
+      "requirements": [
+        "MEDIA-01",
+        "MEDIA-05",
+        "MEDIA-08",
+        "SEC-01",
+        "SEC-04"
+      ],
+      "references": [
+        "R33",
+        "R56",
+        "R57"
+      ],
+      "consumes": "已验证test-pattern sender、公开capture API与host授权",
+      "produces": "monitor/window/audio source ports，用户可撤销",
+      "implementation": "逐OS查询合法capture API和权限，首次只选一个窗口/屏幕；系统音频另授权。Wayland走portal，macOS/Windows按当前SDK文档；不要用私有注入作为默认捕获。pipeline记录codec转换/编码器预算。",
+      "cases": [
+        {
+          "id": "T48-01",
+          "scenario": "用户拒绝屏幕权限",
+          "expected": "permission-required而非空黑帧成功"
+        },
+        {
+          "id": "T48-02",
+          "scenario": "共享时用户撤销",
+          "expected": "立即停止capture与远端stream"
+        },
+        {
+          "id": "T48-03",
+          "scenario": "选择窗口A",
+          "expected": "不意外泄露屏幕B"
+        },
+        {
+          "id": "T48-04",
+          "scenario": "声卡变化",
+          "expected": "重新协商格式，不变速播放"
+        }
+      ],
+      "verification_command": "platform capture fake tests + 每个计划发布OS的权限/撤销真机测试",
+      "gate": "",
+      "status": "planned",
+      "conditional_dependencies": [
+        "T35",
+        "T39",
+        "T44"
+      ],
+      "conditional_rule": "Only the selected release/profile needs its corresponding provider. These are not a requirement to finish every protocol first.",
+      "evidence_required": true
+    },
+    {
+      "id": "T49",
+      "title": "显式跨协议转发与Media bridge",
+      "depends_on": [
+        "T07",
+        "T08",
+        "T10",
+        "T24",
+        "T28"
+      ],
+      "files": [
+        "crates/interop-runtime/src/bridge.rs",
+        "tests/contract/bridge.rs",
+        "apps/playground/src/routes/bridge/"
+      ],
+      "requirements": [
+        "CORE-05",
+        "MEDIA-08",
+        "FILE-08",
+        "SEC-01",
+        "INT-07"
+      ],
+      "references": [],
+      "consumes": "来源session、目标endpoint能力与两端grants",
+      "produces": "有目的/有hop限制/重新授权的bridge任务",
+      "implementation": "建立source→bridge→target两个会话，不沿用source外部身份获得target权限。文件完整落盘后转发为初始策略；流式中继只有明确协议/预算才支持。媒体codec交集优先remux，需要转码明确审批。",
+      "cases": [
+        {
+          "id": "T49-01",
+          "scenario": "原始source指定公网上传地址",
+          "expected": "需新目标授权"
+        },
+        {
+          "id": "T49-02",
+          "scenario": "相同route循环回来",
+          "expected": "hop/route检测阻断"
+        },
+        {
+          "id": "T49-03",
+          "scenario": "没有record/export能力的NativePresentation",
+          "expected": "不可桥接"
+        },
+        {
+          "id": "T49-04",
+          "scenario": "桥接成功",
+          "expected": "UI说明在本机解密/重加密，不称原始端到端E2EE"
+        }
+      ],
+      "verification_command": "cargo test -p interop-runtime bridge",
+      "gate": "",
+      "status": "planned",
+      "conditional_dependencies": [],
+      "conditional_rule": "Only the selected release/profile needs its corresponding provider. These are not a requirement to finish every protocol first.",
+      "evidence_required": true
+    },
+    {
+      "id": "T50",
+      "title": "XROSS文件/Shelf真实集成",
+      "depends_on": [
+        "T03",
+        "T07",
+        "T08",
+        "T15",
+        "T17",
+        "T18"
+      ],
+      "files": [
+        "adapters/xross-host/src/files.rs",
+        "adapters/xross-host/src/offers.rs",
+        "tests/contract/xross_host.rs",
+        "lab/evidence/xross-file-integration/"
+      ],
+      "requirements": [
+        "INT-01",
+        "INT-02",
+        "INT-03",
+        "INT-04",
+        "FILE-10"
+      ],
+      "references": [],
+      "consumes": "当前主仓已核对接口、至少LocalSend和QuickShare接收闭环",
+      "produces": "从原生外部分享进入Xross既有offer/history/content流程",
+      "implementation": "主仓只新增薄adapter和feature开关。把external principal以原有权限表达接入，不登录第二账号；bytes由外部wire处理但发布和存储遵循host。audience不能因跨协议桥接放大；保留file clipboard fast-path语义。",
+      "cases": [
+        {
+          "id": "T50-01",
+          "scenario": "外部接收文件",
+          "expected": "主transfer中心一条任务、一个内容receipt"
+        },
+        {
+          "id": "T50-02",
+          "scenario": "相同内容但不共享audience",
+          "expected": "不泄露存在性或合并权限"
+        },
+        {
+          "id": "T50-03",
+          "scenario": "禁用interop",
+          "expected": "原有Xross file/clipboard/LocalSend行为不变"
+        },
+        {
+          "id": "T50-04",
+          "scenario": "provider重启",
+          "expected": "不实例化第二Iroh/profile"
+        }
+      ],
+      "verification_command": "主仓既有回归 + adapters/xross-host契约测试；记录双方commit与实际命令",
+      "gate": "",
+      "status": "planned",
+      "conditional_dependencies": [
+        "T21",
+        "T22"
+      ],
+      "conditional_rule": "Only the selected release/profile needs its corresponding provider. These are not a requirement to finish every protocol first.",
+      "evidence_required": true
+    },
+    {
+      "id": "T51",
+      "title": "XROSS Media Graph/native presentation集成",
+      "depends_on": [
+        "T03",
+        "T07",
+        "T28",
+        "T29",
+        "T30"
+      ],
+      "files": [
+        "adapters/xross-host/src/media.rs",
+        "tests/contract/xross_media.rs",
+        "lab/evidence/xross-media-integration/"
+      ],
+      "requirements": [
+        "INT-01",
+        "INT-02",
+        "INT-05",
+        "MEDIA-02",
+        "MEDIA-03",
+        "MEDIA-08"
+      ],
+      "references": [
+        "S05"
+      ],
+      "consumes": "主仓真实media ports，encoded与native-only两种provider",
+      "produces": "统一Xross媒体入口，不强制重复录屏/转码",
+      "implementation": "先接AirPlay compressed输出和Windows native-only source两个形态，证明抽象没有只适合一种协议。将media permission映射现有host权限；virtual camera/OBS若还没稳定，只保留可选sink而不阻塞基本播放。",
+      "cases": [
+        {
+          "id": "T51-01",
+          "scenario": "AirPlay encoded source",
+          "expected": "host decoder播放并保留clock"
+        },
+        {
+          "id": "T51-02",
+          "scenario": "Windows native-only",
+          "expected": "host显示合法native窗口且不提供虚假export"
+        },
+        {
+          "id": "T51-03",
+          "scenario": "停止会话",
+          "expected": "Xross侧player/source/worker均回收"
+        },
+        {
+          "id": "T51-04",
+          "scenario": "一个provider异常",
+          "expected": "其他Remote Audio/文件会话不受影响"
+        }
+      ],
+      "verification_command": "主仓媒体契约回归 + 两种source form的桌面E2E",
+      "gate": "",
+      "status": "planned",
+      "conditional_dependencies": [
+        "T36"
+      ],
+      "conditional_rule": "Only the selected release/profile needs its corresponding provider. These are not a requirement to finish every protocol first.",
+      "evidence_required": true
+    },
+    {
+      "id": "T52",
+      "title": "针对首批协议的fuzz与对抗测试",
+      "depends_on": [
+        "T08",
+        "T09",
+        "T13",
+        "T14",
+        "T28"
+      ],
+      "files": [
+        "tests/fuzz/",
+        "tests/security/",
+        "policies/limits.json",
+        "lab/evidence/security/"
+      ],
+      "requirements": [
+        "SEC-03",
+        "SEC-04",
+        "SEC-05",
+        "SEC-08",
+        "FILE-05",
+        "MEDIA-07"
+      ],
+      "references": [
+        "S16",
+        "S17"
+      ],
+      "consumes": "首批parser/worker/lease实现和固定fixtures",
+      "produces": "可复现crash corpus、修复回归与安全gate",
+      "implementation": "RTSP/HTTP/TLV/plist/protobuf/IPC/metadata分别target；覆盖任意分片、重复长度、超深结构、整数溢出、恶意URI、symlink race、token跨scope。fuzz只在隔离runner跑，时间/seed/corpus版本保留；找到crash先最小化再修复。",
+      "cases": [
+        {
+          "id": "T52-01",
+          "scenario": "任一可复现panic/OOM/任意文件读取",
+          "expected": "该profile release阻断"
+        },
+        {
+          "id": "T52-02",
+          "scenario": "fuzz无crash",
+          "expected": "只声称此范围测试通过，不声称安全证明"
+        },
+        {
+          "id": "T52-03",
+          "scenario": "日志注入可伪造审批事件",
+          "expected": "测试失败并转义修复"
+        }
+      ],
+      "verification_command": "按各target执行cargo-fuzz/属性测试与OS隔离E2E；记录实际执行次数和持续时间",
+      "gate": "",
+      "status": "planned",
+      "conditional_dependencies": [
+        "T20",
+        "T32",
+        "T37"
+      ],
+      "conditional_rule": "Only the selected release/profile needs its corresponding provider. These are not a requirement to finish every protocol first.",
+      "evidence_required": true
+    },
+    {
+      "id": "T53",
+      "title": "建立具名真机兼容性矩阵",
+      "depends_on": [
+        "T14"
+      ],
+      "files": [
+        "tests/devices/matrix.json",
+        "lab/evidence/device-runs/",
+        "docs/compatibility.md"
+      ],
+      "requirements": [
+        "CORE-03",
+        "APP-05",
+        "APP-08",
+        "MEDIA-05"
+      ],
+      "references": [],
+      "consumes": "可运行首批providers、真实iPhone/Android/Windows/TV",
+      "produces": "每个profile/role/platform/device组合的实测证据",
+      "implementation": "使用测试计划文档中的最小设备矩阵与合法自制内容。分别记录发现、配对、接受、媒体/字节、停止、重连；不能把同品牌某机型通过泛化所有ROM。无需等全部候选通过，只qualify本次release范围。",
+      "cases": [
+        {
+          "id": "T53-01",
+          "scenario": "只有仿真测试",
+          "expected": "不能进入device-verified列表"
+        },
+        {
+          "id": "T53-02",
+          "scenario": "同型号OS更新",
+          "expected": "旧结果保留并新增待复测行"
+        },
+        {
+          "id": "T53-03",
+          "scenario": "失败涉及特定codec",
+          "expected": "只关闭该profile变体，不假称全协议失败或成功"
+        }
+      ],
+      "verification_command": "执行docs/10-validation-and-device-lab.md中的具名用例，生成实际run manifests",
+      "gate": "",
+      "status": "planned",
+      "conditional_dependencies": [
+        "T17",
+        "T18",
+        "T21",
+        "T22",
+        "T30",
+        "T36",
+        "T41",
+        "T43"
+      ],
+      "conditional_rule": "Only the selected release/profile needs its corresponding provider. These are not a requirement to finish every protocol first.",
+      "evidence_required": true
+    },
+    {
+      "id": "T54",
+      "title": "构建清晰许可的发布产物",
+      "depends_on": [
+        "T05",
+        "T13",
+        "T46",
+        "T47"
+      ],
+      "files": [
+        "packaging/provider-manifest.json",
+        "packaging/NOTICE",
+        "packaging/licenses/",
+        "packaging/sbom/",
+        "tests/packaging/"
+      ],
+      "requirements": [
+        "SEC-06",
+        "SEC-07",
+        "SEC-10",
+        "APP-07",
+        "INT-08"
+      ],
+      "references": [
+        "S01",
+        "S02",
+        "S19",
+        "S20",
+        "S23"
+      ],
+      "consumes": "已批准provider路线、目标OS/arch/features",
+      "produces": "独立可追溯的core/worker/playground产物和源码义务资料",
+      "implementation": "每产物列transitive依赖/feature/native codecs、GPL/LGPL/SDK义务；独立GPLworker不可被默认静态连进permissive core。不以根repo LICENSE判定产物。进行签名/校验，禁止运行时从陌生URL下载可执行provider。",
+      "cases": [
+        {
+          "id": "T54-01",
+          "scenario": "release含未批准GPL dependency",
+          "expected": "构建gate拒绝"
+        },
+        {
+          "id": "T54-02",
+          "scenario": "关闭profile但仍携带其native library",
+          "expected": "SBOM/打包测试发现"
+        },
+        {
+          "id": "T54-03",
+          "scenario": "worker hash与manifest不符",
+          "expected": "拒绝启动"
+        },
+        {
+          "id": "T54-04",
+          "scenario": "来源包/notice缺项",
+          "expected": "不发布受影响产物"
+        }
+      ],
+      "verification_command": "产物SBOM/license检查+各OS安装包清单比较；使用真实产物hash",
+      "gate": "",
+      "status": "planned",
+      "conditional_dependencies": [],
+      "conditional_rule": "Only the selected release/profile needs its corresponding provider. These are not a requirement to finish every protocol first.",
+      "evidence_required": true
+    },
+    {
+      "id": "T55",
+      "title": "CI、schema兼容、升级与回滚",
+      "depends_on": [
+        "T09",
+        "T10",
+        "T13",
+        "T50",
+        "T51",
+        "T54"
+      ],
+      "files": [
+        ".github/workflows/ci.yml",
+        "tests/upgrade/",
+        "packaging/state-migrations.md",
+        "docs/operations.md"
+      ],
+      "requirements": [
+        "CORE-06",
+        "CORE-07",
+        "APP-06",
+        "APP-07",
+        "INT-06"
+      ],
+      "references": [
+        "S16",
+        "S17",
+        "S19"
+      ],
+      "consumes": "contract版本、scope store、worker manifests",
+      "produces": "跨版本测试/资源回收/升级回滚策略",
+      "implementation": "CI按批准feature matrix运行，不自动all-features商用打包；PR权限最小/禁生产secrets。N/N−1 control与worker兼容，状态迁移先备份再原子切换，明确不可恢复session不自动假resume。保留旧产物回滚路由。",
+      "cases": [
+        {
+          "id": "T55-01",
+          "scenario": "旧UI收到未知可选字段",
+          "expected": "可忽略"
+        },
+        {
+          "id": "T55-02",
+          "scenario": "旧worker缺关键feature",
+          "expected": "拒绝而非降级授权"
+        },
+        {
+          "id": "T55-03",
+          "scenario": "升级中杀进程",
+          "expected": "配对store可恢复且无半写"
+        },
+        {
+          "id": "T55-04",
+          "scenario": "回滚",
+          "expected": "不遗留旧监听或宽权限token"
+        }
+      ],
+      "verification_command": "CI矩阵+N/N−1 golden/upgrade tests；主仓相关integration回归",
+      "gate": "",
+      "status": "planned",
+      "conditional_dependencies": [],
+      "conditional_rule": "Only the selected release/profile needs its corresponding provider. These are not a requirement to finish every protocol first.",
+      "evidence_required": true
+    },
+    {
+      "id": "T56",
+      "title": "首批profile的release gate与能力发布",
+      "depends_on": [
+        "T50",
+        "T51",
+        "T52",
+        "T53",
+        "T54",
+        "T55"
+      ],
+      "files": [
+        "releases/<version>/qualification.json",
+        "docs/compatibility.md",
+        "docs/known-limitations.md"
+      ],
+      "requirements": [
+        "CORE-03",
+        "APP-05",
+        "APP-08",
+        "INT-08"
+      ],
+      "references": [],
+      "consumes": "每个目标profile证据、安全与许可决议",
+      "produces": "限范围可用release，受限/实验能力明确隐藏或标注",
+      "implementation": "按profile检查证据、oncall/维护责任、依赖更新策略、安装/回滚和授权。主产品只加载此次qualified provider。单个Huawei/Cast receiver gate失败不阻断LocalSend/AirPlay/QuickShare等独立能力。",
+      "cases": [
+        {
+          "id": "T56-01",
+          "scenario": "缺device evidence但目录有实现",
+          "expected": "只能experimental不进普通支持列表"
+        },
+        {
+          "id": "T56-02",
+          "scenario": "未来protocol backlog未做",
+          "expected": "不阻断本次已限定release"
+        },
+        {
+          "id": "T56-03",
+          "scenario": "任何安全发布阻断项",
+          "expected": "移除受影响profile后重验产物"
+        }
+      ],
+      "verification_command": "逐项执行release checklist；所有实际结论写qualification.json，不以计划本身当证据",
+      "gate": "",
+      "status": "planned",
+      "conditional_dependencies": [],
+      "conditional_rule": "Only the selected release/profile needs its corresponding provider. These are not a requirement to finish every protocol first.",
+      "evidence_required": true
+    },
+    {
+      "id": "T57",
+      "title": "RTSP/RTP标准媒体适配",
+      "depends_on": [
+        "T04",
+        "T05",
+        "T28",
+        "T29"
+      ],
+      "files": [
+        "crates/proto-rtsp/",
+        "tests/devices/rtsp.md"
+      ],
+      "requirements": [
+        "MEDIA-01",
+        "MEDIA-03",
+        "MEDIA-05",
+        "MEDIA-07"
+      ],
+      "references": [
+        "R50",
+        "R51",
+        "R52",
+        "R53",
+        "S26"
+      ],
+      "consumes": "独立RTSP1/2/发布与拉取profile、固定codec/容器",
+      "produces": "可用标准网络media sink/source，和mirror区别明确",
+      "implementation": "先订阅/服务一个合法H264流，再按对端支持实现ANNOUNCE/RECORD发布。保留RTP/RTCP时钟、sequence回绕和丢包处理；认证无默认公网匿名listener。wire/parser来自已审查路线。",
+      "cases": [
+        {
+          "id": "T57-01",
+          "scenario": "RTSP2对RTSP1-only",
+          "expected": "明确不支持"
+        },
+        {
+          "id": "T57-02",
+          "scenario": "RTP乱序/丢包",
+          "expected": "有界缓冲并按keyframe恢复"
+        },
+        {
+          "id": "T57-03",
+          "scenario": "坏SSRC/session",
+          "expected": "不串流"
+        },
+        {
+          "id": "T57-04",
+          "scenario": "对端断开",
+          "expected": "media ended与资源回收"
+        }
+      ],
+      "verification_command": "cargo test -p proto-rtsp; 固定VLC/GStreamer/MediaMTX对端测试",
+      "gate": "",
+      "status": "planned",
+      "conditional_dependencies": [],
+      "conditional_rule": "Only the selected release/profile needs its corresponding provider. These are not a requirement to finish every protocol first.",
+      "evidence_required": true
+    },
+    {
+      "id": "T58",
+      "title": "WebRTC、WHIP与明确版本WHEP适配",
+      "depends_on": [
+        "T04",
+        "T05",
+        "T07",
+        "T28",
+        "T29"
+      ],
+      "files": [
+        "crates/proto-webrtc/",
+        "tests/devices/webrtc.md",
+        "lab/research/webrtc/signaling-profiles.md"
+      ],
+      "requirements": [
+        "MEDIA-03",
+        "MEDIA-05",
+        "MEDIA-07",
+        "SEC-05"
+      ],
+      "references": [
+        "R50",
+        "R54",
+        "S22"
+      ],
+      "consumes": "主仓既有WebRTC选型或已审查栈、WHIP RFC9725",
+      "produces": "与浏览器/OBS兼容的明确HTTP信令profile",
+      "implementation": "复用ICE/DTLS/SRTP实现，WHIP按标准定义POST session/Location/PATCH/DELETE与鉴权。WHEP固定实际文档/实现版本并记录成熟度，不假设WebRTC自带通用信令。TURN/credentials由host有限配置。",
+      "cases": [
+        {
+          "id": "T58-01",
+          "scenario": "没有bearer的受限WHIP POST",
+          "expected": "拒绝"
+        },
+        {
+          "id": "T58-02",
+          "scenario": "其他session URL DELETE",
+          "expected": "拒绝"
+        },
+        {
+          "id": "T58-03",
+          "scenario": "ICE restart/网络变更",
+          "expected": "成功恢复或明确终止"
+        },
+        {
+          "id": "T58-04",
+          "scenario": "不受支持WHEP版本",
+          "expected": "明确不匹配"
+        }
+      ],
+      "verification_command": "cargo test -p proto-webrtc; 浏览器+指定媒体服务双向测试",
+      "gate": "",
+      "status": "planned",
+      "conditional_dependencies": [],
+      "conditional_rule": "Only the selected release/profile needs its corresponding provider. These are not a requirement to finish every protocol first.",
+      "evidence_required": true
+    },
+    {
+      "id": "T59",
+      "title": "HLS媒体资源与播放拓展",
+      "depends_on": [
+        "T24",
+        "T28",
+        "T29"
+      ],
+      "files": [
+        "crates/interop-media/src/hls.rs",
+        "tests/e2e/hls.rs"
+      ],
+      "requirements": [
+        "MEDIA-01",
+        "MEDIA-06",
+        "MEDIA-09"
+      ],
+      "references": [
+        "R50",
+        "R52",
+        "R60",
+        "S27"
+      ],
+      "consumes": "有限resource URL与FetchPolicy、合法自制HLS",
+      "produces": "playlist/segments/字幕的受限发布与播放",
+      "implementation": "主manifest和所有子资源走同授权/URL策略；区分VOD/live和seek能力；语言轨等只显示已解析支持项。segment窗口回收有上限，禁止无限缓存。不可把HLS高buffer模式宣传为低延迟镜像。",
+      "cases": [
+        {
+          "id": "T59-01",
+          "scenario": "子playlist重定向到未授权地址",
+          "expected": "拒绝"
+        },
+        {
+          "id": "T59-02",
+          "scenario": "token到期后segment请求",
+          "expected": "拒绝"
+        },
+        {
+          "id": "T59-03",
+          "scenario": "live窗口之外seek",
+          "expected": "不支持/范围错误"
+        },
+        {
+          "id": "T59-04",
+          "scenario": "多语言轨选择",
+          "expected": "每次取资源仍守scope"
+        }
+      ],
+      "verification_command": "cargo test -p interop-media hls; 浏览器/native player合法样例E2E",
+      "gate": "",
+      "status": "planned",
+      "conditional_dependencies": [],
+      "conditional_rule": "Only the selected release/profile needs its corresponding provider. These are not a requirement to finish every protocol first.",
+      "evidence_required": true
+    },
+    {
+      "id": "T60",
+      "title": "WebDAV只读先行适配",
+      "depends_on": [
+        "T03",
+        "T04",
+        "T05",
+        "T07",
+        "T08",
+        "T24"
+      ],
+      "files": [
+        "lab/research/webdav/library-selection.md",
+        "workers/webdav/",
+        "tests/devices/webdav.md"
+      ],
+      "requirements": [
+        "FILE-05",
+        "FILE-08",
+        "INT-01",
+        "INT-03"
+      ],
+      "references": [
+        "S25",
+        "S27"
+      ],
+      "consumes": "Xross Remote Files已存在读/Range接口和许可合格库",
+      "produces": "只读WebDAV client/server scope；写能力后续独立授权",
+      "implementation": "先核对成熟库feature与license，映射PROPFIND/GET/HEAD到scoped host entries；深度/条目/属性响应预算固定。写/LOCK/rename不能凭函数存在就放行，单独增加conformance用例再开放。",
+      "cases": [
+        {
+          "id": "T60-01",
+          "scenario": "Depth=infinity超预算",
+          "expected": "有界拒绝"
+        },
+        {
+          "id": "T60-02",
+          "scenario": "未授权目录PROPFIND",
+          "expected": "无存在性泄露"
+        },
+        {
+          "id": "T60-03",
+          "scenario": "Range读源变更",
+          "expected": "失败不拼接"
+        },
+        {
+          "id": "T60-04",
+          "scenario": "只读share PUT",
+          "expected": "拒绝"
+        }
+      ],
+      "verification_command": "库原生测试+Xross契约测试+库存WebDAV客户端读/拒绝写验证",
+      "gate": "",
+      "status": "planned",
+      "conditional_dependencies": [],
+      "conditional_rule": "Only the selected release/profile needs its corresponding provider. These are not a requirement to finish every protocol first.",
+      "evidence_required": true
+    },
+    {
+      "id": "T61",
+      "title": "SFTP复用现有SSH能力",
+      "depends_on": [
+        "T03",
+        "T04",
+        "T05",
+        "T07",
+        "T08"
+      ],
+      "files": [
+        "adapters/xross-host/src/sftp.rs",
+        "lab/research/sftp/interop-profile.md",
+        "tests/devices/sftp.md"
+      ],
+      "requirements": [
+        "FILE-05",
+        "FILE-08",
+        "INT-01",
+        "INT-02"
+      ],
+      "references": [
+        "S30"
+      ],
+      "consumes": "现有Xross SSH/SFTP引擎和CredentialRef授权",
+      "produces": "不另造SSH/Vault的SFTP服务适配",
+      "implementation": "client方向优先复用现有连接/host key校验；server新增外部暴露需独立policy与目录权限，禁止隐式shell。不要把SFTP认证成功授予Xross账户/好友身份。",
+      "cases": [
+        {
+          "id": "T61-01",
+          "scenario": "host key变化",
+          "expected": "拒绝而非自动接受"
+        },
+        {
+          "id": "T61-02",
+          "scenario": "只有SFTP scope请求PTY",
+          "expected": "auth-denied"
+        },
+        {
+          "id": "T61-03",
+          "scenario": "路径越界read/write",
+          "expected": "被host lease拒绝"
+        },
+        {
+          "id": "T61-04",
+          "scenario": "取消上传",
+          "expected": "不发布半文件"
+        }
+      ],
+      "verification_command": "现有Xross SSH/SFTP回归+库存SFTP客户端/服务器interop",
+      "gate": "",
+      "status": "planned",
+      "conditional_dependencies": [],
+      "conditional_rule": "Only the selected release/profile needs its corresponding provider. These are not a requirement to finish every protocol first.",
+      "evidence_required": true
+    },
+    {
+      "id": "T62",
+      "title": "SMB3系统/成熟服务方案可行性",
+      "depends_on": [
+        "T03",
+        "T04",
+        "T05",
+        "T07",
+        "T08"
+      ],
+      "files": [
+        "lab/research/smb/decision.md",
+        "workers/smb/",
+        "tests/devices/smb.md"
+      ],
+      "requirements": [
+        "CORE-09",
+        "FILE-05",
+        "FILE-08",
+        "SEC-01"
+      ],
+      "references": [
+        "S29"
+      ],
+      "consumes": "所选平台系统服务/成熟SMB实现的官方资料",
+      "produces": "client/server分开、仅授权share的provider或blocker",
+      "implementation": "先调研系统共享是否可受控集成，必要library另入source intake。禁SMB1降级/匿名全盘；记录auth/sign/encryption与credential边界。server装服务/开端口不得自动做。",
+      "cases": [
+        {
+          "id": "T62-01",
+          "scenario": "没有签名/加密满足要求",
+          "expected": "禁止静默降级"
+        },
+        {
+          "id": "T62-02",
+          "scenario": "重复/冲突share名称",
+          "expected": "不修改系统现有share"
+        },
+        {
+          "id": "T62-03",
+          "scenario": "越权路径/凭据错误",
+          "expected": "拒绝且不泄露metadata"
+        }
+      ],
+      "verification_command": "平台probe+库存SMB3客户端受限share互通",
+      "gate": "没有适合的许可/公开API时只交决议，不从零写完整SMB安全栈。",
+      "status": "planned",
+      "conditional_dependencies": [],
+      "conditional_rule": "Only the selected release/profile needs its corresponding provider. These are not a requirement to finish every protocol first.",
+      "evidence_required": true
+    },
+    {
+      "id": "T63",
+      "title": "Magic Wormhole兼容provider",
+      "depends_on": [
+        "T04",
+        "T05",
+        "T07",
+        "T08",
+        "T13"
+      ],
+      "files": [
+        "workers/wormhole/",
+        "lab/research/wormhole/profile.md",
+        "tests/devices/wormhole.md"
+      ],
+      "requirements": [
+        "FILE-01",
+        "FILE-02",
+        "FILE-05",
+        "FILE-07",
+        "SEC-08"
+      ],
+      "references": [
+        "R28",
+        "R29"
+      ],
+      "consumes": "固定协议/库/relay配置、source intake",
+      "produces": "独立CLI兼容收发，与Xross身份分开",
+      "implementation": "先用合法参考CLI在独立worker接受host file leases；短码输入不记录到日志，rendezvous/relay由用户配置。只实现固定compatible version，取消和重试按协议真实能力映射。",
+      "cases": [
+        {
+          "id": "T63-01",
+          "scenario": "短码不一致",
+          "expected": "pairing失败无payload"
+        },
+        {
+          "id": "T63-02",
+          "scenario": "中继不可用",
+          "expected": "明确network failure"
+        },
+        {
+          "id": "T63-03",
+          "scenario": "用户取消",
+          "expected": "rendezvous/session/临时文件回收"
+        }
+      ],
+      "verification_command": "库存Wormhole CLI双向+中继失效/取消测试",
+      "gate": "",
+      "status": "planned",
+      "conditional_dependencies": [],
+      "conditional_rule": "Only the selected release/profile needs its corresponding provider. These are not a requirement to finish every protocol first.",
+      "evidence_required": true
+    },
+    {
+      "id": "T64",
+      "title": "croc兼容provider",
+      "depends_on": [
+        "T04",
+        "T05",
+        "T07",
+        "T08",
+        "T13"
+      ],
+      "files": [
+        "workers/croc/",
+        "lab/research/croc/profile.md",
+        "tests/devices/croc.md"
+      ],
+      "requirements": [
+        "FILE-01",
+        "FILE-02",
+        "FILE-03",
+        "FILE-07",
+        "SEC-08"
+      ],
+      "references": [
+        "R30"
+      ],
+      "consumes": "固定croc版本与合法CLI/provider",
+      "produces": "croc↔Xross文件互通实验能力",
+      "implementation": "先独立程序封装不复制其整个应用进core；把code/relay配置视为secret/连接条件。验证CLI输出稳定性，必要时补结构化接口并保留来源许可。版本握手不匹配明确拒绝。",
+      "cases": [
+        {
+          "id": "T64-01",
+          "scenario": "code泄露到普通日志",
+          "expected": "测试失败"
+        },
+        {
+          "id": "T64-02",
+          "scenario": "对端拒绝",
+          "expected": "本地任务不继续读文件"
+        },
+        {
+          "id": "T64-03",
+          "scenario": "partial transfer重启",
+          "expected": "只按已验证croc语义恢复，不继承Xross假resume"
+        }
+      ],
+      "verification_command": "库存croc双向文件与中断回归",
+      "gate": "",
+      "status": "planned",
+      "conditional_dependencies": [],
+      "conditional_rule": "Only the selected release/profile needs its corresponding provider. These are not a requirement to finish every protocol first.",
+      "evidence_required": true
+    },
+    {
+      "id": "T65",
+      "title": "PairDrop/Snapdrop网页部署适配",
+      "depends_on": [
+        "T04",
+        "T05",
+        "T07",
+        "T08",
+        "T58"
+      ],
+      "files": [
+        "lab/research/browser-interop/profile.md",
+        "workers/browser-signaling/",
+        "tests/e2e/pairdrop.md"
+      ],
+      "requirements": [
+        "FILE-01",
+        "FILE-02",
+        "SEC-01",
+        "APP-04"
+      ],
+      "references": [
+        "R26",
+        "R27"
+      ],
+      "consumes": "指定版本信令服务器/页面及许可路线",
+      "produces": "明确限定部署的网页互通provider",
+      "implementation": "研究的是应用信令与传输元数据，不把WebRTC当完整分享协议。隔离房间/peer可见性、上传批准、session tokens；域名/服务器绑定，禁止陌生signaling列出全部Xross设备。",
+      "cases": [
+        {
+          "id": "T65-01",
+          "scenario": "加入不同房间",
+          "expected": "不看到对方文件/身份"
+        },
+        {
+          "id": "T65-02",
+          "scenario": "恶意服务器要求额外目录",
+          "expected": "无权读取"
+        },
+        {
+          "id": "T65-03",
+          "scenario": "浏览器关闭",
+          "expected": "会话终止/重连规则明确"
+        }
+      ],
+      "verification_command": "指定PairDrop/Snapdrop版本部署+浏览器E2E",
+      "gate": "",
+      "status": "planned",
+      "conditional_dependencies": [],
+      "conditional_rule": "Only the selected release/profile needs its corresponding provider. These are not a requirement to finish every protocol first.",
+      "evidence_required": true
+    },
+    {
+      "id": "T66",
+      "title": "Syncthing BEP/同步边界决议",
+      "depends_on": [
+        "T03",
+        "T04",
+        "T05",
+        "T14"
+      ],
+      "files": [
+        "lab/research/syncthing/dossier.md",
+        "lab/decisions/sync-boundary.md",
+        "lab/pocs/syncthing-provider/"
+      ],
+      "requirements": [
+        "INT-01",
+        "INT-03",
+        "INT-08",
+        "SEC-01"
+      ],
+      "references": [
+        "R31"
+      ],
+      "consumes": "Xross现有Sync/Shelf权威、Syncthing协议/许可",
+      "produces": "是否提供互通gateway的清晰决议和最小只读/单向POC",
+      "implementation": "先评估对等持续同步语义、folder授权、版本向量、删除传播和冲突。首个可行实验只在空临时目录单向传测试文件；不能把两个sync引擎同时写同一生产目录。扩展实现必须单独scope批准。",
+      "cases": [
+        {
+          "id": "T66-01",
+          "scenario": "收到远端删除",
+          "expected": "未授权双向同步时不删本地文件"
+        },
+        {
+          "id": "T66-02",
+          "scenario": "Syncthing identity与Xross身份混用",
+          "expected": "设计测试拒绝"
+        },
+        {
+          "id": "T66-03",
+          "scenario": "双向引擎同目录导致循环",
+          "expected": "scope不批准"
+        }
+      ],
+      "verification_command": "协议dossier审查+独立临时目录单向POC",
+      "gate": "这是可选同步互通路线，不是本项目必须重写的新Xross Sync。",
+      "status": "planned",
+      "conditional_dependencies": [],
+      "conditional_rule": "Only the selected release/profile needs its corresponding provider. These are not a requirement to finish every protocol first.",
+      "evidence_required": true
+    },
+    {
+      "id": "T67",
+      "title": "AirDrop平台与独立实现gate",
+      "depends_on": [
+        "T02",
+        "T04",
+        "T05",
+        "T12",
+        "T14"
+      ],
+      "files": [
+        "lab/research/airdrop/dossier.md",
+        "lab/pocs/airdrop/",
+        "tests/devices/airdrop.md"
+      ],
+      "requirements": [
+        "CORE-03",
+        "CORE-09",
+        "FILE-01",
+        "FILE-02",
+        "SEC-06",
+        "SEC-10"
+      ],
+      "references": [
+        "R21",
+        "R22"
+      ],
+      "consumes": "用户授权测试设备、固定研究实现、AWDL平台证据",
+      "produces": "现代系统可行性和可发布路线；失败有具体阶段blocker",
+      "implementation": "先库存设备互传基线，再公开/合法实验profile；分discover、TLS/identity、offer、archive/stream四关。原生contacts可见模式与用户授权单独记录，不能借用私有身份材料或隐藏可见限制。",
+      "cases": [
+        {
+          "id": "T67-01",
+          "scenario": "只有老iOS成功",
+          "expected": "不外推当前iOS"
+        },
+        {
+          "id": "T67-02",
+          "scenario": "AWDL链路失败",
+          "expected": "在传输层记录blocker"
+        },
+        {
+          "id": "T67-03",
+          "scenario": "归档路径穿越",
+          "expected": "storage拒绝"
+        },
+        {
+          "id": "T67-04",
+          "scenario": "对端未同意",
+          "expected": "不传文件"
+        }
+      ],
+      "verification_command": "指定Apple设备版本的同意可发现模式下逐阶段probe",
+      "gate": "",
+      "status": "planned",
+      "conditional_dependencies": [],
+      "conditional_rule": "Only the selected release/profile needs its corresponding provider. These are not a requirement to finish every protocol first.",
+      "evidence_required": true
+    },
+    {
+      "id": "T68",
+      "title": "互传联盟MDFE研究与厂商路径",
+      "depends_on": [
+        "T02",
+        "T04",
+        "T05",
+        "T12"
+      ],
+      "files": [
+        "lab/research/mdfe/dossier.md",
+        "lab/research/mdfe/vendor-contacts.md",
+        "tests/devices/mdfe.md"
+      ],
+      "requirements": [
+        "CORE-02",
+        "CORE-03",
+        "SEC-06",
+        "SEC-10"
+      ],
+      "references": [
+        "S14"
+      ],
+      "consumes": "两家中国ROM真机、厂商公开资料/可取得SDK",
+      "produces": "是否有可合法实现spec/API的结论与最小双向实验计划",
+      "implementation": "先确认具体系统菜单与版本属于联盟profile而非Google Quick Share；搜官方开发者入口/申请资料，记录发现与链路，不猜加密材料。缺公开spec则保持research，不写凭空Rust兼容栈。",
+      "cases": [
+        {
+          "id": "T68-01",
+          "scenario": "三星国际版QuickShare成功",
+          "expected": "不当作中国互传通过"
+        },
+        {
+          "id": "T68-02",
+          "scenario": "只有厂商宣传互通",
+          "expected": "仍无Xross实现证据"
+        },
+        {
+          "id": "T68-03",
+          "scenario": "授权资料不可公开",
+          "expected": "原始内容留受控lab，公开实现不直接引用"
+        }
+      ],
+      "verification_command": "厂家原生↔原生基线+资料gate；合法wire事实充分后另行落实对应adapter任务",
+      "gate": "",
+      "status": "planned",
+      "conditional_dependencies": [],
+      "conditional_rule": "Only the selected release/profile needs its corresponding provider. These are not a requirement to finish every protocol first.",
+      "evidence_required": true
+    },
+    {
+      "id": "T69",
+      "title": "Huawei Share SDK provider",
+      "depends_on": [
+        "T04",
+        "T05",
+        "T07",
+        "T08",
+        "T12",
+        "T13"
+      ],
+      "files": [
+        "lab/research/huawei-share/sdk-matrix.md",
+        "workers/huawei-share/",
+        "tests/devices/huawei-share.md"
+      ],
+      "requirements": [
+        "CORE-09",
+        "FILE-01",
+        "FILE-02",
+        "SEC-04",
+        "SEC-07",
+        "SEC-10"
+      ],
+      "references": [
+        "S11",
+        "S12",
+        "S13"
+      ],
+      "consumes": "正式取得的SDK/条款/版本/设备支持说明",
+      "produces": "SDK worker与同一Offer接口；支持平台实测矩阵",
+      "implementation": "验证EMUI/HarmonyOS代际、OS/网卡依赖和可分发条件。SDK binary hash锁定，不传云凭据/文件目录。先Win/Linux官方supported路径probe，再考虑其他平台，不能自动宣称Mac支持。",
+      "cases": [
+        {
+          "id": "T69-01",
+          "scenario": "SDK缺失/无分发权",
+          "expected": "vendor-gated"
+        },
+        {
+          "id": "T69-02",
+          "scenario": "新鸿蒙无法发现旧SDK",
+          "expected": "标具体不兼容"
+        },
+        {
+          "id": "T69-03",
+          "scenario": "SDK请求任意path",
+          "expected": "只通过已批准临时file lease适配"
+        }
+      ],
+      "verification_command": "官方SDK sample+provider contract tests+指定Huawei设备双向测试",
+      "gate": "",
+      "status": "planned",
+      "conditional_dependencies": [],
+      "conditional_rule": "Only the selected release/profile needs its corresponding provider. These are not a requirement to finish every protocol first.",
+      "evidence_required": true
+    },
+    {
+      "id": "T70",
+      "title": "Huawei Cast+与OpenHarmony系统provider",
+      "depends_on": [
+        "T04",
+        "T05",
+        "T12",
+        "T13",
+        "T28",
+        "T29"
+      ],
+      "files": [
+        "lab/research/huawei-cast/architecture-map.md",
+        "workers/huawei-cast/",
+        "workers/openharmony-cast/",
+        "tests/devices/huawei-cast.md"
+      ],
+      "requirements": [
+        "CORE-03",
+        "CORE-09",
+        "MEDIA-01",
+        "MEDIA-02",
+        "SEC-10"
+      ],
+      "references": [
+        "R37",
+        "R38",
+        "R39",
+        "R40",
+        "S10"
+      ],
+      "consumes": "官方SDK合法资料或固定OpenHarmony系统源码",
+      "produces": "明确分开commercial SDK/system component/public app三种可行性",
+      "implementation": "先映射Cast framework/WFD/Cast+stream/softbus实际依赖。OpenHarmony自制系统闭环不外推商用Huawei设备；普通App可用性单独编译/权限probe。可行时只接已有media source contract。",
+      "cases": [
+        {
+          "id": "T70-01",
+          "scenario": "系统privileged应用成功",
+          "expected": "普通App能力仍未验证"
+        },
+        {
+          "id": "T70-02",
+          "scenario": "Cast+SDK许可不允许分发",
+          "expected": "不进入release bundle"
+        },
+        {
+          "id": "T70-03",
+          "scenario": "native source只能播放",
+          "expected": "不广告录制/转发"
+        }
+      ],
+      "verification_command": "指定SDK/System build的最小sample+普通App权限probe+设备对端实验",
+      "gate": "",
+      "status": "planned",
+      "conditional_dependencies": [],
+      "conditional_rule": "Only the selected release/profile needs its corresponding provider. These are not a requirement to finish every protocol first.",
+      "evidence_required": true
+    },
+    {
+      "id": "T71",
+      "title": "scrcpy授权ADB provider",
+      "depends_on": [
+        "T04",
+        "T05",
+        "T07",
+        "T13",
+        "T28",
+        "T29"
+      ],
+      "files": [
+        "workers/scrcpy/",
+        "tests/devices/scrcpy.md"
+      ],
+      "requirements": [
+        "MEDIA-01",
+        "MEDIA-06",
+        "MEDIA-08",
+        "SEC-01",
+        "SEC-04"
+      ],
+      "references": [
+        "R56"
+      ],
+      "consumes": "用户显式启用/授权ADB的测试Android设备",
+      "produces": "有标注的ADB显示provider，view-only默认",
+      "implementation": "保持固定client/server版本，用稳定数据接口或合法patch；不自动打开ADB或批准调试指纹。视频/音频和control权限分开。只把它归类ADB连接工具，不宣称Smart View兼容。",
+      "cases": [
+        {
+          "id": "T71-01",
+          "scenario": "用户未确认ADB",
+          "expected": "不连接"
+        },
+        {
+          "id": "T71-02",
+          "scenario": "view-only尝试输入",
+          "expected": "auth-denied"
+        },
+        {
+          "id": "T71-03",
+          "scenario": "撤销ADB授权",
+          "expected": "终止且不自动重授信"
+        },
+        {
+          "id": "T71-04",
+          "scenario": "设备断开",
+          "expected": "不残留server进程/任务"
+        }
+      ],
+      "verification_command": "库存scrcpy基线+Xross provider view/control权限设备测试",
+      "gate": "",
+      "status": "planned",
+      "conditional_dependencies": [],
+      "conditional_rule": "Only the selected release/profile needs its corresponding provider. These are not a requirement to finish every protocol first.",
+      "evidence_required": true
+    },
+    {
+      "id": "T72",
+      "title": "Sunshine/Moonlight GameStream provider",
+      "depends_on": [
+        "T04",
+        "T05",
+        "T07",
+        "T13",
+        "T28",
+        "T29"
+      ],
+      "files": [
+        "workers/gamestream/",
+        "tests/devices/gamestream.md"
+      ],
+      "requirements": [
+        "MEDIA-01",
+        "MEDIA-03",
+        "MEDIA-05",
+        "MEDIA-06",
+        "SEC-01",
+        "SEC-10"
+      ],
+      "references": [
+        "R57",
+        "R58"
+      ],
+      "consumes": "许可审查后的host/client组件、测试设备",
+      "produces": "可选低延迟画面provider，输入与媒体权限分开",
+      "implementation": "不把GPL core直接link到不兼容产物；先各自库存client/host互通再adapter。只在用户选择时允许capture/launch/input；codec/控制器/多显示器是分别profile，不先追全部游戏优化。",
+      "cases": [
+        {
+          "id": "T72-01",
+          "scenario": "只看权限请求launch app",
+          "expected": "拒绝"
+        },
+        {
+          "id": "T72-02",
+          "scenario": "配对撤销",
+          "expected": "不能恢复旧session"
+        },
+        {
+          "id": "T72-03",
+          "scenario": "网络丢包",
+          "expected": "记录实际延迟/恢复，不假装lossless"
+        }
+      ],
+      "verification_command": "库存Sunshine与Moonlight互操作+媒体/输入权限回归",
+      "gate": "",
+      "status": "planned",
+      "conditional_dependencies": [],
+      "conditional_rule": "Only the selected release/profile needs its corresponding provider. These are not a requirement to finish every protocol first.",
+      "evidence_required": true
+    },
+    {
+      "id": "T73",
+      "title": "标准媒体SRT适配",
+      "depends_on": [
+        "T04",
+        "T05",
+        "T07",
+        "T13",
+        "T28",
+        "T29"
+      ],
+      "files": [
+        "workers/srt/",
+        "tests/devices/srt.md"
+      ],
+      "requirements": [
+        "MEDIA-03",
+        "MEDIA-05",
+        "MEDIA-07",
+        "SEC-05"
+      ],
+      "references": [
+        "R50",
+        "R55"
+      ],
+      "consumes": "许可允许的libsrt/provider和指定MPEGTS/codec组合",
+      "produces": "caller/listener初版，rendezvous另标可选",
+      "implementation": "把SRT连接角色和媒体方向分开；listen须host批准接口/port，stream ID不直接决定任意文件路径。口令/加密要求fail closed。容器codec交集由media模块表达。",
+      "cases": [
+        {
+          "id": "T73-01",
+          "scenario": "口令错误",
+          "expected": "拒绝且不播放垃圾数据"
+        },
+        {
+          "id": "T73-02",
+          "scenario": "慢receiver",
+          "expected": "有界队列/超时"
+        },
+        {
+          "id": "T73-03",
+          "scenario": "恶意stream ID含路径",
+          "expected": "不触发本地文件创建"
+        }
+      ],
+      "verification_command": "libsrt原生测试+OBS/GStreamer库存对端测试",
+      "gate": "",
+      "status": "planned",
+      "conditional_dependencies": [],
+      "conditional_rule": "Only the selected release/profile needs its corresponding provider. These are not a requirement to finish every protocol first.",
+      "evidence_required": true
+    },
+    {
+      "id": "T74",
+      "title": "标准媒体RTMP/RTMPS适配",
+      "depends_on": [
+        "T04",
+        "T05",
+        "T07",
+        "T13",
+        "T28",
+        "T29"
+      ],
+      "files": [
+        "workers/rtmp/",
+        "tests/devices/rtmp.md"
+      ],
+      "requirements": [
+        "MEDIA-03",
+        "MEDIA-05",
+        "SEC-05",
+        "SEC-08"
+      ],
+      "references": [
+        "R50",
+        "R59",
+        "R60"
+      ],
+      "consumes": "审查后的媒体服务和有限stream key",
+      "produces": "发布/接收profile，TLS与codec支持显式",
+      "implementation": "优先worker/成熟库，控制stream key作用域/生命周期；默认RTMPS，明文实验需用户明确知情且限制接口。不要自动支持enhanced-RTMP全部codec，逐组合记录。",
+      "cases": [
+        {
+          "id": "T74-01",
+          "scenario": "错误key发布",
+          "expected": "无媒体会话"
+        },
+        {
+          "id": "T74-02",
+          "scenario": "对端TLS验证失败",
+          "expected": "不降级明文"
+        },
+        {
+          "id": "T74-03",
+          "scenario": "日志含stream key",
+          "expected": "失败"
+        },
+        {
+          "id": "T74-04",
+          "scenario": "停止后新包",
+          "expected": "丢弃并结束"
+        }
+      ],
+      "verification_command": "OBS↔测试服务自制媒体流+key/TLS错误测试",
+      "gate": "",
+      "status": "planned",
+      "conditional_dependencies": [],
+      "conditional_rule": "Only the selected release/profile needs its corresponding provider. These are not a requirement to finish every protocol first.",
+      "evidence_required": true
+    },
+    {
+      "id": "T75",
+      "title": "NDI合法SDK接入gate",
+      "depends_on": [
+        "T04",
+        "T05",
+        "T12",
+        "T13",
+        "T28",
+        "T29"
+      ],
+      "files": [
+        "lab/research/ndi/sdk-decision.md",
+        "workers/ndi/",
+        "tests/devices/ndi.md"
+      ],
+      "requirements": [
+        "CORE-03",
+        "MEDIA-02",
+        "SEC-07",
+        "SEC-10"
+      ],
+      "references": [
+        "S31"
+      ],
+      "consumes": "正式SDK与授权/分发/平台文档",
+      "produces": "是否采用SDK以及支持格式/方向的有证据决议",
+      "implementation": "把SDK作为独立native依赖审查，确认可发布平台、架构、商标/条款、网络发现范围。无合法SDK资料则不编写假兼容。取得后映射video/audio/metadata与媒体clock，不获得隐式输入权限。",
+      "cases": [
+        {
+          "id": "T75-01",
+          "scenario": "许可或SDK版本未固定",
+          "expected": "vendor-gated"
+        },
+        {
+          "id": "T75-02",
+          "scenario": "仅特定pixelformat可用",
+          "expected": "仅该profile"
+        },
+        {
+          "id": "T75-03",
+          "scenario": "SDK升级",
+          "expected": "重新核对hash/ABI/许可与设备回归"
+        }
+      ],
+      "verification_command": "合法SDK samples + media contract测试；无SDK时只交gate文档",
+      "gate": "",
+      "status": "planned",
+      "conditional_dependencies": [],
+      "conditional_rule": "Only the selected release/profile needs its corresponding provider. These are not a requirement to finish every protocol first.",
+      "evidence_required": true
+    },
+    {
+      "id": "T76",
+      "title": "DIAL与厂商电视控制子profile",
+      "depends_on": [
+        "T04",
+        "T05",
+        "T07",
+        "T11",
+        "T24"
+      ],
+      "files": [
+        "lab/research/tv-control/dossiers/",
+        "workers/tv-control/",
+        "tests/devices/tv-control.md"
+      ],
+      "requirements": [
+        "CORE-02",
+        "CORE-05",
+        "SEC-01",
+        "MEDIA-06"
+      ],
+      "references": [
+        "R43",
+        "S07"
+      ],
+      "consumes": "具体TV型号的官方公开API/SDK授权",
+      "produces": "仅discover/launch/control能力，与media transport拆分",
+      "implementation": "按DIAL/Tizen/webOS/Roku分别dossier，先只launch用户选定测试app；pair/pin/token存在时必须正常完成。不要把能开TV app显示成screen mirror support。新的库先进入intake，不能因需要功能直接npm安装执行。",
+      "cases": [
+        {
+          "id": "T76-01",
+          "scenario": "未pair请求控制",
+          "expected": "拒绝"
+        },
+        {
+          "id": "T76-02",
+          "scenario": "电视支持launch但不支持媒体流",
+          "expected": "capabilities只control"
+        },
+        {
+          "id": "T76-03",
+          "scenario": "用户未选目标app",
+          "expected": "不执行任意launch"
+        }
+      ],
+      "verification_command": "具名TV API sample+权限/动作allowlist测试",
+      "gate": "",
+      "status": "planned",
+      "conditional_dependencies": [],
+      "conditional_rule": "Only the selected release/profile needs its corresponding provider. These are not a requirement to finish every protocol first.",
+      "evidence_required": true
+    },
+    {
+      "id": "T77",
+      "title": "移动端与TV packaging能力验证",
+      "depends_on": [
+        "T12",
+        "T13",
+        "T28",
+        "T29",
+        "T54"
+      ],
+      "files": [
+        "lab/research/platforms/android-tv.md",
+        "lab/research/platforms/harmonyos.md",
+        "lab/research/platforms/ios.md",
+        "adapters/mobile-host/",
+        "tests/devices/mobile-lifecycle.md"
+      ],
+      "requirements": [
+        "CORE-09",
+        "APP-06",
+        "APP-07",
+        "INT-05",
+        "INT-08"
+      ],
+      "references": [
+        "R04",
+        "R36",
+        "R37",
+        "S10",
+        "S11",
+        "S12",
+        "S13"
+      ],
+      "consumes": "已稳定LAN/file/media契约和平台SDK实际可用条件",
+      "produces": "不用桌面spawn假设的embedding/native lifecycle方案",
+      "implementation": "先AndroidTV LAN接收+native播放，再Harmony公共socket/mDNS/media API，iOS后台/extension按实际限制。Tizen/webOS只在SDK允许时接，不能假定Tauri能装所有TV。系统receiver已有时不重复注册冲突服务。",
+      "cases": [
+        {
+          "id": "T77-01",
+          "scenario": "App退后台被系统暂停",
+          "expected": "明确不可用/恢复，不声称always-on"
+        },
+        {
+          "id": "T77-02",
+          "scenario": "电视用遥控器审批",
+          "expected": "完整可操作无鼠标依赖"
+        },
+        {
+          "id": "T77-03",
+          "scenario": "系统不允许spawn sidecar",
+          "expected": "使用合法embedding或标blocked"
+        },
+        {
+          "id": "T77-04",
+          "scenario": "商店规则不允许特定组件",
+          "expected": "对应发行版不包含该feature"
+        }
+      ],
+      "verification_command": "各平台SDK构建与指定设备前台/后台/息屏/卸载测试",
+      "gate": "",
+      "status": "planned",
+      "conditional_dependencies": [],
+      "conditional_rule": "Only the selected release/profile needs its corresponding provider. These are not a requirement to finish every protocol first.",
+      "evidence_required": true
+    },
+    {
+      "id": "T78",
+      "title": "性能、背压与radio共存优化",
+      "depends_on": [
+        "T14",
+        "T28",
+        "T29",
+        "T53"
+      ],
+      "files": [
+        "benchmarks/",
+        "docs/performance-profiles.md",
+        "lab/evidence/performance/",
+        "tests/contract/backpressure.rs"
+      ],
+      "requirements": [
+        "FILE-03",
+        "MEDIA-03",
+        "MEDIA-07",
+        "MEDIA-10",
+        "APP-05"
+      ],
+      "references": [],
+      "consumes": "真机baseline、目标硬件与已稳定profile",
+      "produces": "按profile的实测预算与可重复对照，不按LOC/token估算性能",
+      "implementation": "先分阶段计时/内存/CPU/queue/音画drift；用同设备参考receiver进行A/B。文件流不为提高吞吐绕过hash/磁盘提交；视频拥塞不无限缓冲。无线操作对现有LAN任务的影响纳入指标。",
+      "cases": [
+        {
+          "id": "T78-01",
+          "scenario": "慢磁盘/consumer",
+          "expected": "有界背压、无OOM"
+        },
+        {
+          "id": "T78-02",
+          "scenario": "持续30分钟",
+          "expected": "记录内存趋势/时钟偏移并有阈值依据"
+        },
+        {
+          "id": "T78-03",
+          "scenario": "sender+receiver不同codec",
+          "expected": "不隐藏转码CPU/延迟"
+        },
+        {
+          "id": "T78-04",
+          "scenario": "无测量依据",
+          "expected": "UI不显示虚假毫秒精度"
+        }
+      ],
+      "verification_command": "运行明确设备/config的基准用例并生成原始指标CSV与summary",
+      "gate": "",
+      "status": "planned",
+      "conditional_dependencies": [
+        "T23",
+        "T33",
+        "T38",
+        "T39"
+      ],
+      "conditional_rule": "Only the selected release/profile needs its corresponding provider. These are not a requirement to finish every protocol first.",
+      "evidence_required": true
+    },
+    {
+      "id": "T79",
+      "title": "按测量需要升级共享内存/native-view输出",
+      "depends_on": [
+        "T13",
+        "T28",
+        "T29",
+        "T47",
+        "T78"
+      ],
+      "files": [
+        "crates/interop-ipc/src/shared_ring.rs",
+        "workers/presentation/native_view/",
+        "tests/security/shared_ring.rs"
+      ],
+      "requirements": [
+        "MEDIA-02",
+        "MEDIA-07",
+        "SEC-03",
+        "SEC-04",
+        "APP-02"
+      ],
+      "references": [],
+      "consumes": "证明拷贝/数据通道是瓶颈的profiling证据",
+      "produces": "可选ring/texture/native-view fast path，保留基线fallback",
+      "implementation": "只在真实瓶颈存在时做；验证producer index/slot length/generation、对端进程身份、FD/handle授权与释放。shared memory不存长期秘密；畸形元信息不能让consumer越界读写或use-after-release。",
+      "cases": [
+        {
+          "id": "T79-01",
+          "scenario": "producer伪造slot length",
+          "expected": "消费端拒绝"
+        },
+        {
+          "id": "T79-02",
+          "scenario": "旧generation handle重复使用",
+          "expected": "拒绝"
+        },
+        {
+          "id": "T79-03",
+          "scenario": "窗口销毁后texture回调",
+          "expected": "安全取消不崩溃"
+        },
+        {
+          "id": "T79-04",
+          "scenario": "无法跨平台实现",
+          "expected": "保留binary pipe/native-window不阻断功能"
+        }
+      ],
+      "verification_command": "共享内存属性/fuzz/OS句柄测试 + 基线/fast-path一致性回归",
+      "gate": "",
+      "status": "planned",
+      "conditional_dependencies": [],
+      "conditional_rule": "Only the selected release/profile needs its corresponding provider. These are not a requirement to finish every protocol first.",
+      "evidence_required": true
+    },
+    {
+      "id": "T80",
+      "title": "公开实现仓库与Xross依赖化交付",
+      "depends_on": [
+        "T05",
+        "T50",
+        "T51",
+        "T54",
+        "T55",
+        "T56"
+      ],
+      "files": [
+        "README.md",
+        "NOTICE",
+        "docs/provenance-summary.md",
+        "docs/public-api.md",
+        "packaging/source-bundles/",
+        "releases/publication-review.json"
+      ],
+      "requirements": [
+        "SEC-06",
+        "SEC-07",
+        "SEC-10",
+        "INT-01",
+        "INT-06",
+        "INT-08"
+      ],
+      "references": [
+        "S01",
+        "S02",
+        "S03",
+        "S23"
+      ],
+      "consumes": "有来源证据的实现、合规产物和稳定host契约",
+      "produces": "可公开的库/worker/CLI与Xross版本化依赖，不人工复制lab",
+      "implementation": "保留真实provenance；审查公开docs/captures是否含第三方受限内容或用户隐私。决定各component许可，不把混合tree一律MIT。主产品用版本/commit依赖或独立worker manifest，提供升级兼容说明与安全报告入口。",
+      "cases": [
+        {
+          "id": "T80-01",
+          "scenario": "公开包含受限SDK/原始私有抓包",
+          "expected": "发布拒绝"
+        },
+        {
+          "id": "T80-02",
+          "scenario": "文档声称独立实现但来源为GPL翻译",
+          "expected": "纠正路线/许可，不抹历史"
+        },
+        {
+          "id": "T80-03",
+          "scenario": "Xross升级interop后旧provider不兼容",
+          "expected": "version gate阻断而不是运行失控"
+        }
+      ],
+      "verification_command": "公开包license/privacy/provenance review+完整首批qualified矩阵回归",
+      "gate": "",
+      "status": "planned",
+      "conditional_dependencies": [],
+      "conditional_rule": "Only the selected release/profile needs its corresponding provider. These are not a requirement to finish every protocol first.",
+      "evidence_required": true
+    }
+  ]
+}

@@ -1,0 +1,191 @@
+{
+  "schema_version": 1,
+  "sources": [
+    {
+      "id": "S01",
+      "title": "GNU GPL FAQ：链接、aggregate、IPC 的解释",
+      "url": "https://www.gnu.org/licenses/gpl-faq.en.html",
+      "scope": "法律解释来源；不是针对 Xross 的法律意见"
+    },
+    {
+      "id": "S02",
+      "title": "GNU LGPLv3 正文",
+      "url": "https://www.gnu.org/licenses/lgpl.html",
+      "scope": "库组合、重新链接、通知与安装信息等条件"
+    },
+    {
+      "id": "S03",
+      "title": "美国版权法 §101/§102",
+      "url": "https://www.copyright.gov/title17/92chap1.html",
+      "scope": "思想/过程与受保护表达的区别；司法辖区不能泛化"
+    },
+    {
+      "id": "S04",
+      "title": "Windows MiracastReceiver API",
+      "url": "https://learn.microsoft.com/en-us/uwp/api/windows.media.miracast.miracastreceiver",
+      "scope": "系统 receiver 入口；需实际平台 probe"
+    },
+    {
+      "id": "S05",
+      "title": "Windows MediaSourceCreated",
+      "url": "https://learn.microsoft.com/en-us/uwp/api/windows.media.miracast.miracastreceiversession.mediasourcecreated",
+      "scope": "公开对象为 MediaSource；不是 raw packet 导出保证"
+    },
+    {
+      "id": "S06",
+      "title": "MS-MICE overview",
+      "url": "https://learn.microsoft.com/en-us/openspecs/windows_protocols/ms-mice/ab6341b7-4fc7-41fd-a74d-3fe023455482",
+      "scope": "Miracast over infrastructure；初始无线发现不可忽略"
+    },
+    {
+      "id": "S07",
+      "title": "Google Cast getting started",
+      "url": "https://developers.google.com/cast/docs/get-started",
+      "scope": "sender 与 receiver app 平台区别"
+    },
+    {
+      "id": "S08",
+      "title": "Google Cast registration",
+      "url": "https://developers.google.com/cast/docs/registration",
+      "scope": "应用 ID/开发设备注册≠通用硬件授权"
+    },
+    {
+      "id": "S09",
+      "title": "Google Cast Web Receiver",
+      "url": "https://developers.google.com/cast/docs/web_receiver/basic",
+      "scope": "CAF receiver app 运行条件"
+    },
+    {
+      "id": "S10",
+      "title": "Huawei Cast+ codelab",
+      "url": "https://developer.huawei.com/consumer/cn/codelab/CastPlusKit/index.html",
+      "scope": "合作/SDK权限门槛；文档年代和新鸿蒙需再核"
+    },
+    {
+      "id": "S11",
+      "title": "Huawei Share Windows codelab",
+      "url": "https://developer.huawei.com/consumer/cn/codelab/ShareKit-Windows/",
+      "scope": "旧 Windows/EMUI 前提，不自动外推现代设备"
+    },
+    {
+      "id": "S12",
+      "title": "Huawei Share Linux codelab",
+      "url": "https://developer.huawei.com/consumer/en/codelab/ShareEngine-Linux/",
+      "scope": "SDK平台条件和原生依赖，旧资料"
+    },
+    {
+      "id": "S13",
+      "title": "Huawei Share Android codelab",
+      "url": "https://developer.huawei.com/consumer/cn/codelab/ShareKit-android/",
+      "scope": "厂商 SDK 合作路径，非公开 wire 标准"
+    },
+    {
+      "id": "S14",
+      "title": "Samsung China Quick Share",
+      "url": "https://www.samsung.com.cn/apps/quick-share/",
+      "scope": "中国区互传联盟与分享方式，需地区/ROM矩阵"
+    },
+    {
+      "id": "S15",
+      "title": "Android Quick Share",
+      "url": "https://www.android.com/quick-share/",
+      "scope": "产品支持范围不是开放 SDK 保证"
+    },
+    {
+      "id": "S16",
+      "title": "Cargo build scripts",
+      "url": "https://doc.rust-lang.org/cargo/reference/build-scripts.html",
+      "scope": "构建阶段执行风险"
+    },
+    {
+      "id": "S17",
+      "title": "Rust procedural macros",
+      "url": "https://doc.rust-lang.org/reference/procedural-macros.html",
+      "scope": "编译期代码/文件访问风险"
+    },
+    {
+      "id": "S18",
+      "title": "Tauri capabilities",
+      "url": "https://v2.tauri.app/security/capabilities/",
+      "scope": "限制 frontend IPC；不是全进程安全沙箱"
+    },
+    {
+      "id": "S19",
+      "title": "Tauri sidecar",
+      "url": "https://v2.tauri.app/develop/sidecar/",
+      "scope": "目标三元组打包及执行权限"
+    },
+    {
+      "id": "S20",
+      "title": "FFmpeg legal",
+      "url": "https://www.ffmpeg.org/legal.html",
+      "scope": "构建选项与组合许可"
+    },
+    {
+      "id": "S21",
+      "title": "Bluetooth OPP",
+      "url": "https://www.bluetooth.com/specifications/specs/object-push-profile-1-2-1/",
+      "scope": "文件推送 profile；系统开放 API 待核"
+    },
+    {
+      "id": "S22",
+      "title": "WHIP RFC9725",
+      "url": "https://www.rfc-editor.org/rfc/rfc9725.html",
+      "scope": "WebRTC HTTP ingest 已成 RFC；不因此宣称 WHEP 也已标准化"
+    },
+    {
+      "id": "S23",
+      "title": "GitHub license API 局限",
+      "url": "https://docs.github.com/en/rest/licenses/licenses",
+      "scope": "根 LICENSE 检测不覆盖完整依赖"
+    },
+    {
+      "id": "S24",
+      "title": "Wi-Fi Display 规范入口（经 MiracleCast 链接）",
+      "url": "https://www.wi-fi.org/file/wi-fi-display-technical-specification-v11",
+      "scope": "可用性/获取条款需本地确认；本包未读取完整标准"
+    },
+    {
+      "id": "S25",
+      "title": "WebDAV RFC4918",
+      "url": "https://www.rfc-editor.org/rfc/rfc4918",
+      "scope": "稳定规范链接；仅作为后续研究起点，本轮未逐章重审"
+    },
+    {
+      "id": "S26",
+      "title": "RTP RFC3550",
+      "url": "https://www.rfc-editor.org/rfc/rfc3550",
+      "scope": "时序/RTCP 标准参考入口，本轮未逐章重审"
+    },
+    {
+      "id": "S27",
+      "title": "HTTP semantics RFC9110",
+      "url": "https://www.rfc-editor.org/rfc/rfc9110",
+      "scope": "Range、条件请求与缓存验证，后续实现依据"
+    },
+    {
+      "id": "S28",
+      "title": "Microsoft Connected Devices Platform / MS-CDP",
+      "url": "https://learn.microsoft.com/en-us/openspecs/windows_protocols/ms-cdp/f5a15c56-ac3a-48f9-8c51-07b2eadbe9b4",
+      "scope": "公开协议基础；NearShare上层语义和具体Windows互操作另验"
+    },
+    {
+      "id": "S29",
+      "title": "Microsoft SMB2 / SMB3 规范",
+      "url": "https://learn.microsoft.com/en-us/openspecs/windows_protocols/ms-smb2/5606ad47-5ee0-437a-817e-70c366052962",
+      "scope": "系统共享/成熟库接入的协议参考，不建议自行重写完整安全栈"
+    },
+    {
+      "id": "S30",
+      "title": "SFTP filexfer draft history",
+      "url": "https://datatracker.ietf.org/doc/draft-ietf-secsh-filexfer/history/",
+      "scope": "历史Internet-Draft并非最终通用RFC；固定实现版本与扩展，再与既有Xross SFTP核对"
+    },
+    {
+      "id": "S31",
+      "title": "NDI SDK licensing",
+      "url": "https://docs.ndi.video/all/developing-with-ndi/sdk/licensing",
+      "scope": "官方SDK使用/分发/标识条件；SDK可取得不代表开放wire协议或任意重许可"
+    }
+  ]
+}

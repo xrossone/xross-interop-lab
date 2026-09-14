@@ -1,0 +1,221 @@
+{
+  "package": "xross-interop-plan",
+  "version": "2026-09-15",
+  "scope": "specification-and-plan-not-protocol-implementation",
+  "metrics": {
+    "status": "PASS",
+    "repositories": 64,
+    "official_sources": 31,
+    "profiles": 38,
+    "requirements": 56,
+    "tasks": 80,
+    "acceptance_cases": 278,
+    "markdown_documents": 27,
+    "local_links_checked": 768,
+    "dependency_graph": "acyclic",
+    "actual_protocol_tests_run": false,
+    "note": "Offline structural validation only; not a safety, license or device-compatibility certification."
+  },
+  "files": [
+    {
+      "path": "MASTER-PLAN.md",
+      "bytes": 338750,
+      "sha256": "3975671c1b030fa5b507b8f95dcf7c14d976901eb2385e576a06e2f961f7e5c3"
+    },
+    {
+      "path": "README.md",
+      "bytes": 7688,
+      "sha256": "bf98b1618b76b7084455b4c540cfe6f5d5ce7ccb1a61ac1c4a77e7053d78e50f"
+    },
+    {
+      "path": "VALIDATION-REPORT.md",
+      "bytes": 4013,
+      "sha256": "a7fde3c659ac1fd70894f2eb2d20db54c0caf5901661755680aebb8d72579af6"
+    },
+    {
+      "path": "docs/00-decisions-and-scope.md",
+      "bytes": 7518,
+      "sha256": "1e5c9d3f03e0832695f4ce52e91b7a48e3dd078e32c6307d2617b799fbf080ea"
+    },
+    {
+      "path": "docs/01-functional-spec.md",
+      "bytes": 11692,
+      "sha256": "82890324dcbccfa67a8336d47af1c729fd419506194c7d8b7dbeb5d0f6525ef5"
+    },
+    {
+      "path": "docs/02-protocol-catalog.md",
+      "bytes": 25570,
+      "sha256": "8b12724ba044cdb66d501f9543660c1a3a238afe5d943f0ba4fd310b13268126"
+    },
+    {
+      "path": "docs/03-reference-projects.md",
+      "bytes": 39518,
+      "sha256": "d0e2195b79f10dac25cf6da1e18f44c0da2dee1b2492d910f6b5aab0872414f1"
+    },
+    {
+      "path": "docs/04-architecture-and-xross-integration.md",
+      "bytes": 11524,
+      "sha256": "dd61872a7074fe9503113e234eb312f5afb18636dff23d8791974c972702f0f2"
+    },
+    {
+      "path": "docs/05-contracts-ipc-cli.md",
+      "bytes": 10645,
+      "sha256": "98c8634534f2feb29cf3d3e619cda260e1e8705b52943927de4dc9f10616d364"
+    },
+    {
+      "path": "docs/06-research-provenance-and-licensing.md",
+      "bytes": 7350,
+      "sha256": "67cd2bf33349113afe74f931f6488dad698138eab177bfbd63cef0729ddaa1bc"
+    },
+    {
+      "path": "docs/07-security-and-trust-model.md",
+      "bytes": 6336,
+      "sha256": "42c61b27b5cbf628ccda72315f40034d99c96d8edceef257a874e8db38a9ddc7"
+    },
+    {
+      "path": "docs/08-playground-and-media-platforms.md",
+      "bytes": 5142,
+      "sha256": "529b2303058a8c547e55f8192b2ec919c77d4d13012803922903ca09eac9fcd8"
+    },
+    {
+      "path": "docs/09-implementation-roadmap.md",
+      "bytes": 5785,
+      "sha256": "7ba2f9632608b9a059e30851edc9aa9c2954ba28fbbb2552fca5f2002d1313e3"
+    },
+    {
+      "path": "docs/10-validation-and-device-lab.md",
+      "bytes": 7277,
+      "sha256": "48740023a3d491b1f2b064823c18f31a881c8e761c1210a3fa90cd87f60ac9f2"
+    },
+    {
+      "path": "docs/11-risks-and-decision-register.md",
+      "bytes": 3952,
+      "sha256": "c5289c83b4ad7c113c0d30c9fc0cba6a6ebf610eb30c229ebc8e9db76ab1982d"
+    },
+    {
+      "path": "docs/12-ai-handoff-and-working-agreement.md",
+      "bytes": 3661,
+      "sha256": "41c541882398c1b5b1ce069d53e78f365bb9d0d19532b78d217b85d1ceb873f0"
+    },
+    {
+      "path": "docs/13-requirements-coverage.md",
+      "bytes": 3594,
+      "sha256": "5c1031eb90f37e7c973bf7206392a02e83fe7cf2e3730733c96b8b7d9d123582"
+    },
+    {
+      "path": "manifests/official-sources.json",
+      "bytes": 6976,
+      "sha256": "1eae0a16eb5286420fcca8f24ea671700738bb9aed541ea18109631db4be9e58"
+    },
+    {
+      "path": "manifests/profile-task-map.json",
+      "bytes": 1233,
+      "sha256": "6dbebdfe397f3d72e724138bf1aaf471220dc42b78714fa07d910f24233a22e7"
+    },
+    {
+      "path": "manifests/protocols.json",
+      "bytes": 24089,
+      "sha256": "de8797c8a98eca27a377615705bcfa42f0971b4dcec7aa76725938ab9e4c455f"
+    },
+    {
+      "path": "manifests/repositories.json",
+      "bytes": 50244,
+      "sha256": "fb919b101157c71456f31dea035d917a17e33e813e724260700cc8843237102d"
+    },
+    {
+      "path": "manifests/requirements-map.json",
+      "bytes": 5253,
+      "sha256": "d9fa7bf28cf35477dc1c9d84857d1f602b65c8ece88ca33cc07c20dad5486ca5"
+    },
+    {
+      "path": "manifests/tasks.json",
+      "bytes": 149685,
+      "sha256": "80fde3913788b45b1a6001c8b2f6d1bb13c967b29eb6df3d2d583ea617f3256e"
+    },
+    {
+      "path": "plans/01-foundation.md",
+      "bytes": 32840,
+      "sha256": "e5cf8996e971139ed6bf8588eb613bcf0a87b87475004e3b5028dc37f90bd54d"
+    },
+    {
+      "path": "plans/02-files.md",
+      "bytes": 29833,
+      "sha256": "9f5f289f89128e44db451d6f3305f8dd8eec137817dddbedcd0693a161011eaf"
+    },
+    {
+      "path": "plans/03-casting.md",
+      "bytes": 42579,
+      "sha256": "3e707580cccd1c3cb5de3898754e7281cb2ce9eb9e62b83d797641274163ffe3"
+    },
+    {
+      "path": "plans/04-product.md",
+      "bytes": 26355,
+      "sha256": "98a6a69d95eb1d20ae08837d5fe965cbf8bcddfb58ddc32af23a1e0f5b285d2d"
+    },
+    {
+      "path": "plans/05-extensions.md",
+      "bytes": 45654,
+      "sha256": "b27d1b6f6b817bd938eee9b067ed32ec1112ea46eb787b0427f3c893dbad1c73"
+    },
+    {
+      "path": "plans/06-optimization-publication.md",
+      "bytes": 8723,
+      "sha256": "5cf12a3f18209229387c75aec03181a1bd31781e831323862927c55ec916dd42"
+    },
+    {
+      "path": "templates/adr.md",
+      "bytes": 770,
+      "sha256": "af9984a0d8e21efd329e4a64672ef71e8a65f5792ac62e3b7e25a1879e59e6a5"
+    },
+    {
+      "path": "templates/protocol-dossier.md",
+      "bytes": 2004,
+      "sha256": "e88ff01a9afdd3efd3ed408f44ecc9ddb72d7f5390b8f3788f6f2f9715dd41e1"
+    },
+    {
+      "path": "templates/provenance-record.example.json",
+      "bytes": 538,
+      "sha256": "14f19069362c2c4e145c5460d2dcd659650d9f2aa3bb50dee2722ff83de53117"
+    },
+    {
+      "path": "templates/run-manifest.example.json",
+      "bytes": 898,
+      "sha256": "f5cfa7d176fb91d6434646be01b090b83d4c84f0c40ab1a6ba39391ba36ece93"
+    },
+    {
+      "path": "templates/task-report.md",
+      "bytes": 857,
+      "sha256": "7a8d3896c098b4e552c3bd9338c53c7658b4751ab2482aa28a871842f0f81161"
+    },
+    {
+      "path": "tools/README.md",
+      "bytes": 2756,
+      "sha256": "e69386588cac0f0d70e7381694d42813f9c5d5f7e6ac0398c4b75be3a70ce400"
+    },
+    {
+      "path": "tools/clone_plan.py",
+      "bytes": 5116,
+      "sha256": "8fe39253fd9e15abeb79f79d283df37cd6a84a42085d67acb3dace21ce350208"
+    },
+    {
+      "path": "tools/resolve_lock.py",
+      "bytes": 5360,
+      "sha256": "80e3f45fe9a3b7dfbdf1bb0b8f7e145a6f1682910aeafd11aece3b95105f1072"
+    },
+    {
+      "path": "tools/tests/test_tools.py",
+      "bytes": 4893,
+      "sha256": "9bebd1077c775968c6b4f95a2ad3c8d49d621f77ba7ace8f4abb52b7fbd887ca"
+    },
+    {
+      "path": "tools/tests/test_validate.py",
+      "bytes": 1039,
+      "sha256": "bf798f81c792c878a1b712fbe87dac50b627c2f5d1df27040c5306ea897ace02"
+    },
+    {
+      "path": "tools/validate_pack.py",
+      "bytes": 7043,
+      "sha256": "84871349d0b548cff8d166fd8f5c88d8d7946d3aae1c00df75f9233f7713b5eb"
+    }
+  ]
+}

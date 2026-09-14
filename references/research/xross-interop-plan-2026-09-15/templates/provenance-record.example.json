@@ -1,0 +1,19 @@
+{
+  "synthetic": true,
+  "record_id": "template-only",
+  "component": null,
+  "origin": null,
+  "source_commit": null,
+  "source_paths": [],
+  "declared_license": null,
+  "license_file_sha256": null,
+  "usage": "unreviewed",
+  "allowed_implementation_inputs": [],
+  "restricted_materials": [],
+  "generated_or_translated": null,
+  "independent_evidence": [],
+  "approved_for_shipping": false,
+  "reviewer": null,
+  "review_date": null,
+  "notes": "Private storage or a language rewrite does not establish a clean copyright provenance."
+}

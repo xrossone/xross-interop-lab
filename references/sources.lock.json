@@ -1,0 +1,1115 @@
+{
+  "schema_version": 1,
+  "recorded_at": "2026-09-14T20:48:24.916729+00:00",
+  "scope": "LOCAL_GIT_SNAPSHOT_NOT_A_SECURITY_OR_LICENSE_AUDIT",
+  "repositories": [
+    {
+      "id": "R01",
+      "clone_url": "https://github.com/FDH2/UxPlay.git",
+      "local_dir": "r01-uxplay",
+      "resolved_commit": "d9791de116b8c728216d25a584b37f0982ecc686",
+      "production_approved": false,
+      "license_audited": false,
+      "status": "resolved",
+      "origin": "https://github.com/FDH2/UxPlay.git",
+      "license_files": [
+        {
+          "path": "LICENSE",
+          "size_bytes": 35149,
+          "sha256": "3972dc9744f6499f0f9b2dbf76696f2ae7ad8af9b23dde66d6af86c9dfb36986"
+        }
+      ]
+    },
+    {
+      "id": "R02",
+      "clone_url": "https://github.com/metaneutrons/shairplay-rust.git",
+      "local_dir": "r02-shairplay-rust",
+      "resolved_commit": "2fb72b30b658b33f106165a5b6fbd941919bdbe5",
+      "production_approved": false,
+      "license_audited": false,
+      "status": "resolved",
+      "origin": "https://github.com/metaneutrons/shairplay-rust.git",
+      "license_files": [
+        {
+          "path": "LICENSE",
+          "size_bytes": 7652,
+          "sha256": "e3a994d82e644b03a792a930f574002658412f62407f5fee083f2555c5f23118"
+        }
+      ]
+    },
+    {
+      "id": "R03",
+      "clone_url": "https://github.com/FD-/RPiPlay.git",
+      "local_dir": "r03-rpiplay",
+      "resolved_commit": "64d0341ed3bef098c940c9ed0675948870a271f9",
+      "production_approved": false,
+      "license_audited": false,
+      "status": "resolved",
+      "origin": "https://github.com/FD-/RPiPlay.git",
+      "license_files": [
+        {
+          "path": "LICENSE",
+          "size_bytes": 35149,
+          "sha256": "3972dc9744f6499f0f9b2dbf76696f2ae7ad8af9b23dde66d6af86c9dfb36986"
+        }
+      ]
+    },
+    {
+      "id": "R04",
+      "clone_url": "https://github.com/jqssun/android-airplay-server.git",
+      "local_dir": "r04-android-airplay-server",
+      "resolved_commit": "c8defdd70d7e6a04f4f1b71d353653682d594106",
+      "production_approved": false,
+      "license_audited": false,
+      "status": "resolved",
+      "origin": "https://github.com/jqssun/android-airplay-server.git",
+      "license_files": [
+        {
+          "path": "LICENSE",
+          "size_bytes": 35148,
+          "sha256": "8b1ba204bb69a0ade2bfcf65ef294a920f6bb361b317dba43c7ef29d96332b9b"
+        }
+      ]
+    },
+    {
+      "id": "R05",
+      "clone_url": "https://github.com/juhovh/shairplay.git",
+      "local_dir": "r05-shairplay",
+      "resolved_commit": "096b61ad14c90169f438e690d096e3fcf87e504e",
+      "production_approved": false,
+      "license_audited": false,
+      "status": "resolved",
+      "origin": "https://github.com/juhovh/shairplay.git",
+      "license_files": [
+        {
+          "path": "LICENSE",
+          "size_bytes": 417,
+          "sha256": "0ac7d61c52aff5717c02250ca0adf0ef35019e2c0838a3479b8fce597aea6fde"
+        }
+      ]
+    },
+    {
+      "id": "R06",
+      "clone_url": "https://github.com/EstebanKubata/playfair.git",
+      "local_dir": "r06-playfair",
+      "resolved_commit": "96c232ed7e65cccfbd1eae8e0d70e7179799290d",
+      "production_approved": false,
+      "license_audited": false,
+      "status": "resolved",
+      "origin": "https://github.com/EstebanKubata/playfair.git",
+      "license_files": [
+        {
+          "path": "LICENSE.md",
+          "size_bytes": 34941,
+          "sha256": "0b7cf235e6136b426f00870c3200bac308950973d062a733bdc3fc1eca36fa06"
+        }
+      ]
+    },
+    {
+      "id": "R07",
+      "clone_url": "https://github.com/mikebrady/shairport-sync.git",
+      "local_dir": "r07-shairport-sync",
+      "resolved_commit": "7bad231c18368dbd26f298577f6210e36e4b0797",
+      "production_approved": false,
+      "license_audited": false,
+      "status": "resolved",
+      "origin": "https://github.com/mikebrady/shairport-sync.git",
+      "license_files": [
+        {
+          "path": "COPYING",
+          "size_bytes": 58,
+          "sha256": "6034449acaf0ffd70e2506283cf6db93c1101904d8a5be19be0be3521cbc169b"
+        }
+      ]
+    },
+    {
+      "id": "R08",
+      "clone_url": "https://github.com/SteeBono/airplayreceiver.git",
+      "local_dir": "r08-airplayreceiver",
+      "resolved_commit": "806fd39ef263a2b38bdd7c8e636a9fd804a94c4e",
+      "production_approved": false,
+      "license_audited": false,
+      "status": "resolved",
+      "origin": "https://github.com/SteeBono/airplayreceiver.git",
+      "license_files": [
+        {
+          "path": "LICENSE",
+          "size_bytes": 1069,
+          "sha256": "f221bb7bc7374b62fa6a21dcd546289ee83f58c6d29a183bbff0764d10b9e77c"
+        }
+      ]
+    },
+    {
+      "id": "R09",
+      "clone_url": "https://github.com/YimingZhanshen/Airplay2OnWindows.git",
+      "local_dir": "r09-airplay2onwindows",
+      "resolved_commit": "8e1e03d35f9e8b3254c4ffc529c2ef78b0995847",
+      "production_approved": false,
+      "license_audited": false,
+      "status": "resolved",
+      "origin": "https://github.com/YimingZhanshen/Airplay2OnWindows.git",
+      "license_files": [
+        {
+          "path": "LICENSE",
+          "size_bytes": 1069,
+          "sha256": "f221bb7bc7374b62fa6a21dcd546289ee83f58c6d29a183bbff0764d10b9e77c"
+        }
+      ]
+    },
+    {
+      "id": "R10",
+      "clone_url": "https://github.com/openairplay/airplay-spec.git",
+      "local_dir": "r10-airplay-spec",
+      "resolved_commit": "00063da0e7f16c20fbfb5d29331334da1a89590a",
+      "production_approved": false,
+      "license_audited": false,
+      "status": "resolved",
+      "origin": "https://github.com/openairplay/airplay-spec.git",
+      "license_files": []
+    },
+    {
+      "id": "R11",
+      "clone_url": "https://github.com/postlund/pyatv.git",
+      "local_dir": "r11-pyatv",
+      "resolved_commit": "b277a4c8222ecdcbaab8a24e3e713ca44765adb4",
+      "production_approved": false,
+      "license_audited": false,
+      "status": "resolved",
+      "origin": "https://github.com/postlund/pyatv.git",
+      "license_files": [
+        {
+          "path": "LICENSE.md",
+          "size_bytes": 1081,
+          "sha256": "d0c63aa9cb294775307a24a74002eec55be1b206b3da84034c960a319fb063e3"
+        }
+      ]
+    },
+    {
+      "id": "R12",
+      "clone_url": "https://github.com/philippe44/AirConnect.git",
+      "local_dir": "r12-airconnect",
+      "resolved_commit": "11d9c53892af246d763022f33476dbc28b400453",
+      "production_approved": false,
+      "license_audited": false,
+      "status": "resolved",
+      "origin": "https://github.com/philippe44/AirConnect.git",
+      "license_files": [
+        {
+          "path": "LICENSE",
+          "size_bytes": 192,
+          "sha256": "dc8a528175ffe4d7f13628e2c93f686c55e999ce4a4fa6ea3cca1bf7c06448ff"
+        }
+      ]
+    },
+    {
+      "id": "R13",
+      "clone_url": "https://github.com/localsend/protocol.git",
+      "local_dir": "r13-protocol",
+      "resolved_commit": "62bd3406ec80d62f2ed46269cdc06c4dcc391083",
+      "production_approved": false,
+      "license_audited": false,
+      "status": "resolved",
+      "origin": "https://github.com/localsend/protocol.git",
+      "license_files": []
+    },
+    {
+      "id": "R14",
+      "clone_url": "https://github.com/localsend/localsend.git",
+      "local_dir": "r14-localsend",
+      "resolved_commit": "230fb692962668ca22ce0e61a8f53ce1cfd32102",
+      "production_approved": false,
+      "license_audited": false,
+      "status": "resolved",
+      "origin": "https://github.com/localsend/localsend.git",
+      "license_files": [
+        {
+          "path": "LICENSE",
+          "size_bytes": 11346,
+          "sha256": "38514afa30358fc21ef37551f3119b27d820427ece3c6f0ae014c7e47338c087"
+        }
+      ]
+    },
+    {
+      "id": "R15",
+      "clone_url": "https://github.com/grishka/NearDrop.git",
+      "local_dir": "r15-neardrop",
+      "resolved_commit": "8f1fdc7d5cbca4f540ff4fa87edcd578613be65f",
+      "production_approved": false,
+      "license_audited": false,
+      "status": "resolved",
+      "origin": "https://github.com/grishka/NearDrop.git",
+      "license_files": []
+    },
+    {
+      "id": "R16",
+      "clone_url": "https://github.com/kyujin-cho/Bada.git",
+      "local_dir": "r16-bada",
+      "resolved_commit": "9fba4ee696b5404e431ee0000e3fb9e685b0a619",
+      "production_approved": false,
+      "license_audited": false,
+      "status": "resolved",
+      "origin": "https://github.com/kyujin-cho/Bada.git",
+      "license_files": []
+    },
+    {
+      "id": "R17",
+      "clone_url": "https://github.com/google/nearby.git",
+      "local_dir": "r17-nearby",
+      "resolved_commit": "2ea517eae15d9752ee189f452b05d9fe13ce23eb",
+      "production_approved": false,
+      "license_audited": false,
+      "status": "resolved",
+      "origin": "https://github.com/google/nearby.git",
+      "license_files": [
+        {
+          "path": "LICENSE",
+          "size_bytes": 10173,
+          "sha256": "a6cba85bc92e0cff7a450b1d873c0eaa2e9fc96bf472df0247a26bec77bf3ff9"
+        }
+      ]
+    },
+    {
+      "id": "R18",
+      "clone_url": "https://github.com/google/ukey2.git",
+      "local_dir": "r18-ukey2",
+      "resolved_commit": "10fc737aa901e873a3367e7e26b88eb01cd55d69",
+      "production_approved": false,
+      "license_audited": false,
+      "status": "resolved",
+      "origin": "https://github.com/google/ukey2.git",
+      "license_files": [
+        {
+          "path": "LICENSE",
+          "size_bytes": 11358,
+          "sha256": "cfc7749b96f63bd31c3c42b5c471bf756814053e847c10f3eb003417bc523d30"
+        },
+        {
+          "path": "NOTICE",
+          "size_bytes": 7,
+          "sha256": "c693279643b8cd5d248172d9c22cb7cf4ed163a3c98c8a3f69c2717edd3eacb7"
+        }
+      ]
+    },
+    {
+      "id": "R19",
+      "clone_url": "https://github.com/Martichou/rquickshare.git",
+      "local_dir": "r19-rquickshare",
+      "resolved_commit": "378d8ae969941bee4bf60ad34ac9cf8bb7005eb7",
+      "production_approved": false,
+      "license_audited": false,
+      "status": "resolved",
+      "origin": "https://github.com/Martichou/rquickshare.git",
+      "license_files": [
+        {
+          "path": "LICENSE",
+          "size_bytes": 35129,
+          "sha256": "a67b992d96a3efcec5dfbf5e9ad49a909d5f6e9abd9c03fcac456acd6e571693"
+        }
+      ]
+    },
+    {
+      "id": "R20",
+      "clone_url": "https://github.com/vicr123/QNearbyShare.git",
+      "local_dir": "r20-qnearbyshare",
+      "resolved_commit": "e0917fdf80c866cb61a979a964900b3b3983eb76",
+      "production_approved": false,
+      "license_audited": false,
+      "status": "resolved",
+      "origin": "https://github.com/vicr123/QNearbyShare.git",
+      "license_files": [
+        {
+          "path": "LICENSE",
+          "size_bytes": 1055,
+          "sha256": "12804bad8f4a7d9c7fe96a883b6cfe209cded5f5e46dfbc1ac9616f1b2b23e7a"
+        }
+      ]
+    },
+    {
+      "id": "R21",
+      "clone_url": "https://github.com/seemoo-lab/opendrop.git",
+      "local_dir": "r21-opendrop",
+      "resolved_commit": "11fe7ba7861093b302bc0637e8cb10adf2d29337",
+      "production_approved": false,
+      "license_audited": false,
+      "status": "resolved",
+      "origin": "https://github.com/seemoo-lab/opendrop.git",
+      "license_files": [
+        {
+          "path": "LICENSE",
+          "size_bytes": 32473,
+          "sha256": "1b3782ccad7b8614100cda30d3faf42fc39f2e97932908c543005053b654ca68"
+        }
+      ]
+    },
+    {
+      "id": "R22",
+      "clone_url": "https://github.com/seemoo-lab/owl.git",
+      "local_dir": "r22-owl",
+      "resolved_commit": "da255a70f221784c836d943dd3f243bc798f223b",
+      "production_approved": false,
+      "license_audited": false,
+      "status": "resolved",
+      "origin": "https://github.com/seemoo-lab/owl.git",
+      "license_files": [
+        {
+          "path": "COPYING",
+          "size_bytes": 35149,
+          "sha256": "3972dc9744f6499f0f9b2dbf76696f2ae7ad8af9b23dde66d6af86c9dfb36986"
+        }
+      ]
+    },
+    {
+      "id": "R23",
+      "clone_url": "https://github.com/nearby-sharing/android.git",
+      "local_dir": "r23-android",
+      "resolved_commit": "426ff8741b58c71708b1aea7a996d382bc06f58b",
+      "production_approved": false,
+      "license_audited": false,
+      "status": "resolved",
+      "origin": "https://github.com/nearby-sharing/android.git",
+      "license_files": [
+        {
+          "path": "LICENSE.md",
+          "size_bytes": 35149,
+          "sha256": "3972dc9744f6499f0f9b2dbf76696f2ae7ad8af9b23dde66d6af86c9dfb36986"
+        }
+      ]
+    },
+    {
+      "id": "R24",
+      "clone_url": "https://github.com/KDE/kdeconnect-kde.git",
+      "local_dir": "r24-kdeconnect-kde",
+      "resolved_commit": "e4d1df9b90735d72fc9758f288701638c67dfe6e",
+      "production_approved": false,
+      "license_audited": false,
+      "status": "resolved",
+      "origin": "https://github.com/KDE/kdeconnect-kde.git",
+      "license_files": []
+    },
+    {
+      "id": "R25",
+      "clone_url": "https://github.com/GSConnect/gnome-shell-extension-gsconnect.git",
+      "local_dir": "r25-gnome-shell-extension-gsconnect",
+      "resolved_commit": "0be3a14d8a6db8bbd287d694e3397ce9f9888f0f",
+      "production_approved": false,
+      "license_audited": false,
+      "status": "resolved",
+      "origin": "https://github.com/GSConnect/gnome-shell-extension-gsconnect.git",
+      "license_files": []
+    },
+    {
+      "id": "R26",
+      "clone_url": "https://github.com/schlagmichdoch/PairDrop.git",
+      "local_dir": "r26-pairdrop",
+      "resolved_commit": "1b0c9c9d903c3cfc706df1303dc75c3b54d04c77",
+      "production_approved": false,
+      "license_audited": false,
+      "status": "resolved",
+      "origin": "https://github.com/schlagmichdoch/PairDrop.git",
+      "license_files": [
+        {
+          "path": "LICENSE",
+          "size_bytes": 35149,
+          "sha256": "3972dc9744f6499f0f9b2dbf76696f2ae7ad8af9b23dde66d6af86c9dfb36986"
+        }
+      ]
+    },
+    {
+      "id": "R27",
+      "clone_url": "https://github.com/SnapDrop/snapdrop.git",
+      "local_dir": "r27-snapdrop",
+      "resolved_commit": "b8b78cc22a672fd7c442f5a4866a8d9b0c05362e",
+      "production_approved": false,
+      "license_audited": false,
+      "status": "resolved",
+      "origin": "https://github.com/SnapDrop/snapdrop.git",
+      "license_files": [
+        {
+          "path": "LICENSE",
+          "size_bytes": 35149,
+          "sha256": "3972dc9744f6499f0f9b2dbf76696f2ae7ad8af9b23dde66d6af86c9dfb36986"
+        }
+      ]
+    },
+    {
+      "id": "R28",
+      "clone_url": "https://github.com/magic-wormhole/magic-wormhole.git",
+      "local_dir": "r28-magic-wormhole",
+      "resolved_commit": "cc6160670bf7faaab52ba307e3f8ba95e80529fe",
+      "production_approved": false,
+      "license_audited": false,
+      "status": "resolved",
+      "origin": "https://github.com/magic-wormhole/magic-wormhole.git",
+      "license_files": [
+        {
+          "path": "LICENSE",
+          "size_bytes": 1080,
+          "sha256": "4a9cc2415c52cef591b6822eee68fed36d7e6d80284b09638cff61d762d99060"
+        }
+      ]
+    },
+    {
+      "id": "R29",
+      "clone_url": "https://github.com/magic-wormhole/magic-wormhole.rs.git",
+      "local_dir": "r29-magic-wormhole.rs",
+      "resolved_commit": "41d78aed662d29729c98ac5715d7e413c139e18e",
+      "production_approved": false,
+      "license_audited": false,
+      "status": "resolved",
+      "origin": "https://github.com/magic-wormhole/magic-wormhole.rs.git",
+      "license_files": [
+        {
+          "path": "LICENSE",
+          "size_bytes": 13827,
+          "sha256": "6fc9e709ccbfe0d77fbffa2427a983282be2eb88e47b1cdb49f21a83b4d1e665"
+        }
+      ]
+    },
+    {
+      "id": "R30",
+      "clone_url": "https://github.com/schollz/croc.git",
+      "local_dir": "r30-croc",
+      "resolved_commit": "18013cb70a341e5d6cdc3c019a8b5d761c515b5e",
+      "production_approved": false,
+      "license_audited": false,
+      "status": "resolved",
+      "origin": "https://github.com/schollz/croc.git",
+      "license_files": [
+        {
+          "path": "LICENSE",
+          "size_bytes": 1066,
+          "sha256": "8dc6526e85f2d9b696c10659617aefd3a2cfe97b44562e79cca7d0f19ee16e0a"
+        }
+      ]
+    },
+    {
+      "id": "R31",
+      "clone_url": "https://github.com/syncthing/syncthing.git",
+      "local_dir": "r31-syncthing",
+      "resolved_commit": "bb19c017ae672b766338e21ab8c4d8ef6024fae3",
+      "production_approved": false,
+      "license_audited": false,
+      "status": "resolved",
+      "origin": "https://github.com/syncthing/syncthing.git",
+      "license_files": [
+        {
+          "path": "LICENSE",
+          "size_bytes": 16726,
+          "sha256": "3f3d9e0024b1921b067d6f7f88deb4a60cbe7a78e76c64e3f1d7fc3b779b9d04"
+        }
+      ]
+    },
+    {
+      "id": "R32",
+      "clone_url": "https://github.com/albfan/miraclecast.git",
+      "local_dir": "r32-miraclecast",
+      "resolved_commit": "0b7f1f1f6586dc65ff480f3cda5c2170a70aa020",
+      "production_approved": false,
+      "license_audited": false,
+      "status": "resolved",
+      "origin": "https://github.com/albfan/miraclecast.git",
+      "license_files": [
+        {
+          "path": "COPYING",
+          "size_bytes": 1335,
+          "sha256": "ca20fcaac74ffdb2f5789b200dea7996493e417bf7d121f7cd1787e8b0c49f1a"
+        },
+        {
+          "path": "LICENSE_gdhcp",
+          "size_bytes": 18111,
+          "sha256": "8e136a0e16783d79792e6a57a1422a40acea2e18affb5e2cecb858382f8b0a6c"
+        },
+        {
+          "path": "LICENSE_htable",
+          "size_bytes": 26527,
+          "sha256": "a9bdde5616ecdd1e980b44f360600ee8783b1f99b8cc83a2beb163a0a390e861"
+        },
+        {
+          "path": "LICENSE_lgpl",
+          "size_bytes": 26530,
+          "sha256": "dc626520dcd53a22f727af3ee42c770e56c97a64fe3adb063799d8ab032fe551"
+        }
+      ]
+    },
+    {
+      "id": "R33",
+      "clone_url": "https://github.com/GNOME/gnome-network-displays.git",
+      "local_dir": "r33-gnome-network-displays",
+      "resolved_commit": "521caad089cafc6f1e7ef4f5838ead57d7374000",
+      "production_approved": false,
+      "license_audited": false,
+      "status": "resolved",
+      "origin": "https://github.com/GNOME/gnome-network-displays.git",
+      "license_files": [
+        {
+          "path": "COPYING",
+          "size_bytes": 35148,
+          "sha256": "0ae0485a5bd37a63e63603596417e4eb0e653334fa6c7f932ca3a0e85d4af227"
+        }
+      ]
+    },
+    {
+      "id": "R34",
+      "clone_url": "https://github.com/ivygroup/miracast-sink.git",
+      "local_dir": "r34-miracast-sink",
+      "resolved_commit": "214d77aec1d14d3deb7841cbd073c0ab6872d87d",
+      "production_approved": false,
+      "license_audited": false,
+      "status": "resolved",
+      "origin": "https://github.com/ivygroup/miracast-sink.git",
+      "license_files": []
+    },
+    {
+      "id": "R35",
+      "clone_url": "https://github.com/FoxLost/universal-miracast-sink.git",
+      "local_dir": "r35-universal-miracast-sink",
+      "resolved_commit": "71e8e7418a65f0c78770fc0ba6e7f3aadc6e36f8",
+      "production_approved": false,
+      "license_audited": false,
+      "status": "resolved",
+      "origin": "https://github.com/FoxLost/universal-miracast-sink.git",
+      "license_files": []
+    },
+    {
+      "id": "R36",
+      "clone_url": "https://github.com/weekdayjast/MiracastReceiver.git",
+      "local_dir": "r36-miracastreceiver",
+      "resolved_commit": "3183c889b70933ebe5634191632752292d1dadfd",
+      "production_approved": false,
+      "license_audited": false,
+      "status": "resolved",
+      "origin": "https://github.com/weekdayjast/MiracastReceiver.git",
+      "license_files": [
+        {
+          "path": "LICENSE",
+          "size_bytes": 1068,
+          "sha256": "fce5faa859934c037c9c8a8392f7e6cd6efc9662f626a36bcaca1cf86f92e1a5"
+        }
+      ]
+    },
+    {
+      "id": "R37",
+      "clone_url": "https://github.com/openharmony/castengine_wifi_display.git",
+      "local_dir": "r37-castengine_wifi_display",
+      "resolved_commit": "13ce3d3ebc82b9cc1cc19c50aa64e3c5222796a1",
+      "production_approved": false,
+      "license_audited": false,
+      "status": "resolved",
+      "origin": "https://github.com/openharmony/castengine_wifi_display.git",
+      "license_files": [
+        {
+          "path": "LICENSE",
+          "size_bytes": 11357,
+          "sha256": "c71d239df91726fc519c6eb72d318ec65820627232b2f796219e87dcf35d0ab4"
+        }
+      ]
+    },
+    {
+      "id": "R38",
+      "clone_url": "https://github.com/openharmony/castengine_cast_framework.git",
+      "local_dir": "r38-castengine_cast_framework",
+      "resolved_commit": "5697f99721a5840aa6bdbfb66473e2de056de937",
+      "production_approved": false,
+      "license_audited": false,
+      "status": "resolved",
+      "origin": "https://github.com/openharmony/castengine_cast_framework.git",
+      "license_files": [
+        {
+          "path": "LICENSE",
+          "size_bytes": 10145,
+          "sha256": "e679d25a862bca2a10d9b551205c22a24e8945695d5be07961b03851691dab9c"
+        }
+      ]
+    },
+    {
+      "id": "R39",
+      "clone_url": "https://github.com/openharmony/castengine_cast_plus_stream.git",
+      "local_dir": "r39-castengine_cast_plus_stream",
+      "resolved_commit": "259c79910f64d74714381179a6c45efd2dd7267b",
+      "production_approved": false,
+      "license_audited": false,
+      "status": "resolved",
+      "origin": "https://github.com/openharmony/castengine_cast_plus_stream.git",
+      "license_files": [
+        {
+          "path": "LICENSE",
+          "size_bytes": 10145,
+          "sha256": "e679d25a862bca2a10d9b551205c22a24e8945695d5be07961b03851691dab9c"
+        }
+      ]
+    },
+    {
+      "id": "R40",
+      "clone_url": "https://github.com/openharmony/communication_dsoftbus.git",
+      "local_dir": "r40-communication_dsoftbus",
+      "resolved_commit": "d15c795b2a309742f9aef52102d1ad1654922409",
+      "production_approved": false,
+      "license_audited": false,
+      "status": "resolved",
+      "origin": "https://github.com/openharmony/communication_dsoftbus.git",
+      "license_files": [
+        {
+          "path": "LICENSE",
+          "size_bytes": 10173,
+          "sha256": "0cec06e0e55fbc3dc5cee4fca9b607f66cb8f4e4dbcf3b3c013594dd156732e9"
+        }
+      ]
+    },
+    {
+      "id": "R41",
+      "clone_url": "https://android.googlesource.com/platform/frameworks/av",
+      "local_dir": "r41-av",
+      "resolved_commit": null,
+      "production_approved": false,
+      "license_audited": false,
+      "status": "missing",
+      "license_files": []
+    },
+    {
+      "id": "R42",
+      "clone_url": "https://chromium.googlesource.com/openscreen",
+      "local_dir": "r42-openscreen",
+      "resolved_commit": "29634014c9870aac8c5bb77b149ca753e8e42cea",
+      "production_approved": false,
+      "license_audited": false,
+      "status": "resolved",
+      "origin": "https://chromium.googlesource.com/openscreen",
+      "license_files": [
+        {
+          "path": "LICENSE",
+          "size_bytes": 1536,
+          "sha256": "4df77ff8575f0b6053e0e02e1b60aa0b2e87e6aaaaa629a7111970e6c4a12e94"
+        }
+      ]
+    },
+    {
+      "id": "R43",
+      "clone_url": "https://github.com/googlecast/CastReceiver.git",
+      "local_dir": "r43-castreceiver",
+      "resolved_commit": "ddfb06c7fb94db902d7706f610553d8dd4ba85e7",
+      "production_approved": false,
+      "license_audited": false,
+      "status": "resolved",
+      "origin": "https://github.com/googlecast/CastReceiver.git",
+      "license_files": [
+        {
+          "path": "LICENSE",
+          "size_bytes": 11325,
+          "sha256": "cb5e8e7e5f4a3988e1063c142c60dc2df75605f4c46515e776e3aca6df976e14"
+        }
+      ]
+    },
+    {
+      "id": "R44",
+      "clone_url": "https://github.com/home-assistant-libs/pychromecast.git",
+      "local_dir": "r44-pychromecast",
+      "resolved_commit": "5cfdb60783f0d0f1646d60023259ec663a2540c2",
+      "production_approved": false,
+      "license_audited": false,
+      "status": "resolved",
+      "origin": "https://github.com/home-assistant-libs/pychromecast.git",
+      "license_files": [
+        {
+          "path": "LICENSE",
+          "size_bytes": 1083,
+          "sha256": "8d2bcee690b23cc4cbeb8efd79a38bd73d301de169db61f136cdf97b8279db34"
+        }
+      ]
+    },
+    {
+      "id": "R45",
+      "clone_url": "https://github.com/cast-web/protocol.git",
+      "local_dir": "r45-protocol",
+      "resolved_commit": "c906d2108cbf1fc9693674a7c07472b610c8ed00",
+      "production_approved": false,
+      "license_audited": false,
+      "status": "resolved",
+      "origin": "https://github.com/cast-web/protocol.git",
+      "license_files": [
+        {
+          "path": "LICENSE",
+          "size_bytes": 1107,
+          "sha256": "a8b3e6123ac60bbad4d227a44ba05ee26575acf21b88fd8b40c715b0c9426e1f"
+        }
+      ]
+    },
+    {
+      "id": "R46",
+      "clone_url": "https://github.com/pupnp/pupnp.git",
+      "local_dir": "r46-pupnp",
+      "resolved_commit": "2dfc2751cae1fbcaf8b053080cd9f60034af6518",
+      "production_approved": false,
+      "license_audited": false,
+      "status": "resolved",
+      "origin": "https://github.com/pupnp/pupnp.git",
+      "license_files": [
+        {
+          "path": "COPYING",
+          "size_bytes": 1477,
+          "sha256": "c8b99423cad48bb44e2cf52a496361404290865eac259a82da6d1e4331ececb3"
+        }
+      ]
+    },
+    {
+      "id": "R47",
+      "clone_url": "https://github.com/plutinosoft/Platinum.git",
+      "local_dir": "r47-platinum",
+      "resolved_commit": "2674fa6b6f868f4a8464c7be77e2442e97429a56",
+      "production_approved": false,
+      "license_audited": false,
+      "status": "resolved",
+      "origin": "https://github.com/plutinosoft/Platinum.git",
+      "license_files": [
+        {
+          "path": "LICENSE.txt",
+          "size_bytes": 19574,
+          "sha256": "85f7d631b04ac031adab7b6fed3e77410b83fadc9c802d10203f14c232f10c19"
+        }
+      ]
+    },
+    {
+      "id": "R48",
+      "clone_url": "https://github.com/gerbera/gerbera.git",
+      "local_dir": "r48-gerbera",
+      "resolved_commit": "1dc78d2230dfb427a7605da9c366d3fec8d321a2",
+      "production_approved": false,
+      "license_audited": false,
+      "status": "resolved",
+      "origin": "https://github.com/gerbera/gerbera.git",
+      "license_files": [
+        {
+          "path": "LICENSE.md",
+          "size_bytes": 15356,
+          "sha256": "cae4138373be41fd2be75faf41ce7efbcf49fb17d0e05ad1c51cc01ac335b9b6"
+        }
+      ]
+    },
+    {
+      "id": "R49",
+      "clone_url": "https://github.com/GNOME/rygel.git",
+      "local_dir": "r49-rygel",
+      "resolved_commit": "dc8a47dcbb7ce713bf8c19bdb6ec2c22db97f52c",
+      "production_approved": false,
+      "license_audited": false,
+      "status": "resolved",
+      "origin": "https://github.com/GNOME/rygel.git",
+      "license_files": [
+        {
+          "path": "COPYING",
+          "size_bytes": 26530,
+          "sha256": "dc626520dcd53a22f727af3ee42c770e56c97a64fe3adb063799d8ab032fe551"
+        },
+        {
+          "path": "COPYING.logo",
+          "size_bytes": 89,
+          "sha256": "c7d881be8ae01162510e982a32001446c6d6d18a9cecc89cc41a28bd215a0262"
+        }
+      ]
+    },
+    {
+      "id": "R50",
+      "clone_url": "https://github.com/bluenviron/mediamtx.git",
+      "local_dir": "r50-mediamtx",
+      "resolved_commit": "20c01dd4593a391dad219cce43ade5d192b671a9",
+      "production_approved": false,
+      "license_audited": false,
+      "status": "resolved",
+      "origin": "https://github.com/bluenviron/mediamtx.git",
+      "license_files": [
+        {
+          "path": "LICENSE",
+          "size_bytes": 1062,
+          "sha256": "ecae73b0a23185a35a1222edc0aae5245bb9739420bad0125b0c42e935301a80"
+        }
+      ]
+    },
+    {
+      "id": "R51",
+      "clone_url": "https://github.com/bluenviron/gortsplib.git",
+      "local_dir": "r51-gortsplib",
+      "resolved_commit": "cffc843481dd6d7545e143ae4e7325b3edd4e53d",
+      "production_approved": false,
+      "license_audited": false,
+      "status": "resolved",
+      "origin": "https://github.com/bluenviron/gortsplib.git",
+      "license_files": [
+        {
+          "path": "LICENSE",
+          "size_bytes": 1062,
+          "sha256": "fa584448e3023627b43c85c80e02a793e6f48e8267636727161202b6bec053d9"
+        }
+      ]
+    },
+    {
+      "id": "R52",
+      "clone_url": "https://github.com/GStreamer/gstreamer.git",
+      "local_dir": "r52-gstreamer",
+      "resolved_commit": "8f1b21e6e582202c840fd0d9929b29dee82512bf",
+      "production_approved": false,
+      "license_audited": false,
+      "status": "resolved",
+      "origin": "https://github.com/GStreamer/gstreamer.git",
+      "license_files": [
+        {
+          "path": "LICENSE",
+          "size_bytes": 26431,
+          "sha256": "ad2eec519ebd4b5df86ea84dff24ae3bfa2edea846a703b58902dd221ae375db"
+        }
+      ]
+    },
+    {
+      "id": "R53",
+      "clone_url": "https://github.com/GStreamer/gstreamer-rs.git",
+      "local_dir": "r53-gstreamer-rs",
+      "resolved_commit": "ac47ad919411896bfc1278df25f6a311fdb41256",
+      "production_approved": false,
+      "license_audited": false,
+      "status": "resolved",
+      "origin": "https://github.com/GStreamer/gstreamer-rs.git",
+      "license_files": [
+        {
+          "path": "LICENSE-APACHE",
+          "size_bytes": 10847,
+          "sha256": "a60eea817514531668d7e00765731449fe14d059d3249e0bc93b36de45f759f2"
+        },
+        {
+          "path": "LICENSE-MIT",
+          "size_bytes": 1023,
+          "sha256": "23f18e03dc49df91622fe2a76176497404e46ced8a715d9d2b67a7446571cca3"
+        }
+      ]
+    },
+    {
+      "id": "R54",
+      "clone_url": "https://github.com/webrtc-rs/webrtc.git",
+      "local_dir": "r54-webrtc",
+      "resolved_commit": "deaddd32dc4f5f6da06c6267e1bf2e25a64fe222",
+      "production_approved": false,
+      "license_audited": false,
+      "status": "resolved",
+      "origin": "https://github.com/webrtc-rs/webrtc.git",
+      "license_files": [
+        {
+          "path": "LICENSE-APACHE",
+          "size_bytes": 10847,
+          "sha256": "a60eea817514531668d7e00765731449fe14d059d3249e0bc93b36de45f759f2"
+        },
+        {
+          "path": "LICENSE-MIT",
+          "size_bytes": 1066,
+          "sha256": "56cc6c08157f4faf70d351b3a7ceac143399d5359a78c180e06dcd0390784f4d"
+        }
+      ]
+    },
+    {
+      "id": "R55",
+      "clone_url": "https://github.com/Haivision/srt.git",
+      "local_dir": "r55-srt",
+      "resolved_commit": "cae8f624a5a777066d12512f7b60debc260bdfa5",
+      "production_approved": false,
+      "license_audited": false,
+      "status": "resolved",
+      "origin": "https://github.com/Haivision/srt.git",
+      "license_files": [
+        {
+          "path": "LICENSE",
+          "size_bytes": 16726,
+          "sha256": "fab3dd6bdab226f1c08630b1dd917e11fcb4ec5e1e020e2c16f83a0a13863e85"
+        }
+      ]
+    },
+    {
+      "id": "R56",
+      "clone_url": "https://github.com/Genymobile/scrcpy.git",
+      "local_dir": "r56-scrcpy",
+      "resolved_commit": "19c1261d2e2cbf2b5e6a71a8b64cc1dd3ede06ac",
+      "production_approved": false,
+      "license_audited": false,
+      "status": "resolved",
+      "origin": "https://github.com/Genymobile/scrcpy.git",
+      "license_files": [
+        {
+          "path": "LICENSE",
+          "size_bytes": 11387,
+          "sha256": "01c12035bf35af37241298dc7ad538eb2a07e5c940437bc6876feeaa9d1951d0"
+        }
+      ]
+    },
+    {
+      "id": "R57",
+      "clone_url": "https://github.com/LizardByte/Sunshine.git",
+      "local_dir": "r57-sunshine",
+      "resolved_commit": "43624bf1bf650718373c37002d025693b334c842",
+      "production_approved": false,
+      "license_audited": false,
+      "status": "resolved",
+      "origin": "https://github.com/LizardByte/Sunshine.git",
+      "license_files": [
+        {
+          "path": "LICENSE",
+          "size_bytes": 35149,
+          "sha256": "3972dc9744f6499f0f9b2dbf76696f2ae7ad8af9b23dde66d6af86c9dfb36986"
+        },
+        {
+          "path": "NOTICE",
+          "size_bytes": 172,
+          "sha256": "6e679d2d6fe2c1a78e053e5f9ba91ad1bc0e9e115c23bf26d64c91480cbb783d"
+        }
+      ]
+    },
+    {
+      "id": "R58",
+      "clone_url": "https://github.com/moonlight-stream/moonlight-common-c.git",
+      "local_dir": "r58-moonlight-common-c",
+      "resolved_commit": "62e066388f1a1b133e0bee947b9a374311a3354b",
+      "production_approved": false,
+      "license_audited": false,
+      "status": "resolved",
+      "origin": "https://github.com/moonlight-stream/moonlight-common-c.git",
+      "license_files": [
+        {
+          "path": "LICENSE.txt",
+          "size_bytes": 35141,
+          "sha256": "589ed823e9a84c56feb95ac58e7cf384626b9cbf4fda2a907bc36e103de1bad2"
+        }
+      ]
+    },
+    {
+      "id": "R59",
+      "clone_url": "https://github.com/obsproject/obs-studio.git",
+      "local_dir": "r59-obs-studio",
+      "resolved_commit": "caaa0223401f2195128f9998265a0f66d84c9a02",
+      "production_approved": false,
+      "license_audited": false,
+      "status": "resolved",
+      "origin": "https://github.com/obsproject/obs-studio.git",
+      "license_files": [
+        {
+          "path": "COPYING",
+          "size_bytes": 18092,
+          "sha256": "8177f97513213526df2cf6184d8ff986c675afb514d4e68a404010521b880643"
+        }
+      ]
+    },
+    {
+      "id": "R60",
+      "clone_url": "https://github.com/FFmpeg/FFmpeg.git",
+      "local_dir": "r60-ffmpeg",
+      "resolved_commit": "639ee849526cfe61ceb312776335c245b98bd9d4",
+      "production_approved": false,
+      "license_audited": false,
+      "status": "resolved",
+      "origin": "https://github.com/FFmpeg/FFmpeg.git",
+      "license_files": [
+        {
+          "path": "COPYING.GPLv2",
+          "size_bytes": 18092,
+          "sha256": "8177f97513213526df2cf6184d8ff986c675afb514d4e68a404010521b880643"
+        },
+        {
+          "path": "COPYING.GPLv3",
+          "size_bytes": 35147,
+          "sha256": "8ceb4b9ee5adedde47b31e975c1d90c73ad27b6b165a1dcd80c7c545eb65b903"
+        },
+        {
+          "path": "COPYING.LGPLv2.1",
+          "size_bytes": 26517,
+          "sha256": "246041b6ecf9bc32d718a62c57877c78b5eb397b6467e74ed7ae2626ab189c30"
+        },
+        {
+          "path": "COPYING.LGPLv3",
+          "size_bytes": 7651,
+          "sha256": "da7eabb7bafdf7d3ae5e9f223aa5bdc1eece45ac569dc21b3b037520b4464768"
+        },
+        {
+          "path": "LICENSE.md",
+          "size_bytes": 4358,
+          "sha256": "8c880fa51b7e1d8dbc09a92685da98c129532f3b0a766a9a58a2321ad67bab6c"
+        }
+      ]
+    },
+    {
+      "id": "R61",
+      "clone_url": "https://github.com/bluez/bluez.git",
+      "local_dir": "r61-bluez",
+      "resolved_commit": "c8e2b951b07fc9b84fa7f3e70dcde2b61aab3ad8",
+      "production_approved": false,
+      "license_audited": false,
+      "status": "resolved",
+      "origin": "https://github.com/bluez/bluez.git",
+      "license_files": [
+        {
+          "path": "COPYING",
+          "size_bytes": 18006,
+          "sha256": "b499eddebda05a8859e32b820a64577d91f1de2b52efa2a1575a2cb4000bc259"
+        },
+        {
+          "path": "COPYING.LIB",
+          "size_bytes": 26423,
+          "sha256": "ec60b993835e2c6b79e6d9226345f4e614e686eb57dc13b6420c15a33a8996e5"
+        }
+      ]
+    },
+    {
+      "id": "R62",
+      "clone_url": "https://github.com/keepsimple1/mdns-sd.git",
+      "local_dir": "r62-mdns-sd",
+      "resolved_commit": "75d19415783a6a5c6b104a40e517ccef5ba4ca51",
+      "production_approved": false,
+      "license_audited": false,
+      "status": "resolved",
+      "origin": "https://github.com/keepsimple1/mdns-sd.git",
+      "license_files": [
+        {
+          "path": "LICENSE-APACHE",
+          "size_bytes": 10857,
+          "sha256": "1118360170ac75117538c65db992cfec5d0ffa28a6b990e46ab45602b638c8fd"
+        },
+        {
+          "path": "LICENSE-MIT",
+          "size_bytes": 1091,
+          "sha256": "cf0547f95d22b91b11540bc053d4973ad8beed39f98b614254c074ca4ed6b6af"
+        }
+      ]
+    },
+    {
+      "id": "R63",
+      "clone_url": "https://github.com/deviceplug/btleplug.git",
+      "local_dir": "r63-btleplug",
+      "resolved_commit": "f0ac6b72df3c94f476c8e040c7340507c5930133",
+      "production_approved": false,
+      "license_audited": false,
+      "status": "resolved",
+      "origin": "https://github.com/deviceplug/btleplug.git",
+      "license_files": [
+        {
+          "path": "LICENSE.md",
+          "size_bytes": 15188,
+          "sha256": "95f1ea7e261c12c46fe8f67d2ddb7a92ebb1a5fd10d127e4ab3003f0701d9f56"
+        }
+      ]
+    },
+    {
+      "id": "R64",
+      "clone_url": "https://github.com/microsoft/windows-rs.git",
+      "local_dir": "r64-windows-rs",
+      "resolved_commit": "ab043faf85cb6dd5832617959a17e297d4030931",
+      "production_approved": false,
+      "license_audited": false,
+      "status": "resolved",
+      "origin": "https://github.com/microsoft/windows-rs.git",
+      "license_files": [
+        {
+          "path": "license-apache-2.0",
+          "size_bytes": 11351,
+          "sha256": "c16f8dcf1a368b83be78d826ea23de4079fe1b4469a0ab9ee20563f37ff3d44b"
+        },
+        {
+          "path": "license-mit",
+          "size_bytes": 1141,
+          "sha256": "c2cfccb812fe482101a8f04597dfc5a9991a6b2748266c47ac91b6a5aae15383"
+        }
+      ]
+    }
+  ]
+}

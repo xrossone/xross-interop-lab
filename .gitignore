@@ -1,0 +1,24 @@
+# Rust / build artifacts（含 impl/ 下各 crate 的 target）
+target/
+__pycache__/
+*.pyc
+
+# 第三方源码树：clone 在仓库外 quarantine，永不 vendor 进来
+/references/external/
+/vendor/
+
+# 抓包与私有材料：脱敏摘录放 evidence/
+/captures/
+*.pcap
+*.pcapng
+*.har
+
+# 凭据
+.env
+.env.*
+*.pem
+*.p12
+*.mobileconfig
+
+# OS
+.DS_Store
