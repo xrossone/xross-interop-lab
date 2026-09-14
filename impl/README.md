@@ -14,10 +14,16 @@
 | crate | 职责 | 引入于 |
 |---|---|---|
 | `crates/interop-contract` | 领域对象、统一错误、能力声明、JSON 契约（ids/capability/offer/media/error + golden + JSON Schema） | T01/T06 |
+| `crates/interop-policy` | scoped grant：绑定 subject/session/scope/direction/预算/expiry，默认拒绝跨 scope | T07 |
+| `crates/interop-runtime` | HostPorts + 内存 fake host；会话注册表（单 authority 终态）、events（4096/16MiB + gap）、limits | T07/T10 |
+| `crates/interop-file` | 受限流式存储：路径形状拒绝、独占临时文件、预算、no-follow 原子发布、SHA-256 完整性 | T08 |
+| `crates/interop-ipc` | 本地控制面：u32BE 长度帧（256KiB 上限）、JSON-RPC 单对象、hello 认证、版本协商 | T09 |
+| `crates/interop-testkit` | fake clock、确定性分片/重排、fixture hash 登记、run manifest 分级、脱敏检查 | T14 |
+| `adapters/standalone-host` | standalone 显式 policy（profile 默认关闭、60s TTL、只签发 Entry scope） | T07 |
+| `apps/interopd` | headless daemon 骨架：UDS 0600 + 帧循环（Windows pipe 载体后续） | T09 |
 
 后续按任务需要创建（docs/04 §2：不一次创建所有空 crate）：
-`interop-policy`、`interop-runtime`、`interop-file`、`interop-ipc`、
-`interop-platform`、`interop-testkit`、`apps/interopd`。
+`interop-platform`（T12）、`apps/interop-cli`（T11+）、`tests/contract/` 工作区级集成测试（T11+）。
 
 ## 依赖分层（T01-01）
 
