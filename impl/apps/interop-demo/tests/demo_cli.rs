@@ -291,6 +291,76 @@ fn d10_dlna_control_path() {
     assert!(!d["blocked"].as_array().expect("blocked").is_empty());
 }
 
+/// D-11：WFD/Miracast 段——消息方向表、完整会话序列、协商字段、IE 边界、RTP 记账。
+#[test]
+fn d11_wfd_control_path() {
+    let (code, v) = run_json(&["wfd", "--json"]);
+    assert_eq!(code, 0);
+    let w = &v["wfd"];
+    assert_eq!(w["evidence_level"], "simulated");
+
+    // 消息层：M1/M2 同形，按发送方区分。
+    assert_eq!(w["messages"]["table"].as_array().expect("table").len(), 10);
+    assert_eq!(w["messages"]["m1_m2_same_shape"], true);
+
+    // 会话：走到 PLAYING 并超时结束；关键帧请求与 keep-alive 各发生一次。
+    assert!(!w["session"]["session_id"].as_str().unwrap_or("").is_empty());
+    assert_eq!(w["session"]["timeout"], true);
+    assert_eq!(w["session"]["keepalive_sent"], true);
+    assert_eq!(w["session"]["keyframe_requests"], 1);
+    assert_eq!(w["session"]["player_available"], false, "本 crate 无播放器：不得声称能显示");
+    assert!(
+        w["session"]["advertised"].as_str().unwrap_or("").contains("wfd_video_formats: 28 00 02 10"),
+        "M3 应答体必须来自本端实现清单"
+    );
+    let m13 = w["session"]["keyframe_request"].as_str().unwrap_or("");
+    assert!(m13.contains("uri=rtsp://localhost/wfd1.0"), "M13 走控制 URI：{m13}");
+    assert!(m13.contains("wfd_idr_request"), "M13 正文是裸参数名：{m13}");
+
+    // 协商：字段解析 + 分歧以可观察形态暴露 + 空广告。
+    assert_eq!(w["negotiation"]["native"]["table"], "cea");
+    assert_eq!(w["negotiation"]["native"]["index"], 5);
+    assert_eq!(w["negotiation"]["video"]["max_slice_num"], 2);
+    assert_eq!(w["negotiation"]["audio"]["lpcm_48000_2ch"], true);
+    assert_eq!(w["negotiation"]["audio"]["aac_48k_2ch"], true);
+    assert_eq!(w["negotiation"]["ports_quirk"]["port1_zero_suppresses_keepalive"], true);
+    assert_eq!(w["negotiation"]["ports_quirk"]["aosp_strict_would_reject_port1_nonzero"], true);
+    assert_eq!(w["negotiation"]["empty_advertisement"]["video_wire"], "none");
+    assert_eq!(w["negotiation"]["empty_advertisement"]["audio_wire"], "none");
+
+    // IE 边界：子元素可往返，容器必须拒绝（F-24）。
+    assert_eq!(w["ie"]["device_subelement"]["bytes"], 9);
+    assert_eq!(w["ie"]["device_subelement"]["id"], 0);
+    assert_eq!(w["ie"]["device_subelement"]["length_field"], 6);
+    assert_eq!(w["ie"]["device_subelement"]["control_port"], 7236);
+    assert_eq!(w["ie"]["device_subelement"]["roundtrip"], true);
+    assert_eq!(w["ie"]["container"]["build"], "UnsupportedFeature", "完整 IE 必须拒绝构造（F-24）");
+    assert_eq!(w["ie"]["container"]["parse"], "UnsupportedFeature");
+
+    // RTP 记账：连续不请求、缺口请求、乱序不请求。
+    assert_eq!(w["rtp"]["sequential_requests_none"], true);
+    assert_eq!(w["rtp"]["loss_requests_keyframe"], true);
+    assert_eq!(w["rtp"]["reorder_does_not"], true);
+    assert_eq!(w["rtp"]["keyframe_requests"], 1);
+    assert_eq!(w["rtp"]["payload_type_anomalies"], 1, "非 33 的 PT 只记账不拒绝");
+
+    // 负向集：没有任何一条被"接受"。
+    let rejects = w["rejects"].as_array().expect("rejects");
+    assert!(rejects.len() >= 15, "负向覆盖不足：{}", rejects.len());
+    for case in rejects {
+        let outcome = case["outcome"].as_str().unwrap_or("");
+        assert_ne!(outcome, "accepted(unexpected)", "负向被接受：{}", case["case"]);
+        assert!(
+            matches!(
+                outcome,
+                "InvalidFrame" | "UnsupportedFeature" | "UnsupportedMethod" | "ResourceLimit"
+            ),
+            "未知错误码 {outcome}"
+        );
+    }
+    assert!(!w["blocked"].as_array().expect("blocked").is_empty());
+}
+
 /// D-07：blocked 与待用户手动清单必须随输出给出（本阶段不允许"看起来全绿"）。
 #[test]
 fn d07_blocked_and_manual_lists_are_reported() {

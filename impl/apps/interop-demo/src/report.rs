@@ -25,8 +25,24 @@ pub struct DemoReport {
     pub quickshare: QuickShareReport,
     pub mirror: MirrorReport,
     pub dlna: DlnaReport,
+    pub wfd: WfdReport,
     pub blocked: Vec<String>,
     pub manual_tests: Vec<String>,
+}
+
+// ---------- WFD/Miracast（T37）----------
+
+#[derive(Debug, Clone, Serialize)]
+pub struct WfdReport {
+    pub evidence_level: &'static str,
+    pub wire: &'static str,
+    pub messages: serde_json::Value,
+    pub session: serde_json::Value,
+    pub negotiation: serde_json::Value,
+    pub ie: serde_json::Value,
+    pub rtp: serde_json::Value,
+    pub rejects: Vec<serde_json::Value>,
+    pub blocked: Vec<String>,
 }
 
 // ---------- DLNA/UPnP AV（T41）----------

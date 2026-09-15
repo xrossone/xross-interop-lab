@@ -12,6 +12,7 @@
 #![allow(clippy::result_large_err)]
 
 pub mod dlna;
+pub mod wfd;
 pub mod mirror;
 pub mod quickshare;
 pub mod report;
@@ -41,6 +42,8 @@ pub const MANUAL_TESTS: &[&str] = &[
     "与 stock Android 完成一次 Quick Share 握手并比对 4 位确认码（裁决 F-12/F-15 两处规范/实现冲突）",
     "AirPlay 真机镜像（iPhone/iPad → 本机）与 30 分钟墙钟长跑（drift/丢帧/RSS 趋势）——需 S1/S2",
     "DLNA 真机矩阵：库存 TV 的 protocolInfo 与实际 SetAVTransportURI→Play 时序（P-M07-1）",
+    "WFD 真机序列与 IE：隔离 Linux 机跑 sink 抓 M0–M16 与 IE 播发（P-M05-2）；Windows MiracastReceiver headless 边界（P-M05-1）",
+    "WFD 真机 codec 矩阵：Android/Windows 发送端 → 本节点（P-M05-3）",
 ];
 
 /// 跑全部场景并汇总（JSON 与人类输出共用同一份数据）。
@@ -52,6 +55,7 @@ pub fn compute_report() -> DemoReport {
     let (qshare, q_ok) = quickshare::quickshare_scenario();
     let (mirror, r_ok) = mirror::mirror_scenario();
     let (dlna, l_ok) = dlna::dlna_scenario();
+    let (wfd, w_ok) = wfd::wfd_scenario();
     let generated_unix_ms = std::time::SystemTime::now()
         .duration_since(std::time::UNIX_EPOCH)
         .map(|d| d.as_millis())
@@ -62,7 +66,7 @@ pub fn compute_report() -> DemoReport {
         evidence_level: EVIDENCE_LEVEL,
         wire: WIRE,
         generated_unix_ms,
-        ok: d_ok && s_ok && k_ok && m_ok && q_ok && r_ok && l_ok,
+        ok: d_ok && s_ok && k_ok && m_ok && q_ok && r_ok && l_ok && w_ok,
         discovery,
         session,
         sink,
@@ -70,6 +74,7 @@ pub fn compute_report() -> DemoReport {
         quickshare: qshare,
         mirror,
         dlna,
+        wfd,
         blocked: BLOCKED.iter().map(|s| s.to_string()).collect(),
         manual_tests: MANUAL_TESTS.iter().map(|s| s.to_string()).collect(),
     }
@@ -286,6 +291,106 @@ pub fn render_human(r: &DemoReport, section: Option<&str>) -> String {
         }
     }
 
+    if want("wfd") {
+        let w = &r.wfd;
+        out.push_str("\n## WFD/Miracast 接收侧（T37）\n");
+        out.push_str(&format!(
+            "消息层            : 登记 {} 条；M1/M2 同形（按发送方区分）={}\n",
+            w.messages["table"].as_array().map(|a| a.len()).unwrap_or(0),
+            w.messages["m1_m2_same_shape"]
+        ));
+        out.push_str(&format!(
+            "会话              : Session={} 入站={} 出站={} 进入 playing→超时={}\n",
+            w.session["session_id"].as_str().unwrap_or(""),
+            w.session["messages_in"],
+            w.session["messages_out"],
+            w.session["timeout"]
+        ));
+        for step in w.session["steps"].as_array().into_iter().flatten() {
+            out.push_str(&format!("  - {}\n", step.as_str().unwrap_or("")));
+        }
+        out.push_str(&format!(
+            "  媒体            : 入包={} 丢包={} 关键帧请求={} 播放器可用={}（能协商 ≠ 能显示）\n",
+            w.session["packets"], w.session["lost"], w.session["keyframe_requests"],
+            w.session["player_available"]
+        ));
+        out.push_str(&format!("  {}\n", w.session["keyframe_request"].as_str().unwrap_or("")));
+        out.push_str(&format!(
+            "协商              : native={} 表={} 索引={}；profile={} level={} slice_max={} wire={}\n",
+            w.negotiation["native"]["raw"].as_str().unwrap_or(""),
+            w.negotiation["native"]["table"].as_str().unwrap_or(""),
+            w.negotiation["native"]["index"],
+            w.negotiation["video"]["profile"].as_str().unwrap_or(""),
+            w.negotiation["video"]["level"].as_str().unwrap_or(""),
+            w.negotiation["video"]["max_slice_num"],
+            w.negotiation["video"]["wire"].as_str().unwrap_or("")
+        ));
+        out.push_str(&format!(
+            "  音频            : LPCM 44.1k={} 48k={} AAC 48k={}；广告 wire={}\n",
+            w.negotiation["audio"]["lpcm_44100_2ch"],
+            w.negotiation["audio"]["lpcm_48000_2ch"],
+            w.negotiation["audio"]["aac_48k_2ch"],
+            w.negotiation["audio"]["wire"].as_str().unwrap_or("")
+        ));
+        out.push_str(&format!(
+            "  端口/传输分歧   : port1=0 抑制 keep-alive={}；R34 严格读法会拒绝 port1≠0={}\n",
+            w.negotiation["ports_quirk"]["port1_zero_suppresses_keepalive"],
+            w.negotiation["ports_quirk"]["aosp_strict_would_reject_port1_nonzero"]
+        ));
+        out.push_str(&format!(
+            "  Transport       : {}\n  {}\n  {}\n",
+            w.negotiation["transport"]["udp_client_port"].as_str().unwrap_or(""),
+            w.negotiation["transport"]["udp_without_client_port_falls_back"].as_str().unwrap_or(""),
+            w.negotiation["transport"]["tcp_interleaved"].as_str().unwrap_or("")
+        ));
+        out.push_str(&format!(
+            "  空广告          : 生产路径（无媒体引擎）的广告 = {}/{}；此时协商必然 unsupported-feature\n",
+            w.negotiation["empty_advertisement"]["video_wire"].as_str().unwrap_or(""),
+            w.negotiation["empty_advertisement"]["audio_wire"].as_str().unwrap_or("")
+        ));
+        out.push_str(&format!(
+            "IE 边界           : 子元素 {} 字节 id=0x{:02X} 长度字段={} 控制端口={} 往返={}；容器 build/parse={}/{}\n",
+            w.ie["device_subelement"]["bytes"],
+            w.ie["device_subelement"]["id"].as_u64().unwrap_or(0),
+            w.ie["device_subelement"]["length_field"],
+            w.ie["device_subelement"]["control_port"],
+            w.ie["device_subelement"]["roundtrip"],
+            w.ie["container"]["build"].as_str().unwrap_or(""),
+            w.ie["container"]["parse"].as_str().unwrap_or("")
+        ));
+        out.push_str(&format!(
+            "  {}\n",
+            w.ie["container"]["reason"].as_str().unwrap_or("")
+        ));
+        out.push_str(&format!(
+            "RTP 记账          : 包={} 字节={} 丢包={} 乱序={} 重复={} SSRC 变化={} PT 异常={} 关键帧请求={}\n",
+            w.rtp["packets"],
+            w.rtp["payload_bytes"],
+            w.rtp["lost"],
+            w.rtp["reordered"],
+            w.rtp["duplicates"],
+            w.rtp["ssrc_changes"],
+            w.rtp["payload_type_anomalies"],
+            w.rtp["keyframe_requests"]
+        ));
+        out.push_str(&format!(
+            "  连续包不请求={} 缺口请求={} 乱序不请求={}\n",
+            w.rtp["sequential_requests_none"], w.rtp["loss_requests_keyframe"], w.rtp["reorder_does_not"]
+        ));
+        out.push_str("负向              :\n");
+        for case in &w.rejects {
+            out.push_str(&format!(
+                "  - {:<28} {}\n",
+                case["case"].as_str().unwrap_or(""),
+                case["outcome"].as_str().unwrap_or("")
+            ));
+        }
+        out.push_str("blocked           :\n");
+        for item in &w.blocked {
+            out.push_str(&format!("  - {item}\n"));
+        }
+    }
+
     if want("dlna") {
         let d = &r.dlna;
         out.push_str("\n## DLNA/UPnP AV（T41）\n");
@@ -475,6 +580,7 @@ pub fn parse_args(args: &[String]) -> Result<(Option<&'static str>, bool), Strin
             "qshare" | "quickshare" => section = Some("qshare"),
             "mirror" => section = Some("mirror"),
             "dlna" => section = Some("dlna"),
+            "wfd" | "miracast" => section = Some("wfd"),
             "--help" | "-h" => return Err("help".to_string()),
             other => return Err(format!("未知子命令 {other:?}")),
         }

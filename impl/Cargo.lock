@@ -263,6 +263,7 @@ dependencies = [
  "proto-airplay",
  "proto-quickshare",
  "proto-upnp",
+ "proto-wfd",
  "serde",
  "serde_json",
 ]

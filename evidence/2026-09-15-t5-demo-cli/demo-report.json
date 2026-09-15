@@ -3,7 +3,7 @@
   "interface_version": "interop.api/0.1",
   "evidence_level": "simulated",
   "wire": "self-authored-fixture",
-  "generated_unix_ms": 1789447084098,
+  "generated_unix_ms": 1789448247212,
   "ok": true,
   "discovery": {
     "evidence_level": "simulated",
@@ -375,7 +375,7 @@
       "format_changes": 1,
       "codec": "h264",
       "dimensions": "1920x1080",
-      "path": "/var/folders/n6/tx2574_56h33v09wbc2hk_nm0000gn/T/xinterop-demo-95315.bin",
+      "path": "/var/folders/n6/tx2574_56h33v09wbc2hk_nm0000gn/T/xinterop-demo-33240.bin",
       "file_size_bytes": 2055
     },
     "audio": {
@@ -464,7 +464,7 @@
       "key_schedule": "HKDF-SHA256",
       "next_secret_bytes": 32,
       "next_secrets_match": true,
-      "pin": "9910",
+      "pin": "7964",
       "pin_matches": true,
       "server_init_bytes": 116,
       "transcript_bytes": 252
@@ -711,6 +711,222 @@
       "屏幕镜像：DLNA 不提供该能力，本节点也不假装提供（T41-02）"
     ]
   },
+  "wfd": {
+    "evidence_level": "simulated",
+    "wire": "self-authored-fixture",
+    "messages": {
+      "m1_m2_same_shape": true,
+      "table": [
+        {
+          "by": "source",
+          "m": 1,
+          "method": "OPTIONS"
+        },
+        {
+          "by": "sink",
+          "m": 2,
+          "method": "OPTIONS"
+        },
+        {
+          "by": "source",
+          "m": 3,
+          "method": "GET_PARAMETER"
+        },
+        {
+          "by": "source",
+          "m": 4,
+          "method": "SET_PARAMETER"
+        },
+        {
+          "by": "source",
+          "m": 5,
+          "method": "SET_PARAMETER"
+        },
+        {
+          "by": "sink",
+          "m": 6,
+          "method": "SETUP"
+        },
+        {
+          "by": "sink",
+          "m": 7,
+          "method": "PLAY"
+        },
+        {
+          "by": "sink",
+          "m": 8,
+          "method": "TEARDOWN"
+        },
+        {
+          "by": "sink",
+          "m": 13,
+          "method": "SET_PARAMETER"
+        },
+        {
+          "by": "source",
+          "m": 16,
+          "method": "GET_PARAMETER"
+        }
+      ]
+    },
+    "session": {
+      "advertised": "wfd_video_formats: 28 00 02 10 00000020 00000000 00000000 00 0004 0001 00 none none\r\nwfd_audio_codecs: LPCM 00000003 00, AAC 00000001 00\r\nwfd_client_rtp_ports: RTP/AVP/UDP;unicast 20000 0 mode=play\r\nwfd_content_protection: none\r\n",
+      "keepalive_sent": true,
+      "keyframe_request": "M13 method=SET_PARAMETER uri=rtsp://localhost/wfd1.0 session=7123456 body=\"wfd_idr_request\\r\\n\"",
+      "keyframe_requests": 1,
+      "lost": 5,
+      "messages_in": 4,
+      "messages_out": 5,
+      "packets": 4,
+      "player_available": false,
+      "session_id": "7123456",
+      "steps": [
+        "M1 入站 → 200 Public=org.wfa.wfd1.0, GET_PARAMETER, SET_PARAMETER",
+        "M2 出站 → 200（CSeq 1）",
+        "M3 入站 → 200（应答体 = 本端实现清单）",
+        "M4 入站 → 协商：profile=0x02 level=0x10 音频=LPCM URL=rtsp://192.0.2.10:7236/wfd1.0/streamid=0",
+        "M5 触发（wfd_trigger_method: SETUP）",
+        "M6 出站 SETUP Transport=RTP/AVP/UDP;unicast;client_port=20000",
+        "SETUP 应答 → Session=7123456",
+        "M7 出站 PLAY → 200（进入 playing）"
+      ],
+      "timeout": true
+    },
+    "negotiation": {
+      "audio": {
+        "aac_48k_2ch": true,
+        "count": 2,
+        "lpcm_44100_2ch": true,
+        "lpcm_48000_2ch": true,
+        "wire": "LPCM 00000003 00, AAC 00000001 00"
+      },
+      "empty_advertisement": {
+        "audio_wire": "none",
+        "video_wire": "none"
+      },
+      "native": {
+        "index": 5,
+        "raw": "0x28",
+        "table": "cea"
+      },
+      "ports_quirk": {
+        "aosp_strict_would_reject_port1_nonzero": true,
+        "distinct_rtcp": 20002,
+        "port1_zero_suppresses_keepalive": true
+      },
+      "transport": {
+        "tcp_interleaved": "RTP/AVP/TCP;interleaved=0-1",
+        "udp_client_port": "RTP/AVP/UDP;unicast;client_port=20000-20001 fallback=false",
+        "udp_without_client_port_falls_back": "RTP/AVP/UDP;unicast;client_port=19000 fallback=true port=19000"
+      },
+      "video": {
+        "cea_sup": "0x00000020",
+        "frame_skipping": false,
+        "level": "0x10",
+        "max_slice_num": 2,
+        "profile": "0x02",
+        "wire": "02 10 00000020 00000000 00000000 00 0004 0001 00 none none"
+      }
+    },
+    "ie": {
+      "container": {
+        "build": "UnsupportedFeature",
+        "parse": "UnsupportedFeature",
+        "reason": "OUI/OUI type 未固化（F-24）：不臆造容器格式"
+      },
+      "device_subelement": {
+        "bytes": 9,
+        "control_port": 7236,
+        "id": 0,
+        "length_field": 6,
+        "max_throughput": 200,
+        "roundtrip": true
+      }
+    },
+    "rtp": {
+      "duplicates": 0,
+      "keyframe_requests": 1,
+      "loss_requests_keyframe": true,
+      "lost": 3,
+      "packets": 7,
+      "payload_bytes": 1136,
+      "payload_type_anomalies": 1,
+      "reorder_does_not": true,
+      "reordered": 2,
+      "sequential_requests_none": true,
+      "ssrc_changes": 0
+    },
+    "rejects": [
+      {
+        "case": "M4 早于 M3",
+        "outcome": "InvalidFrame"
+      },
+      {
+        "case": "M6 出现在入站方向",
+        "outcome": "InvalidFrame"
+      },
+      {
+        "case": "M5 触发值非 SETUP",
+        "outcome": "InvalidFrame"
+      },
+      {
+        "case": "未知方法 DESCRIBE",
+        "outcome": "UnsupportedMethod"
+      },
+      {
+        "case": "重复 Content-Length",
+        "outcome": "InvalidFrame"
+      },
+      {
+        "case": "对端要求 HDCP",
+        "outcome": "UnsupportedFeature"
+      },
+      {
+        "case": "URL 带 userinfo",
+        "outcome": "InvalidFrame"
+      },
+      {
+        "case": "URL 路径不是 streamid=0",
+        "outcome": "InvalidFrame"
+      },
+      {
+        "case": "wfd_client_rtp_ports port0=0",
+        "outcome": "InvalidFrame"
+      },
+      {
+        "case": "视频描述符字段不足",
+        "outcome": "InvalidFrame"
+      },
+      {
+        "case": "profile 位图全 0",
+        "outcome": "InvalidFrame"
+      },
+      {
+        "case": "未知音频编码名",
+        "outcome": "InvalidFrame"
+      },
+      {
+        "case": "生产路径（广告为空）下的 M4",
+        "outcome": "UnsupportedFeature"
+      },
+      {
+        "case": "RTP 版本位不是 2",
+        "outcome": "InvalidFrame"
+      },
+      {
+        "case": "RTP 头截断",
+        "outcome": "InvalidFrame"
+      }
+    ],
+    "blocked": [
+      "完整 WFD IE 的构造/解析（F-24：OUI 与 OUI type 在四个来源里都不存在；需 P-M05-2 抓包）",
+      "P2P 组形成与 IE 播发（F-25 + P-M05-1：macOS 无公开 WFD API，不触碰平台 P2P 接口）",
+      "HDCP 内容保护握手（F-22：密钥交换属设备/厂商材料，仅解析取值并拒绝）",
+      "TS 解复用 / 解码 / 画面呈现（F-28 只到 RTP 记账；本 crate 不含播放器）",
+      "真实发送端（Android/Windows）与 TV/适配器 codec 矩阵（P-M05-2/P-M05-3）",
+      "UIBC 输入回传与厂商扩展参数（wfd_hwe_*/microsoft_*，F-31）"
+    ]
+  },
   "blocked": [
     "FairPlay/设备认证材料永久 vendor-gated：没有 keying 的 SETUP 一律 503，不建流不分配缓冲",
     "S1：外部引擎（UxPlay 等）与解码链路未获批 → 音视频接收实现缺席，能力广告为空",
@@ -729,6 +945,8 @@
     "本机广播的 mDNS/TXT 字节与真实接收端对照（AirPlay features 位值固化需要真机抓包）",
     "与 stock Android 完成一次 Quick Share 握手并比对 4 位确认码（裁决 F-12/F-15 两处规范/实现冲突）",
     "AirPlay 真机镜像（iPhone/iPad → 本机）与 30 分钟墙钟长跑（drift/丢帧/RSS 趋势）——需 S1/S2",
-    "DLNA 真机矩阵：库存 TV 的 protocolInfo 与实际 SetAVTransportURI→Play 时序（P-M07-1）"
+    "DLNA 真机矩阵：库存 TV 的 protocolInfo 与实际 SetAVTransportURI→Play 时序（P-M07-1）",
+    "WFD 真机序列与 IE：隔离 Linux 机跑 sink 抓 M0–M16 与 IE 播发（P-M05-2）；Windows MiracastReceiver headless 边界（P-M05-1）",
+    "WFD 真机 codec 矩阵：Android/Windows 发送端 → 本节点（P-M05-3）"
   ]
 }

@@ -56,7 +56,7 @@ TEARDOWN 后       : stream=false reserved_ports=0
 喂入帧数          : 6
 null  sink        : frames=6 bytes=2071 pts=[Some(0)..Some(166665)] codec=h264 dims=1920x1080 changes=1
 file  sink        : frames=6 bytes=2055 pts=[Some(0)..Some(166665)] codec=h264 dims=1920x1080 changes=1
-      落盘 /var/folders/n6/tx2574_56h33v09wbc2hk_nm0000gn/T/xinterop-demo-95320.bin（2055 字节）
+      落盘 /var/folders/n6/tx2574_56h33v09wbc2hk_nm0000gn/T/xinterop-demo-33283.bin（2055 字节）
 音频              : resample 44100Hz→48000Hz ratio=147/160 frames 441→480（10ms→10ms, speed_ratio=1.000）
 native 窗口       : unavailable（platform-unavailable）
 20000x12000       : resource-limit（area=240000000 > max_pixels=67108864）
@@ -69,6 +69,54 @@ native 窗口       : unavailable（platform-unavailable）
   - 未知 kind=9                        rejected invalid-frame
   - 未知 critical flag 0x80000000      rejected invalid-frame
   - 声明 payload 17MiB（无实际数据）          rejected resource-limit
+
+## WFD/Miracast 接收侧（T37）
+消息层            : 登记 10 条；M1/M2 同形（按发送方区分）=true
+会话              : Session=7123456 入站=4 出站=5 进入 playing→超时=true
+  - M1 入站 → 200 Public=org.wfa.wfd1.0, GET_PARAMETER, SET_PARAMETER
+  - M2 出站 → 200（CSeq 1）
+  - M3 入站 → 200（应答体 = 本端实现清单）
+  - M4 入站 → 协商：profile=0x02 level=0x10 音频=LPCM URL=rtsp://192.0.2.10:7236/wfd1.0/streamid=0
+  - M5 触发（wfd_trigger_method: SETUP）
+  - M6 出站 SETUP Transport=RTP/AVP/UDP;unicast;client_port=20000
+  - SETUP 应答 → Session=7123456
+  - M7 出站 PLAY → 200（进入 playing）
+  媒体            : 入包=4 丢包=5 关键帧请求=1 播放器可用=false（能协商 ≠ 能显示）
+  M13 method=SET_PARAMETER uri=rtsp://localhost/wfd1.0 session=7123456 body="wfd_idr_request\r\n"
+协商              : native=0x28 表=cea 索引=5；profile=0x02 level=0x10 slice_max=2 wire=02 10 00000020 00000000 00000000 00 0004 0001 00 none none
+  音频            : LPCM 44.1k=true 48k=true AAC 48k=true；广告 wire=LPCM 00000003 00, AAC 00000001 00
+  端口/传输分歧   : port1=0 抑制 keep-alive=true；R34 严格读法会拒绝 port1≠0=true
+  Transport       : RTP/AVP/UDP;unicast;client_port=20000-20001 fallback=false
+  RTP/AVP/UDP;unicast;client_port=19000 fallback=true port=19000
+  RTP/AVP/TCP;interleaved=0-1
+  空广告          : 生产路径（无媒体引擎）的广告 = none/none；此时协商必然 unsupported-feature
+IE 边界           : 子元素 9 字节 id=0x00 长度字段=6 控制端口=7236 往返=true；容器 build/parse=UnsupportedFeature/UnsupportedFeature
+  OUI/OUI type 未固化（F-24）：不臆造容器格式
+RTP 记账          : 包=7 字节=1136 丢包=3 乱序=2 重复=0 SSRC 变化=0 PT 异常=1 关键帧请求=1
+  连续包不请求=true 缺口请求=true 乱序不请求=true
+负向              :
+  - M4 早于 M3                     InvalidFrame
+  - M6 出现在入站方向                   InvalidFrame
+  - M5 触发值非 SETUP                InvalidFrame
+  - 未知方法 DESCRIBE                UnsupportedMethod
+  - 重复 Content-Length            InvalidFrame
+  - 对端要求 HDCP                    UnsupportedFeature
+  - URL 带 userinfo               InvalidFrame
+  - URL 路径不是 streamid=0          InvalidFrame
+  - wfd_client_rtp_ports port0=0 InvalidFrame
+  - 视频描述符字段不足                    InvalidFrame
+  - profile 位图全 0                InvalidFrame
+  - 未知音频编码名                      InvalidFrame
+  - 生产路径（广告为空）下的 M4              UnsupportedFeature
+  - RTP 版本位不是 2                  InvalidFrame
+  - RTP 头截断                      InvalidFrame
+blocked           :
+  - 完整 WFD IE 的构造/解析（F-24：OUI 与 OUI type 在四个来源里都不存在；需 P-M05-2 抓包）
+  - P2P 组形成与 IE 播发（F-25 + P-M05-1：macOS 无公开 WFD API，不触碰平台 P2P 接口）
+  - HDCP 内容保护握手（F-22：密钥交换属设备/厂商材料，仅解析取值并拒绝）
+  - TS 解复用 / 解码 / 画面呈现（F-28 只到 RTP 记账；本 crate 不含播放器）
+  - 真实发送端（Android/Windows）与 TV/适配器 codec 矩阵（P-M05-2/P-M05-3）
+  - UIBC 输入回传与厂商扩展参数（wfd_hwe_*/microsoft_*，F-31）
 
 ## DLNA/UPnP AV（T41）
 SSDP              : M-SEARCH 往返=true 通告往返=true
@@ -112,7 +160,7 @@ XML 加固          : XXE 拒绝=true 深度拒绝=true
 ## Quick Share / UKEY2（T19/T20）
 framing           : 4 字节大端长度前缀，本仓上限 5242880 B（非协议常量，F-05）
 握手              : cipher="P256_SHA512(100)" key_schedule="HKDF-SHA256" established=true
-双方一致          : auth=true next_secret=true pin=true（pin="8930"）
+双方一致          : auth=true next_secret=true pin=true（pin="7231"）
 分片等价          : true（[1048576,1,7] 种切分）
   - commitment 不符（ClientFinish 被改）     BadMessageData
   - random 31 字节                       BadRandom
@@ -153,5 +201,7 @@ F-15 冲突         : 采用 "HKDF-SHA256"；"与 stock Android 的成功握手 
   - 与 stock Android 完成一次 Quick Share 握手并比对 4 位确认码（裁决 F-12/F-15 两处规范/实现冲突）
   - AirPlay 真机镜像（iPhone/iPad → 本机）与 30 分钟墙钟长跑（drift/丢帧/RSS 趋势）——需 S1/S2
   - DLNA 真机矩阵：库存 TV 的 protocolInfo 与实际 SetAVTransportURI→Play 时序（P-M07-1）
+  - WFD 真机序列与 IE：隔离 Linux 机跑 sink 抓 M0–M16 与 IE 播发（P-M05-2）；Windows MiracastReceiver headless 边界（P-M05-1）
+  - WFD 真机 codec 矩阵：Android/Windows 发送端 → 本节点（P-M05-3）
 
 汇总：全部场景断言通过（evidence_level=simulated，非真机）
