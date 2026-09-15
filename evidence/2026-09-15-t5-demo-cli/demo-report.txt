@@ -56,7 +56,7 @@ TEARDOWN 后       : stream=false reserved_ports=0
 喂入帧数          : 6
 null  sink        : frames=6 bytes=2071 pts=[Some(0)..Some(166665)] codec=h264 dims=1920x1080 changes=1
 file  sink        : frames=6 bytes=2055 pts=[Some(0)..Some(166665)] codec=h264 dims=1920x1080 changes=1
-      落盘 /var/folders/n6/tx2574_56h33v09wbc2hk_nm0000gn/T/xinterop-demo-57482.bin（2055 字节）
+      落盘 /var/folders/n6/tx2574_56h33v09wbc2hk_nm0000gn/T/xinterop-demo-3348.bin（2055 字节）
 音频              : resample 44100Hz→48000Hz ratio=147/160 frames 441→480（10ms→10ms, speed_ratio=1.000）
 native 窗口       : unavailable（platform-unavailable）
 20000x12000       : resource-limit（area=240000000 > max_pixels=67108864）
@@ -183,10 +183,15 @@ SOAP              : 动作往返=true Fault(701)=true
 受限 DMS          : 根子项=2 越权 objectID=701 超分页=402
 URL lease         : Stop 前=true Stop 后=false
 XML 加固          : XXE 拒绝=true 深度拒绝=true
+renderer（T42）   : 服务=urn:schemas-upnp-org:service:AVTransport:1, urn:schemas-upnp-org:service:RenderingControl:2；file:// 拒绝=code 402 且提到 T42-01=true 拒绝后状态=NO_MEDIA_PRESENT
+  URI 同意        : 需用户同意=true 同意前 Play=code 701 同意后播放=true
+  Seek/Stop       : live Seek=code 710 点播定位=true 位置=90s 重复 Stop 幂等=true
+  音量/订阅       : 越界音量=code 402；越界回调=code 402 且提到 T42-04=true；合法订阅建立→退订=true
   · blocked: 真实 TV 的 protocolInfo 矩阵与 SetAVTransportURI→Play 时序：P-M07-1（需库存 TV 与用户在场）
   · blocked: SSDP 组播收发与描述 HTTP 抓取：需网络策略批准（本切片只做编解码/策略/授权）
-  · blocked: 媒体字节拉取（DMS 侧 read lease 与 HTTP GET 服务）：T24/T42
-  · blocked: GENA 事件订阅投递与 NAT/多接口行为：未实现（只做了解析与预算）
+  · blocked: 媒体字节拉取（DMS 侧 read lease 与 HTTP GET 服务）：T24
+  · blocked: GENA 事件投递：只做订阅校验与拒绝（F-22），不建立回调连接、不推送事件
+  · blocked: 真实 DLNA 控制器（库存 TV/手机 App）驱动本渲染器：P-M07-1；本切片无 native player 接入
   · blocked: 屏幕镜像：DLNA 不提供该能力，本节点也不假装提供（T41-02）
 
 ## AirPlay 镜像路径（T33）
@@ -206,7 +211,7 @@ XML 加固          : XXE 拒绝=true 深度拒绝=true
 ## Quick Share / UKEY2（T19/T20）
 framing           : 4 字节大端长度前缀，本仓上限 5242880 B（非协议常量，F-05）
 握手              : cipher="P256_SHA512(100)" key_schedule="HKDF-SHA256" established=true
-双方一致          : auth=true next_secret=true pin=true（pin="9922"）
+双方一致          : auth=true next_secret=true pin=true（pin="9353"）
 分片等价          : true（[1048576,1,7] 种切分）
   - commitment 不符（ClientFinish 被改）     BadMessageData
   - random 31 字节                       BadRandom

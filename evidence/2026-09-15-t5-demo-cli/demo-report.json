@@ -3,7 +3,7 @@
   "interface_version": "interop.api/0.1",
   "evidence_level": "simulated",
   "wire": "self-authored-fixture",
-  "generated_unix_ms": 1789448991602,
+  "generated_unix_ms": 1789449456570,
   "ok": true,
   "discovery": {
     "evidence_level": "simulated",
@@ -375,7 +375,7 @@
       "format_changes": 1,
       "codec": "h264",
       "dimensions": "1920x1080",
-      "path": "/var/folders/n6/tx2574_56h33v09wbc2hk_nm0000gn/T/xinterop-demo-57444.bin",
+      "path": "/var/folders/n6/tx2574_56h33v09wbc2hk_nm0000gn/T/xinterop-demo-3309.bin",
       "file_size_bytes": 2055
     },
     "audio": {
@@ -464,7 +464,7 @@
       "key_schedule": "HKDF-SHA256",
       "next_secret_bytes": 32,
       "next_secrets_match": true,
-      "pin": "7009",
+      "pin": "1635",
       "pin_matches": true,
       "server_init_bytes": 116,
       "transcript_bytes": 252
@@ -703,11 +703,37 @@
       "depth_rejected": true,
       "xxe_rejected": true
     },
+    "renderer": {
+      "bad_callback": {
+        "code": 402,
+        "mentions_t42_04": true
+      },
+      "file_uri_refused": {
+        "code": 402,
+        "mentions_t42_01": true
+      },
+      "live_seek_code": 710,
+      "needs_user_consent": true,
+      "play_after_consent_ok": true,
+      "play_before_consent_code": 701,
+      "position_after_seek": 90,
+      "repeat_stop_idempotent": true,
+      "services": [
+        "urn:schemas-upnp-org:service:AVTransport:1",
+        "urn:schemas-upnp-org:service:RenderingControl:2"
+      ],
+      "state_after_refusal": "NO_MEDIA_PRESENT",
+      "subscription_sid_prefix": "uuid:xross",
+      "unsubscribe_ok": true,
+      "vod_seek_ok": true,
+      "volume_out_of_range_code": 402
+    },
     "blocked": [
       "真实 TV 的 protocolInfo 矩阵与 SetAVTransportURI→Play 时序：P-M07-1（需库存 TV 与用户在场）",
       "SSDP 组播收发与描述 HTTP 抓取：需网络策略批准（本切片只做编解码/策略/授权）",
-      "媒体字节拉取（DMS 侧 read lease 与 HTTP GET 服务）：T24/T42",
-      "GENA 事件订阅投递与 NAT/多接口行为：未实现（只做了解析与预算）",
+      "媒体字节拉取（DMS 侧 read lease 与 HTTP GET 服务）：T24",
+      "GENA 事件投递：只做订阅校验与拒绝（F-22），不建立回调连接、不推送事件",
+      "真实 DLNA 控制器（库存 TV/手机 App）驱动本渲染器：P-M07-1；本切片无 native player 接入",
       "屏幕镜像：DLNA 不提供该能力，本节点也不假装提供（T41-02）"
     ]
   },

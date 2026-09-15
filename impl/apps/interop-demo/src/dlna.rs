@@ -6,6 +6,7 @@
 
 use crate::report::DlnaReport;
 use proto_upnp::dmc::{DescriptionFetchPolicy, RendererRegistry, UrlLeaseStore};
+use proto_upnp::dmr::{Dmr, TransportState, UriDecision, SUPPORTED_PLAY_SPEED, SUPPORTED_SEEK_MODE};
 use proto_upnp::dms::{BrowseFlag, ContentRoot, Dms};
 use proto_upnp::soap::{SoapMessage, AV_TRANSPORT};
 use proto_upnp::ssdp::{build_alive, build_search, SsdpMessage};
@@ -236,6 +237,56 @@ pub fn dlna_scenario() -> (DlnaReport, bool) {
         ok = false;
     }
 
+    // ---- renderer 侧（T42）：外来 URI 策略、幂等 Stop、live Seek、订阅回调 ----
+    let mut dmr = Dmr::new(DescriptionFetchPolicy::default());
+    let file_uri = dmr.set_uri("file:///etc/passwd", None).err();
+    let dmr_file_refused = file_uri
+        .as_ref()
+        .map(|fault| (fault.code, fault.description.contains("T42-01")))
+        .unwrap_or((0, false));
+    let dmr_state_after_refusal = dmr.state().as_str();
+    let consent = dmr.set_uri("http://192.0.2.40:8000/media/clip.mp4", None);
+    let needs_consent = matches!(consent, Ok(UriDecision::NeedsUserConsent));
+    let play_before_consent = dmr.play(SUPPORTED_PLAY_SPEED).err().map(|f| f.code);
+    let play_after_consent = dmr
+        .grant_consent("http://192.0.2.40:8000/media/clip.mp4")
+        .and_then(|_| dmr.play(SUPPORTED_PLAY_SPEED))
+        .is_ok();
+    let dmr_playing = dmr.state() == TransportState::Playing;
+    let live_seek = dmr.seek(SUPPORTED_SEEK_MODE, "0:01:30").err().map(|f| f.code);
+    dmr.set_media_duration(Some(600));
+    let vod_seek_ok = dmr.seek(SUPPORTED_SEEK_MODE, "0:01:30").is_ok();
+    let dmr_position = dmr.position_secs();
+    let stop_ok = dmr.stop().is_ok() && dmr.stop().is_ok();
+    let volume_guard = dmr.set_volume(101).err().map(|f| f.code);
+    let bad_callback = dmr
+        .subscribe("http://127.0.0.1:9999/event", 300, None)
+        .err()
+        .map(|fault| (fault.code, fault.description.contains("T42-04")));
+    let good_subscription = dmr
+        .subscribe("http://192.0.2.50:9999/event", 300, None)
+        .ok()
+        .map(|s| s.sid.clone())
+        .unwrap_or_default();
+    let unsubscribe_ok = dmr.unsubscribe(&good_subscription).is_ok();
+    if !(dmr_file_refused.1
+        && dmr_state_after_refusal == "NO_MEDIA_PRESENT"
+        && needs_consent
+        && play_before_consent == Some(701)
+        && play_after_consent
+        && dmr_playing
+        && live_seek == Some(710)
+        && vod_seek_ok
+        && dmr_position == 90
+        && stop_ok
+        && volume_guard == Some(402)
+        && bad_callback == Some((402, true))
+        && !good_subscription.is_empty()
+        && unsubscribe_ok)
+    {
+        ok = false;
+    }
+
     let report = DlnaReport {
         evidence_level: "simulated",
         wire: "self-authored-fixture",
@@ -270,11 +321,28 @@ pub fn dlna_scenario() -> (DlnaReport, bool) {
             "depth_rejected": depth_rejected,
             "budget_note": "深度/体积/元素数上限是本仓策略值（XmlBudget），不是协议常量",
         }),
+        renderer: serde_json::json!({
+            "file_uri_refused": { "code": dmr_file_refused.0, "mentions_t42_01": dmr_file_refused.1 },
+            "state_after_refusal": dmr_state_after_refusal,
+            "needs_user_consent": needs_consent,
+            "play_before_consent_code": play_before_consent,
+            "play_after_consent_ok": play_after_consent,
+            "live_seek_code": live_seek,
+            "vod_seek_ok": vod_seek_ok,
+            "position_after_seek": dmr_position,
+            "repeat_stop_idempotent": stop_ok,
+            "volume_out_of_range_code": volume_guard,
+            "bad_callback": { "code": bad_callback.map(|c| c.0).unwrap_or(0), "mentions_t42_04": bad_callback.map(|c| c.1).unwrap_or(false) },
+            "subscription_sid_prefix": good_subscription.split('-').next().unwrap_or(""),
+            "unsubscribe_ok": unsubscribe_ok,
+            "services": dmr.declared_services(),
+        }),
         blocked: vec![
             "真实 TV 的 protocolInfo 矩阵与 SetAVTransportURI→Play 时序：P-M07-1（需库存 TV 与用户在场）".to_string(),
             "SSDP 组播收发与描述 HTTP 抓取：需网络策略批准（本切片只做编解码/策略/授权）".to_string(),
-            "媒体字节拉取（DMS 侧 read lease 与 HTTP GET 服务）：T24/T42".to_string(),
-            "GENA 事件订阅投递与 NAT/多接口行为：未实现（只做了解析与预算）".to_string(),
+            "媒体字节拉取（DMS 侧 read lease 与 HTTP GET 服务）：T24".to_string(),
+            "GENA 事件投递：只做订阅校验与拒绝（F-22），不建立回调连接、不推送事件".to_string(),
+            "真实 DLNA 控制器（库存 TV/手机 App）驱动本渲染器：P-M07-1；本切片无 native player 接入".to_string(),
             "屏幕镜像：DLNA 不提供该能力，本节点也不假装提供（T41-02）".to_string(),
         ],
     };
@@ -291,6 +359,7 @@ fn failed_report() -> DlnaReport {
         dms: serde_json::Value::Null,
         leases: serde_json::Value::Null,
         xml: serde_json::Value::Null,
+        renderer: serde_json::Value::Null,
         blocked: vec!["DLNA 场景提前失败（构造异常）".to_string()],
     }
 }

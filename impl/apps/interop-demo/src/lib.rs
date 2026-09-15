@@ -524,6 +524,36 @@ pub fn render_human(r: &DemoReport, section: Option<&str>) -> String {
             "XML 加固          : XXE 拒绝={} 深度拒绝={}\n",
             d.xml["xxe_rejected"], d.xml["depth_rejected"]
         ));
+        out.push_str(&format!(
+            "renderer（T42）   : 服务={}；file:// 拒绝=code {} 且提到 T42-01={} 拒绝后状态={}\n",
+            d.renderer["services"]
+                .as_array()
+                .map(|a| a.iter().filter_map(|v| v.as_str()).collect::<Vec<_>>().join(", "))
+                .unwrap_or_default(),
+            d.renderer["file_uri_refused"]["code"],
+            d.renderer["file_uri_refused"]["mentions_t42_01"],
+            d.renderer["state_after_refusal"].as_str().unwrap_or("")
+        ));
+        out.push_str(&format!(
+            "  URI 同意        : 需用户同意={} 同意前 Play=code {} 同意后播放={}\n",
+            d.renderer["needs_user_consent"],
+            d.renderer["play_before_consent_code"],
+            d.renderer["play_after_consent_ok"]
+        ));
+        out.push_str(&format!(
+            "  Seek/Stop       : live Seek=code {} 点播定位={} 位置={}s 重复 Stop 幂等={}\n",
+            d.renderer["live_seek_code"],
+            d.renderer["vod_seek_ok"],
+            d.renderer["position_after_seek"],
+            d.renderer["repeat_stop_idempotent"]
+        ));
+        out.push_str(&format!(
+            "  音量/订阅       : 越界音量=code {}；越界回调=code {} 且提到 T42-04={}；合法订阅建立→退订={}\n",
+            d.renderer["volume_out_of_range_code"],
+            d.renderer["bad_callback"]["code"],
+            d.renderer["bad_callback"]["mentions_t42_04"],
+            d.renderer["unsubscribe_ok"]
+        ));
         for b in &d.blocked {
             out.push_str(&format!("  · blocked: {b}\n"));
         }

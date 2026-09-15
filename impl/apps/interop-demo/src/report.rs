@@ -72,6 +72,7 @@ pub struct DlnaReport {
     pub dms: serde_json::Value,
     pub leases: serde_json::Value,
     pub xml: serde_json::Value,
+    pub renderer: serde_json::Value,
     pub blocked: Vec<String>,
 }
 
