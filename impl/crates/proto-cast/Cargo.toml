@@ -1,0 +1,15 @@
+[package]
+name = "proto-cast"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+publish.workspace = true
+
+# Google Cast（CASTV2）sender 侧"媒体 URL"控制面的 headless 核心（plans/03 T43）。
+# 事实来源见 specs-reviewed/m08-cast-media-control.md 与 provenance/m08-inputs.json。
+# **不含**：设备认证握手（F-18：凭据材料不可得，只留 seam）、app 注册与 app ID 签发（F-17/F-23）、
+# 媒体字节服务与实时 streaming（F-25）、分块（F-05）。
+# serde_json 只是通用 JSON 解析库，不是 Cast 协议栈；协议语义全部按字段表逐条校验。
+[dependencies]
+interop-contract = { path = "../../crates/interop-contract" }
+serde_json = "1"

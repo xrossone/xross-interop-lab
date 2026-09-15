@@ -12,6 +12,7 @@ members = [
     "crates/proto-airplay",
     "crates/proto-quickshare",
     "crates/proto-upnp",
+    "crates/proto-cast",
     "crates/proto-wfd",
     "adapters/standalone-host",
     "apps/interopd",

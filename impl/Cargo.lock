@@ -420,6 +420,14 @@ dependencies = [
 ]
 
 [[package]]
+name = "proto-cast"
+version = "0.1.0"
+dependencies = [
+ "interop-contract",
+ "serde_json",
+]
+
+[[package]]
 name = "proto-quickshare"
 version = "0.1.0"
 dependencies = [

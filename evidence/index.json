@@ -382,6 +382,14 @@
       "date": "2026-09-15",
       "path": "evidence/2026-09-15-t37-wfd-control/run-manifest.json",
       "notes": "T37 WFD/Miracast 接收侧控制面与媒体协商（headless）：M1..M8/M13/M16 方向与顺序、wfd_video_formats/wfd_audio_codecs 描述符、子元素 id 0x00、RTP 记账与按本仓策略的关键帧请求（T37-01..04）；完整 WFD IE 因 OUI 未固化而拒绝构造（F-24），无 HDCP/无 TS 解复用/无解码"
+    },
+    {
+      "id": "run-2026-09-15-t43-cast-sender",
+      "kind": "run-manifest",
+      "level": "build-verified",
+      "date": "2026-09-15",
+      "path": "evidence/2026-09-15-t43-cast-sender/run-manifest.json",
+      "notes": "T43 Google Cast 媒体 URL sender（headless）：CASTV2 信封（字段号 1..9/64 KiB/分块拒绝）、四个命名空间的载荷编解码、sender 控制会话（连接→拉起→媒体会话→收尾）与 T43-01..04 四条约束；无认证握手（seam 恒拒绝）、无 app 注册、无媒体字节服务、不提供镜像"
     }
   ]
 }

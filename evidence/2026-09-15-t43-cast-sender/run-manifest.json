@@ -1,0 +1,93 @@
+{
+  "schema_version": 1,
+  "run_id": "2026-09-15-t43-cast-sender",
+  "task": "T43 · Google Cast 媒体 URL sender（headless 切片）",
+  "kind": "manual",
+  "evidence_level": "build-verified",
+  "is_test_evidence": true,
+  "synthetic": false,
+  "base_commit": "3e76cb9（T43 gate）",
+  "case_ids": [
+    "T43-01",
+    "T43-02",
+    "T43-03",
+    "T43-04"
+  ],
+  "result": "pass",
+  "commands": [
+    {
+      "seq": 1,
+      "purpose": "red：验收套件首次运行（T43-01 抓出真实缺陷）",
+      "command": "cargo test --manifest-path impl/Cargo.toml -p proto-cast",
+      "exit_code": 101,
+      "result": "fail：12 例中 11 通过 / 1 失败 —— T43-01 断言『认证失败不得留下半个会话』时，控制器状态停在 `Connecting`：`connect()` 先把状态改成 Connecting，再由 `emit()` 检查通道闸门。**这正是 T43-01 要防的形态**（闸门拒绝后留下一个既没发出命令、又不在 idle 的会话），没有这条 case 不会暴露"
+    },
+    {
+      "seq": 2,
+      "purpose": "green：把闸门检查移到任何状态变更之前（connect/launch/media 命令）",
+      "command": "cargo test --manifest-path impl/Cargo.toml -p proto-cast",
+      "exit_code": 0,
+      "result": "pass：12 tests（T43-01..04 各 1 例 + 信封往返/分块拒绝/载荷键与负向/请求关联与超时/心跳与失效/URL 形状/发现解析）"
+    },
+    {
+      "seq": 3,
+      "purpose": "全 workspace 回归 + 静态检查 + lab 纪律",
+      "command": "cargo test --manifest-path impl/Cargo.toml --workspace; cargo clippy --manifest-path impl/Cargo.toml --workspace --all-targets; python3 -m unittest discover -s tools",
+      "exit_code": 0,
+      "result": "pass：impl 181 → **193** tests 全绿；clippy 0 warnings；lab 64 tests OK（cast gate 9 例中实现侧检查由 skip 转为实际执行）"
+    }
+  ],
+  "acceptance_mapping": {
+    "T43-01": "TLS/auth 失败 → 不启动播放：生产闸门 `UnavailableGate` 对任何命令返回 `vendor-gated` 且**先于状态变更**；断言 `stats().sent == 0`、状态仍为 idle、`media_url_held == false`，并且直接调用 `load`/`play` 同样不产生任何消息（没有『先开门再补认证』的路径）",
+    "T43-02": "app launch 失败 → 明确错误而不是 media loading：`LAUNCH_ERROR` → `Event::LaunchFailed`（原因原样带出 appId），状态回到 `connected`、`app_id`/`transport_id` 清空；随后 `load` 因状态检查被拒且错误信息写明 T43-02 约束；未配置的 app ID 在 `launch` 阶段就被拒（F-17 不伪造、不猜 app ID）",
+    "T43-03": "停止或被接收端终止 → 清理 URL 与控制状态：三条路径各一例——① 本地 `stop()` 发 `STOP` 并产生 `MediaUrlReleased{why:stop}`；② 接收端 `RECEIVER_STATUS` 应用列表变空 → `why:receiver-stopped` 且回到 `connected`；③ `MEDIA_STATUS` 转入 idle（FINISHED）→ `why:media-idle`；另有 `close()` 的 `why:close`。三条都断言 `media_session_id` 清空与 `media_url_held == false`",
+    "T43-04": "只 URL 可用 → screen 能力保持 false：`screen_capability()` 与 `stats().screen_capability` 在 idle/connected/launched/media-session 各状态恒为 false；有活动媒体会话时同样不声明屏幕能力"
+  },
+  "extra_coverage": {
+    "envelope": "CastMessage 字段号 1..9 往返（含 BINARY 载荷）；required 字段缺失、未知协议版本、长度前缀超 64 KiB（分配前拒绝）、长度前缀与实际不符（截断）分别按 invalid-frame/resource-limit 拒绝；控制面 BINARY 载荷 → unsupported-feature",
+    "chunking": "F-05：`continued = true` 与 `remaining_length` 一律 unsupported-feature（参考实现也没有分块路径）",
+    "payloads": "connection CONNECT 的 origin/connType/userAgent/senderInfo 键、media LOAD 的键集合（且**不写 duration**）、SEEK 的 resumeState 只认 PLAYBACK_START、MEDIA_STATUS 的 playerState/idleReason/currentTime/volume；负向含 LOAD 缺 media/contentId、空 contentType、customData 非对象、未知 streamType、未知 playerState、未知命名空间、已登记命名空间的未登记类型（QUEUE_INSERT）、缺 type 键、非对象载荷、非法 JSON",
+    "correlation": "requestId 逐条递增（首条为 1）、伪造 requestId → invalid-frame、超时（10 s 实现取值）产生 RequestTimedOut；心跳到点发 PING（不注入 requestId）、收到 PING 回 PONG 给发件人、超过 20 s（来源取值）无入站 → ChannelExpired 并置 ended",
+    "discovery": "TXT 解析：id/fn 必填，st 的 0/1 与 ca 十六进制位掩码，未知键忽略；负向含非 `_googlecast._tcp` 服务类型、缺 id/fn、空值、st=7、ca 非法",
+    "policy_values": "子元素无关的常量一律标注：心跳 10 s/10 s 与过期 20 s 是**来源取值**（F-09，单一来源）；请求超时 10 s 是**实现取值**（F-16）；媒体 URL 形状校验（http(s)/无 userinfo/有主机名）是**本仓策略**"
+  },
+  "artifacts": [
+    {
+      "path": "impl/crates/proto-cast/Cargo.toml"
+    },
+    {
+      "path": "impl/crates/proto-cast/src/lib.rs"
+    },
+    {
+      "path": "impl/crates/proto-cast/src/castv2.rs"
+    },
+    {
+      "path": "impl/crates/proto-cast/src/namespaces.rs"
+    },
+    {
+      "path": "impl/crates/proto-cast/src/controller.rs"
+    },
+    {
+      "path": "impl/crates/proto-cast/src/discovery.rs"
+    },
+    {
+      "path": "impl/crates/proto-cast/tests/cast_control.rs"
+    },
+    {
+      "path": "specs-reviewed/m08-cast-media-control.md",
+      "note": "F-01..F-25 字段表（T43 gate 产出，见 3e76cb9）"
+    },
+    {
+      "path": "provenance/m08-inputs.json"
+    },
+    {
+      "path": "evidence/cast/corpus-plan.json"
+    },
+    {
+      "path": "tools/test_cast_gate.py"
+    }
+  ],
+  "credentials_redacted": true,
+  "license_route_approved": false,
+  "notes": "**证据等级 build-verified**（信封/载荷/控制状态机/发现解析在本机可证）。**不是** device-verified：没有连接任何真实 Chromecast/Google TV，也没有 TLS 传输层（P-M08-1 blocked）。**没有**设备认证（F-18：凭据材料不可得 → 生产闸门恒拒绝，一条命令都发不出去）、**没有** app 注册或 app ID 签发（F-17/F-23）、**没有**媒体字节服务与实时 streaming（F-25/T44）、**没有**分块（F-05）、**不提供**屏幕镜像（T43-04：只推媒体 URL）。测试与 demo 里的 app ID / URL / TXT 值全为自制占位。"
+}
