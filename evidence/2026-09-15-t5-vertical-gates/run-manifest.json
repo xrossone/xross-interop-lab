@@ -1,0 +1,59 @@
+{
+ "schema_version": 1,
+ "run_id": "2026-09-15-t5-vertical-gates",
+ "task": "T5 · 首个真机 vertical 的 gate 与 scope 请求（只做计划/来源审查）",
+ "kind": "manual",
+ "evidence_level": "source-reviewed",
+ "is_test_evidence": false,
+ "synthetic": false,
+ "base_commit": "d937838（T4 提交）",
+ "case_ids": [
+  "T5-AIRPLAY-GATE",
+  "T5-QUICKSHARE-GATE",
+  "T5-SCOPE-REQUESTS"
+ ],
+ "result": "pass",
+ "commands": [
+  {
+   "seq": 1,
+   "purpose": "读取 AirPlay 组来源的许可与放行状态（gate 的来源盘点表）",
+   "command": "python3 -c \"json.load(open('decisions/source-allowlist.json')) → group=='airplay' 逐项打印 id/name/status/declared/review_level/production_approved\"",
+   "exit_code": 0,
+   "result": "R01–R12 全部 production_approved=false；R10=restricted（无许可文件，review_level=missing）；R07/R12=per-file-needed"
+  },
+  {
+   "seq": 2,
+   "purpose": "读取 M01/F02 dossier 的未关闭 probe 与纪律",
+   "command": "grep -n 'P-M01|P-F02|probe' research/m01-airplay-legacy-mirror/dossier.md research/f02-quickshare-lan/dossier.md",
+   "exit_code": 0,
+   "result": "M01 未关闭 P-M01-3（PIN，planned）/P-M01-1/2（诊断，optional，降级后）；F02 未关闭 P-F02-1/2/3（P-F02-1 需抓包批准）；两 dossier 均写明「probe 关闭前实现停在 probe 阶段」"
+  },
+  {
+   "seq": 3,
+   "purpose": "核对 T30 前置与验收 case、T31 gate 要求",
+   "command": "sed -n '128,230p' references/research/xross-interop-plan-2026-09-15/plans/03-casting.md",
+   "exit_code": 0,
+   "result": "T30 前置=T05,T13,T28,T29（T13 已由本阶段关闭）；T30-01..04 与 T31-01..03 已并入 gate 的验收清单与纪律"
+  },
+  {
+   "seq": 4,
+   "purpose": "产出 gate 文档后的仓库一致性检查",
+   "command": "python3 -m unittest discover -s tools -p 'test_*.py'",
+   "exit_code": 0,
+   "result": "pass：28 tests OK（含 ADR 纪律与 run manifest schema；本 manifest 通过校验）"
+  }
+ ],
+ "acceptance_mapping": {
+  "T5-AIRPLAY-GATE": "research/vertical-gates.md §1：前置状态表（T13 已关/T28,T29 未开）、R01–R12 用途与边界、模块 gap（discovery/control/pairing/fp-setup/video/audio/timing/teardown）、T31-01/02/03 纪律（能力分声明、FairPlay 不硬写 stub、selftest 不替代真机）、A1–A10 真机验收清单",
+  "T5-QUICKSHARE-GATE": "§2：P-F02-1/2/3 的问题/方法/所需用户批准；wire 固化前不得创造字节格式；抓包不入库",
+  "T5-SCOPE-REQUESTS": "§3：S1 UxPlay 外部引擎接入、S2 真机互联矩阵、S3 抓包+脱敏、S4 xross-dev bridge 窗口、S5 provider 放行——每条含「为什么需要用户」与「批准后的第一步」"
+ },
+ "artifacts": [
+  {
+   "path": "research/vertical-gates.md"
+  }
+ ],
+ "credentials_redacted": true,
+ "license_route_approved": false,
+ "notes": "本 run 无实现、无真机、无抓包：只做来源审查与计划。vertical 选择（AirPlay 优先）由 agent 在用户授权下作出（用户 2026-09-15：「你自己决定吧」），理由与可复核依据写在文档 §0。任何真机动作都需要 §3 的 scope 行（S1–S3）被用户明确批准后才开始。"
+}

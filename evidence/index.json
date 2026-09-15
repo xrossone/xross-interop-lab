@@ -12,6 +12,14 @@
    "notes": "ADR-003 执行与信任边界（用户 2026-09-15 采纳，accepted）+ decisions 台账同步 + ADR 纪律测试恢复（ADR-01..04）"
   },
   {
+   "id": "run-2026-09-15-t5-vertical-gates",
+   "kind": "run-manifest",
+   "level": "source-reviewed",
+   "date": "2026-09-15",
+   "path": "evidence/2026-09-15-t5-vertical-gates/run-manifest.json",
+   "notes": "T5 首个真机 vertical gate（AirPlay 优先，Quick Share 待 F02）+ 5 条 scope 请求；只做来源审查与计划"
+  },
+  {
    "id": "run-2026-09-15-t4-seam-simulation",
    "kind": "run-manifest",
    "level": "simulated",
