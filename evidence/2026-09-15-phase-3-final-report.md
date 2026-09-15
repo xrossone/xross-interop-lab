@@ -111,3 +111,24 @@ Quick Share ↔ Android）、抓包、可见性矩阵、native 窗口、Tauri GU
 4. 有环境时补：Linux/Windows 的 probe 字段、`client.v1` 落地复核、native sink 的桌面会话验证。
 
 **不是完成报告**：以上均为待办；阶段 3 的"完成"只指 §2 的测试面、§4 的证据层级与 §5 的清单落库。
+
+
+---
+
+## 补充（2026-09-15 稍后）：T21 Quick Share 传输闭环（headless 部分）已落地
+
+**commit** `592acc9`（实现 + 证据）与 `8a7897e`（demo `qshare` 段接入传输链）。
+
+- **实现**：`crates/proto-quickshare` 新增 `secure_message.rs`（D2D 密钥链 F-19、SecureMessage 信封
+  AES-256-CBC + HMAC-SHA256、`DeviceToDeviceMessage` 严格 +1 序号）、`payload.rs`
+  （OfflineFrame/V1Frame/PayloadTransferFrame 编解码 + 常数内存组装器）、`receive.rs`
+  （introduction → 报价 → 用户裁决 → 流式落盘 → 原子发布；payloadID↔entryID 绑定、预算、
+  CANCEL 清理；文件名穿越由 `interop-file` 的 FILE-05 规则拒绝）。
+- **验收**：T21-01..04 全部有可运行测试（两个 payloadID 混入 → 拒绝且不发布；用户拒绝 → REJECT 且无文件；
+  10 GiB 合成流常数内存；伪造文件名穿越 → 拒绝），另加 SecureMessage 正负向（往返/篡改/重放/跳号）。
+- **字段表新增**：F-25..F-29（来源 R18 `securemessage.proto`/`securegcm.proto`/
+  `device_to_device_messages.proto`、R17 `offline_wire_formats.proto`、R15 汇集自 Chromium 的
+  `wire_format.proto`——许可边界已登记在 `provenance/quickshare-inputs.json`）。
+- **测试面**：impl 113 → **126**（proto-quickshare 28）；clippy 0；lab 39 OK。
+- **仍未做**：Quick Share 发现（P-F02-1/3 未关闭）、keep-alive 与 paired-key 帧、与 Android 的真机传输。
+  因此 §5 的「传输闭环」一行从"未实现"改为"headless 已实现、真机未验"。

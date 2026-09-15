@@ -136,9 +136,20 @@ tools/                          # 仓库检查脚本与测试（python3 -m unitt
   `python3 -m unittest discover -s tools` **39 tests OK**。每 task 的 run manifest 见
   [evidence/index.json](evidence/index.json)。
 
+**阶段 4 首批（2026-09-15 稍后追加）**
+
+- **T21 Quick Share 传输闭环（headless 部分）**：`crates/proto-quickshare` 新增
+  `secure_message`（D2D 密钥链 + SecureMessage AES-256-CBC/HMAC-SHA256 + 严格 +1 序号，跳号/重放即
+  `integrity-failed`）、`payload`（OfflineFrame/V1Frame/PayloadTransferFrame 编解码 + 常数内存组装器，
+  10 GiB 合成流有测试）、`receive`（introduction 报价投影 → 用户裁决 → 流式落盘 → 原子发布；
+  payloadID↔entryID 绑定、预算、CANCEL 清理；落盘经 `interop-file`，文件名穿越由 FILE-05 拒绝）。
+  证据：[evidence/2026-09-15-t21-quickshare-transport](evidence/2026-09-15-t21-quickshare-transport/run-manifest.json)；
+  demo 的 `qshare` 段现在能一次跑完 握手→加密→分块→落盘 hash 对照。**发现与真机仍未做**（P-F02-1/3）。
+
 **未开始 / 待批准**：T30（UxPlay provider 闭环，需 scope S1/S2）、T33/T34（AirPlay 音视频接收真机）、
-T21/T22（Quick Share 传输加密与 payload 闭环，待 P-F02-1/2/3 关闭与 S3 抓包批准）、
-xross-dev 侧 bridge 窗口（S4）、provider 放行（S5）；native 窗口 sink 与 Tauri demo 壳留桌面会话。
+T22（Quick Share 发送闭环，需 QR/可发现路径）、keep-alive 与 paired-key 帧、Quick Share 发现源
+（待 P-F02-1/2/3 关闭与 S3 抓包批准）、xross-dev 侧 bridge 窗口（S4）、provider 放行（S5）；
+native 窗口 sink 与 Tauri demo 壳留桌面会话。
 阶段 3 的 goal prompt 见 [docs/goal-phase-3.md](docs/goal-phase-3.md)，执行结果见
 [evidence/2026-09-15-phase-3-final-report.md](evidence/2026-09-15-phase-3-final-report.md)；阶段 2 见
 [evidence/2026-09-15-phase-2-final-report.md](evidence/2026-09-15-phase-2-final-report.md)。
