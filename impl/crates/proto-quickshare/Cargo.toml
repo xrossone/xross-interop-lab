@@ -10,7 +10,11 @@ publish.workspace = true
 # 发现/QR/传输加密/payload 层**不在本 crate**（P-F02-1/3 未关闭）。
 [dependencies]
 interop-contract = { path = "../interop-contract" }
+interop-file = { path = "../interop-file" }
 sha2 = "0.10"
 hkdf = "0.12"
 p256 = { version = "0.13", features = ["ecdh"] }
 getrandom = "0.2"
+aes = "0.8"            # AES-256-CBC（F-20：成熟原语，不自写）
+cbc = { version = "0.1", features = ["alloc"] }
+hmac = "0.12"          # HMAC-SHA256（F-20 的签名方案）

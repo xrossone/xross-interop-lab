@@ -15,5 +15,8 @@
 pub mod crypto;
 pub mod framing;
 pub mod handshake;
+pub mod payload;
+pub mod receive;
+pub mod secure_message;
 pub mod session;
 pub mod wire;

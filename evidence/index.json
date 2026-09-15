@@ -4,6 +4,14 @@
  "notes": "证据登记簿：dossier/specs 中的 evidence_refs 必须指向这里登记的 id（tools/test_dossiers.py 强制）。kind 词表：run-manifest | device-run | source-tree | page-review | user-observation。",
  "entries": [
   {
+   "id": "run-2026-09-15-t21-quickshare-transport",
+   "kind": "run-manifest",
+   "level": "build-verified",
+   "date": "2026-09-15",
+   "path": "evidence/2026-09-15-t21-quickshare-transport/run-manifest.json",
+   "notes": "T21 Quick Share 传输闭环（headless）：SecureMessage AES-256-CBC+HMAC、D2D 严格序号、payload 分块与常数内存、接收会话的绑定/拒绝/预算/取消（T21-01..04）；发现与真机仍未做"
+  },
+  {
    "id": "run-2026-09-15-t20-quickshare-core",
    "kind": "run-manifest",
    "level": "build-verified",

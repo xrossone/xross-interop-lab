@@ -1,0 +1,65 @@
+{
+ "schema_version": 1,
+ "run_id": "2026-09-15-t21-quickshare-transport",
+ "task": "T21 · Quick Share 传输闭环（headless 部分：SecureMessage + payload 层 + 接收会话）",
+ "kind": "manual",
+ "evidence_level": "build-verified",
+ "is_test_evidence": true,
+ "synthetic": false,
+ "base_commit": "5b26daa（阶段 3 收尾）",
+ "case_ids": [
+  "T21-01",
+  "T21-02",
+  "T21-03",
+  "T21-04"
+ ],
+ "result": "pass",
+ "commands": [
+  {
+   "seq": 1,
+   "purpose": "red：payload/receive/secure_message 模块不存在",
+   "command": "cargo test --manifest-path impl/Cargo.toml -p proto-quickshare",
+   "exit_code": 101,
+   "result": "fail：could not compile（unresolved import proto_quickshare::{payload,receive,secure_message}）"
+  },
+  {
+   "seq": 2,
+   "purpose": "green：T21 验收套件 + SecureMessage 正负向",
+   "command": "cargo test --manifest-path impl/Cargo.toml -p proto-quickshare",
+   "exit_code": 0,
+   "result": "pass：28 tests（lib 9 + handshake/framing 9 + receive/transport 10）"
+  },
+  {
+   "seq": 3,
+   "purpose": "全 workspace 回归 + 静态检查 + lab 检查",
+   "command": "cargo test --manifest-path impl/Cargo.toml --workspace; cargo clippy --manifest-path impl/Cargo.toml --workspace --all-targets; python3 -m unittest discover -s tools",
+   "exit_code": 0,
+   "result": "pass：126 tests 全绿（113 → 126）；clippy 0 warnings；lab 39 tests OK"
+  }
+ ],
+ "acceptance_mapping": {
+  "T21-01": "introduction 声明 payload id 4；先写 2 字节合法 chunk；随后一条 payload id 9 的 chunk → invalid-frame（绝不写进另一个条目），published_count=0，条目已写字节仍为 2",
+  "T21-02": "ReceiveDecision::Reject → ResponseStatus::Reject，条目 0 个、发布 0 个、root 下无最终文件；拒绝后任何 payload 帧都被拒",
+  "T21-03": "10 GiB 合成 FILE payload 以 1 MiB chunk 流过组装器（计数 sink）：总字节 = 10 GiB、单次交给 sink ≤ 1 MiB、offset 首 0 尾 TOTAL-CHUNK、完成后拒绝追加 —— 常数内存（组装器只保留 written/complete）",
+  "T21-04": "伪造名称 '../../etc/passwd'、'..'、'a/b'、'C:evil.txt'、'CON.txt'、含 NUL → 全部被 interop-file 形状规则拒绝且不建条目；合法名 'photo (1).jpg' + 目录 'Photos' 正常落盘并原子发布（relative_path='Photos/photo (1).jpg'）"
+ },
+ "extra_coverage": {
+  "secure_message": "UKEY2 next secret → D2D 密钥链 → SecureMessage 往返；签名/密文改一位 → integrity-failed；跳号与重放 → integrity-failed 且不推进序号；序号严格 +1（双方独立计数）",
+  "payload_codec": "OfflineFrame/V1Frame/PayloadTransferFrame 编解码往返；未知 packet_type → invalid-frame；offset 跳号/total_size 不符/LAST_CHUNK 提前或缺失/完成后追加 → 拒绝且**无部分写入**（检查先于写入）",
+  "receive_session": "预算超限 → NOT_ENOUGH_SPACE（不建条目）；CANCEL 控制帧 → 清理在途条目且无最终文件；payload id 在 introduction 内重复 → 拒绝；MIME 只作提示不参与决策",
+  "license_note": "本 task 首次引入 aes/cbc/hmac crate（成熟原语，本地 registry）与 interop-file 依赖；未引入任何第三方协议源码"
+ },
+ "artifacts": [
+  { "path": "impl/crates/proto-quickshare/src/secure_message.rs" },
+  { "path": "impl/crates/proto-quickshare/src/payload.rs" },
+  { "path": "impl/crates/proto-quickshare/src/receive.rs" },
+  { "path": "impl/crates/proto-quickshare/src/wire.rs", "note": "新增 SecureMessage/HeaderAndBody/Header/GcmMetadata/DeviceToDeviceMessage 编解码（字段号 F-25/F-26/F-29）" },
+  { "path": "impl/crates/proto-quickshare/tests/quickshare_receive.rs" },
+  { "path": "specs-reviewed/f02-quickshare-lan.md", "note": "新增 F-25..F-29 字段行；F-19/F-20/F-22 标记为 T21 已实现" },
+  { "path": "provenance/quickshare-inputs.json", "note": "登记 R17 offline_wire_formats.proto 与 R15 ProtobufSource（Chromium 来源）的许可边界" },
+  { "path": "evidence/quickshare/corpus-plan.json", "note": "新增 qs-014..qs-018（transport/payload/receive 正负向）" }
+ ],
+ "credentials_redacted": true,
+ "license_route_approved": false,
+ "notes": "**证据等级 build-verified**：真实 AES-256-CBC/HMAC-SHA256/HKDF、真实 spool 落盘与原子发布、10 GiB 常数内存证明。**不是** device-verified：没有与 Android 真机传输；**发现仍未实现**（P-F02-1/3），所以这不是「LAN 接收闭环”——闭环的最后一段（发现 + 真机）在待用户清单里。keep-alive 与 paired-key 帧未实现（本路径不需要，真机联调时再评）。"
+}

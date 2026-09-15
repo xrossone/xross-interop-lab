@@ -137,12 +137,14 @@ class QuickShareGate(unittest.TestCase):
         for f in fixtures:
             for key in ("id", "kind", "layer", "fact_ref", "description", "expected"):
                 self.assertIn(key, f, f"语料条目缺字段：{f.get('id')}")
-            self.assertRegex(f["fact_ref"], r"F-\d+|T19-\d+", f"{f['id']} 必须引用字段表行或 T19 case")
+            self.assertRegex(
+                f["fact_ref"], r"F-\d+|T\d\d-\d+", f"{f['id']} 必须引用字段表行或验收 case 号"
+            )
         kinds = {f["kind"] for f in fixtures}
         self.assertIn("negative", kinds)
         self.assertIn("fragmentation", kinds)
-        must_have = {"qs-011", "qs-012", "qs-013"}
-        self.assertTrue(must_have <= ids, f"缺少 T19-01/T19-02 的 invariant 语料：{must_have - ids}")
+        must_have = {"qs-011", "qs-012", "qs-013", "qs-018"}
+        self.assertTrue(must_have <= ids, f"缺少 T19-01/T19-02/T21 的 invariant 语料：{must_have - ids}")
         device = self.corpus.get("device_corpus", {})
         self.assertEqual(device.get("status"), "blocked", "真机语料必须标 blocked（需用户抓包）")
 

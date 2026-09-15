@@ -113,6 +113,46 @@
       "fact_ref": "F-21",
       "description": "握手已完成但确认码未核对",
       "expected": "payload gate 仍关闭（UKEY2 的 out-of-band 验证是必须步骤）"
+    },
+    {
+      "id": "qs-014",
+      "kind": "positive",
+      "layer": "transport",
+      "fact_ref": "F-19,F-25,F-26,F-29",
+      "description": "UKEY2 握手 → D2D 密钥链 → SecureMessage 加解密往返（首条序号 1，双方独立计数）",
+      "expected": "明文一致；expected_sequence 递增；密钥 Debug 打码"
+    },
+    {
+      "id": "qs-015",
+      "kind": "negative",
+      "layer": "transport",
+      "fact_ref": "F-25,F-29",
+      "description": "篡改 SecureMessage 的签名或密文一位；以及重放已接受过的帧 / 跳号",
+      "expected": "integrity-failed；被拒帧不推进序号（严格 +1 策略）"
+    },
+    {
+      "id": "qs-016",
+      "kind": "positive",
+      "layer": "payload",
+      "fact_ref": "F-27",
+      "description": "10 GiB 合成 FILE payload 以 1 MiB chunk 流过组装器（计数 sink）",
+      "expected": "字节数正确、单次交给 sink ≤ chunk、O(1) 状态（常数内存）"
+    },
+    {
+      "id": "qs-017",
+      "kind": "negative",
+      "layer": "payload",
+      "fact_ref": "F-22,F-27",
+      "description": "offset 跳号、total_size 不符、写满缺 LAST_CHUNK、LAST_CHUNK 提前、完成后追加",
+      "expected": "invalid-frame / resource-limit，且协议违规**不产生部分写入**"
+    },
+    {
+      "id": "qs-018",
+      "kind": "invariant",
+      "layer": "receive",
+      "fact_ref": "T21-01,T21-02,T21-04",
+      "description": "payloadID 混入、用户拒绝、伪造 filename、超预算、CANCEL 中断",
+      "expected": "拒绝/REJECT/NOT_ENOUGH_SPACE；published_count 恒为 0 且无临时文件残留"
     }
   ],
   "device_corpus": {

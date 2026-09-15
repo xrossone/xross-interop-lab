@@ -7,7 +7,8 @@
     "未固化（P-F02-1/3 未关闭）的字段不得写进实现：发现载体、可见性矩阵、GMS 服务端相关字段一律 not_implemented",
     "行级事实引用必须注明 commit+文件+行；不复制表达、不翻译、不链接第三方代码",
     "R16（Bada，无根 LICENSE）restricted：只作事实核对，任何表达不进入实现上下文",
-    "R19（rquickshare，GPL-3.0）只作结构参考：不复制、不翻译、不链接；GPL 分析只在 restricted 区留痕"
+    "R19（rquickshare，GPL-3.0）只作结构参考：不复制、不翻译、不链接；GPL 分析只在 restricted 区留痕",
+    "R15 的 ProtobufSource/ 目录来自 Chromium（BSD-3-Clause）：只允许取字段号/结构事实，不复制注释与表达"
   ],
   "entries": [
     {
@@ -16,7 +17,7 @@
       "commit_ref": "8f1fdc7",
       "license": "Unlicense（PROTOCOL.md 与 Swift 源码同为 Unlicense）",
       "use": "facts-source：Nearby Share/Quick Share LAN 协议事实（发现 TXT、TCP framing、UKEY2 使用方式、PIN、密钥链、控制帧）",
-      "boundary": "引用行级事实需注明文件+行；不复制代码表达（Swift 实现仅作事实核对）；PROTOCOL.md 系作者逆向（非规范）→ 但可操作性事实需与 R18 或真机交叉",
+      "boundary": "引用行级事实需注明文件+行；不复制代码表达（Swift 实现仅作事实核对）；PROTOCOL.md 系作者逆向（非规范）→ 但可操作性事实需与 R18 或真机交叉；NearbyShare/ProtobufSource/wire_format.proto 系作者汇集自 Chromium（BSD-3-Clause 来源），只取字段号事实、不复制表达",
       "allowed_in_crate": true,
       "gate": "协议事实可进入 specs-reviewed 字段表；实现按字段表写，不照抄 Swift 结构"
     },
@@ -36,7 +37,7 @@
       "commit_ref": "2ea517e",
       "license": "Apache-2.0（含 NOTICE）",
       "use": "官方 Nearby Connections 参考：offline frame / payload / medium 枚举等的结构事实来源",
-      "boundary": "行级事实引用注明路径+行；不复制表达；不链接",
+      "boundary": "行级事实引用注明路径+行；不复制表达；不链接；本 task 使用 connections/implementation/proto/offline_wire_formats.proto 的字段号事实（Apache-2.0）",
       "allowed_in_crate": true,
       "gate": "本 task 只用于字段表引用（T20 用到的部分以 R18 的 UKEY2 规范为主）"
     },

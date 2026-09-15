@@ -92,11 +92,11 @@ pub const PUBLIC_KEY_TYPE_EC_P256: i32 = 1;
 
 // ---------------------------------------------------------------- protobuf 最小子集
 
-fn invalid(why: impl Into<String>) -> Error {
+pub(crate) fn invalid(why: impl Into<String>) -> Error {
     Error::new(ErrorCode::InvalidFrame, why.into()).with_phase("negotiating")
 }
 
-fn write_varint(out: &mut Vec<u8>, mut v: u64) {
+pub(crate) fn write_varint(out: &mut Vec<u8>, mut v: u64) {
     loop {
         let byte = (v & 0x7F) as u8;
         v >>= 7;
@@ -108,18 +108,18 @@ fn write_varint(out: &mut Vec<u8>, mut v: u64) {
     }
 }
 
-fn write_varint_field(out: &mut Vec<u8>, field: u32, v: u64) {
+pub(crate) fn write_varint_field(out: &mut Vec<u8>, field: u32, v: u64) {
     write_varint(out, (field as u64) << 3);
     write_varint(out, v);
 }
 
-fn write_bytes_field(out: &mut Vec<u8>, field: u32, bytes: &[u8]) {
+pub(crate) fn write_bytes_field(out: &mut Vec<u8>, field: u32, bytes: &[u8]) {
     write_varint(out, ((field as u64) << 3) | 2);
     write_varint(out, bytes.len() as u64);
     out.extend_from_slice(bytes);
 }
 
-struct Reader<'a> {
+pub(crate) struct Reader<'a> {
     buf: &'a [u8],
     pos: usize,
     /// 跳过的未知字段数（proto2 语义：忽略；记录下来便于诊断）
@@ -127,7 +127,7 @@ struct Reader<'a> {
 }
 
 impl<'a> Reader<'a> {
-    fn new(buf: &'a [u8]) -> Self {
+    pub(crate) fn new(buf: &'a [u8]) -> Self {
         Self {
             buf,
             pos: 0,
@@ -135,11 +135,11 @@ impl<'a> Reader<'a> {
         }
     }
 
-    fn eof(&self) -> bool {
+    pub(crate) fn eof(&self) -> bool {
         self.pos >= self.buf.len()
     }
 
-    fn byte(&mut self) -> Result<u8, Error> {
+    pub(crate) fn byte(&mut self) -> Result<u8, Error> {
         let b = *self
             .buf
             .get(self.pos)
@@ -148,7 +148,7 @@ impl<'a> Reader<'a> {
         Ok(b)
     }
 
-    fn varint(&mut self) -> Result<u64, Error> {
+    pub(crate) fn varint(&mut self) -> Result<u64, Error> {
         let mut result: u64 = 0;
         for shift in 0..10u32 {
             let b = self.byte()?;
@@ -164,7 +164,7 @@ impl<'a> Reader<'a> {
     }
 
     /// 读 length-delimited 字段：**先查长度再切片**（不预分配）。
-    fn bytes(&mut self) -> Result<&'a [u8], Error> {
+    pub(crate) fn bytes(&mut self) -> Result<&'a [u8], Error> {
         let len = self.varint()?;
         if len > MAX_FIELD_BYTES as u64 {
             return Err(Error::new(
@@ -189,7 +189,7 @@ impl<'a> Reader<'a> {
         Ok(out)
     }
 
-    fn skip(&mut self, wire_type: u64) -> Result<(), Error> {
+    pub(crate) fn skip(&mut self, wire_type: u64) -> Result<(), Error> {
         match wire_type {
             0 => {
                 self.varint()?;
@@ -212,7 +212,7 @@ impl<'a> Reader<'a> {
     }
 
     /// 下一条字段的 (field_number, wire_type)。
-    fn next_key(&mut self) -> Result<(u32, u64), Error> {
+    pub(crate) fn next_key(&mut self) -> Result<(u32, u64), Error> {
         let key = self.varint()?;
         let field = (key >> 3) as u32;
         if field == 0 {
@@ -507,4 +507,166 @@ pub fn rebuild_client_init(
 pub fn with_message_type(frame: &[u8], message_type: Ukey2MessageType) -> Vec<u8> {
     let message = decode_ukey2_message(frame).expect("合法 Ukey2Message");
     encode_ukey2_message(message_type, &message.message_data)
+}
+
+// ---------------------------------------------------------------- SecureMessage（F-19/F-20）
+//
+// 字段号来源：R18 `securemessage.proto`（`SecureMessage{header_and_body=1, signature=2}`、
+// `HeaderAndBody{header=1, body=2}`、`Header{signature_scheme=1, encryption_scheme=2,
+// verification_key_id=3, decryption_key_id=4, iv=5, public_metadata=6}`）、
+// R18 `securegcm.proto`（`GcmMetadata{type=1, version=2}`，`DEVICE_TO_DEVICE_MESSAGE=13`）、
+// R18 `device_to_device_messages.proto`（`DeviceToDeviceMessage{message=1, sequence_number=2}`）。
+
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct SecureMessage {
+    pub header_and_body: Vec<u8>,
+    pub signature: Vec<u8>,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct HeaderAndBody {
+    pub header: Vec<u8>,
+    pub body: Vec<u8>,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct Header {
+    pub signature_scheme: i64,
+    pub encryption_scheme: i64,
+    pub verification_key_id: Option<Vec<u8>>,
+    pub decryption_key_id: Option<Vec<u8>>,
+    pub iv: Option<Vec<u8>>,
+    pub public_metadata: Option<Vec<u8>>,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct DeviceToDeviceMessage {
+    pub message: Vec<u8>,
+    pub sequence_number: i32,
+}
+
+pub fn encode_secure_message(header_and_body: &[u8], signature: &[u8]) -> Vec<u8> {
+    let mut out = Vec::with_capacity(header_and_body.len() + signature.len() + 8);
+    write_bytes_field(&mut out, 1, header_and_body);
+    write_bytes_field(&mut out, 2, signature);
+    out
+}
+
+pub fn decode_secure_message(buf: &[u8]) -> Result<SecureMessage, Error> {
+    let mut r = Reader::new(buf);
+    let mut hab = None;
+    let mut sig = None;
+    while !r.eof() {
+        let (field, wire_type) = r.next_key()?;
+        match (field, wire_type) {
+            (1, 2) => hab = Some(r.bytes()?.to_vec()),
+            (2, 2) => sig = Some(r.bytes()?.to_vec()),
+            _ => r.skip(wire_type)?,
+        }
+    }
+    Ok(SecureMessage {
+        header_and_body: hab.ok_or_else(|| invalid("SecureMessage 缺 header_and_body"))?,
+        signature: sig.ok_or_else(|| invalid("SecureMessage 缺 signature"))?,
+    })
+}
+
+pub fn encode_header_and_body(header: &[u8], body: &[u8]) -> Vec<u8> {
+    let mut out = Vec::with_capacity(header.len() + body.len() + 8);
+    write_bytes_field(&mut out, 1, header);
+    write_bytes_field(&mut out, 2, body);
+    out
+}
+
+pub fn decode_header_and_body(buf: &[u8]) -> Result<HeaderAndBody, Error> {
+    let mut r = Reader::new(buf);
+    let mut header = None;
+    let mut body = None;
+    while !r.eof() {
+        let (field, wire_type) = r.next_key()?;
+        match (field, wire_type) {
+            (1, 2) => header = Some(r.bytes()?.to_vec()),
+            (2, 2) => body = Some(r.bytes()?.to_vec()),
+            _ => r.skip(wire_type)?,
+        }
+    }
+    Ok(HeaderAndBody {
+        header: header.ok_or_else(|| invalid("HeaderAndBody 缺 header"))?,
+        body: body.ok_or_else(|| invalid("HeaderAndBody 缺 body"))?,
+    })
+}
+
+pub fn encode_header(
+    signature_scheme: i64,
+    encryption_scheme: i64,
+    iv: Option<&[u8]>,
+    public_metadata: Option<&[u8]>,
+) -> Vec<u8> {
+    let mut out = Vec::new();
+    write_varint_field(&mut out, 1, signature_scheme as u64);
+    write_varint_field(&mut out, 2, encryption_scheme as u64);
+    if let Some(iv) = iv {
+        write_bytes_field(&mut out, 5, iv);
+    }
+    if let Some(md) = public_metadata {
+        write_bytes_field(&mut out, 6, md);
+    }
+    out
+}
+
+pub fn decode_header(buf: &[u8]) -> Result<Header, Error> {
+    let mut r = Reader::new(buf);
+    let mut h = Header {
+        signature_scheme: 0,
+        encryption_scheme: 0,
+        verification_key_id: None,
+        decryption_key_id: None,
+        iv: None,
+        public_metadata: None,
+    };
+    while !r.eof() {
+        let (field, wire_type) = r.next_key()?;
+        match (field, wire_type) {
+            (1, 0) => h.signature_scheme = r.varint()? as i64,
+            (2, 0) => h.encryption_scheme = r.varint()? as i64,
+            (3, 2) => h.verification_key_id = Some(r.bytes()?.to_vec()),
+            (4, 2) => h.decryption_key_id = Some(r.bytes()?.to_vec()),
+            (5, 2) => h.iv = Some(r.bytes()?.to_vec()),
+            (6, 2) => h.public_metadata = Some(r.bytes()?.to_vec()),
+            _ => r.skip(wire_type)?,
+        }
+    }
+    Ok(h)
+}
+
+/// `GcmMetadata{ type=1, version=2 }`（F-20：D2D 消息用 type=13、version=1）。
+pub fn encode_gcm_metadata(metadata_type: i64, version: i64) -> Vec<u8> {
+    let mut out = Vec::new();
+    write_varint_field(&mut out, 1, metadata_type as u64);
+    write_varint_field(&mut out, 2, version as u64);
+    out
+}
+
+pub fn encode_device_to_device(sequence_number: i32, message: &[u8]) -> Vec<u8> {
+    let mut out = Vec::new();
+    write_bytes_field(&mut out, 1, message);
+    write_varint_field(&mut out, 2, sequence_number as u64);
+    out
+}
+
+pub fn decode_device_to_device(buf: &[u8]) -> Result<DeviceToDeviceMessage, Error> {
+    let mut r = Reader::new(buf);
+    let mut message = None;
+    let mut sequence = None;
+    while !r.eof() {
+        let (field, wire_type) = r.next_key()?;
+        match (field, wire_type) {
+            (1, 2) => message = Some(r.bytes()?.to_vec()),
+            (2, 0) => sequence = Some(r.varint()? as i32),
+            _ => r.skip(wire_type)?,
+        }
+    }
+    Ok(DeviceToDeviceMessage {
+        message: message.unwrap_or_default(),
+        sequence_number: sequence.ok_or_else(|| invalid("DeviceToDeviceMessage 缺 sequence_number"))?,
+    })
 }

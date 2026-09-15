@@ -32,18 +32,27 @@ P-F02-1（LAN 发现载体）与 P-F02-3（可见性矩阵）**blocked**——�
 | F-16 | ukey2 | 认证串与 next secret：`AUTH = HKDF(ikm=DHS, salt="UKEY2 v1 auth", info=M1‖M2)`；`NEXT = HKDF(ikm=DHS, salt="UKEY2 v1 next", info=M1‖M2)`；`M1/M2` = 双方完整序列化（含 Ukey2Message 封装、不含 TCP 长度前缀）的前两条消息；UKEY2 的 `L_auth/L_next` 由**下一协议**决定（UKEY2 本身不规定长度） | R18 README §Deriving…；`ukey2_handshake.cc:32,35,210-265`；R15 `NearbyConnection.swift:365-374` | source-reviewed（三方一致） | yes |
 | F-17 | auth | 4 位确认码：对 auth 串逐字节做 `hash = (hash + int8(byte)·mult) mod 9973, mult = mult·31 mod 9973`，输出 `%04d` | R15 `NearbyConnection.swift:307-319`（PROTOCOL.md 指向 Chromium `nearby_sharing_service_impl.cc`） | source-reviewed（单一实现来源） | yes |
 | F-18 | ukey2 | `next_protocol` 取值为 `"AES_256_CBC-HMAC_SHA256"`（客户端设置、服务端校验，不匹配即拒绝） | R15 `NearbyShare/OutboundNearbyConnection.swift:173`、`InboundNearbyConnection.swift:187` | source-reviewed | yes |
-| F-19 | keys | 握手后密钥链：`D2D_client = HKDF-SHA256(ikm=NEXT, salt=SHA256("D2D"), info="client")`、`D2D_server = …info="server"`；随后四把密钥以 `salt=SHA256("SecureMessage")`、`info="ENC:2"`（加密）/`"SIG:1"`（HMAC）派生 | R15 `NearbyConnection.swift:380-395`；R18 `src/main/cpp/src/securegcm/d2d_crypto_ops.cc:120-150` | source-reviewed（两来源一致） | no |
+| F-19 | keys | 握手后密钥链：`D2D_client = HKDF-SHA256(ikm=NEXT, salt=SHA256("D2D"), info="client")`、`D2D_server = …info="server"`；随后四把密钥以 `salt=SHA256("SecureMessage")`、`info="ENC:2"`（加密）/`"SIG:1"`（HMAC）派生 | R15 `NearbyConnection.swift:380-395`；R18 `src/main/cpp/src/securegcm/d2d_crypto_ops.cc:120-150` | source-reviewed（两来源一致；T21 已实现） | yes |
 | F-20 | transport | 加密层 `SecureMessage{ header_and_body=1, signature=2 }`；`Header{ signature_scheme=1(HMAC_SHA256=1), encryption_scheme=2(AES_256_CBC=2), iv=5, public_metadata=6 }`；D2D 消息含独立递增 sequence number（首条为 1） | R18 `securemessage.proto`；R15 `PROTOCOL.md:175-183` | source-reviewed | no |
 | F-21 | control | 连接握手顺序：连接请求 → UKEY2 ClientInit → ServerInit → ClientFinish → 双方 connection response；此后全部加密 | R15 `PROTOCOL.md:87-109,127-171` | source-reviewed | yes |
 | F-22 | control | paired-key encryption/result 帧、introduction（文件清单 + payload_id）、response（`ACCEPT`/`REJECT`/`NOT_ENOUGH_SPACE`）、payload transfer（id/type/totalSize/chunk/offset/flags(LAST_CHUNK bit0)）、disconnection | R15 `PROTOCOL.md:191-227` | source-reviewed | no |
 | F-23 | control | keep-alive：Android 每 10 秒发一次 offline frame `KEEP_ALIVE` 并期待对端同样发送，否则断开 | R15 `PROTOCOL.md:228-230` | source-reviewed | no |
 | F-24 | discovery/QR | QR URL `https://quickshare.google/qrcode#key=…`；由 `key` 派生 `advertisingToken = HKDF-SHA256(ikm=key, salt="", info="advertisingContext", 16B)` 与 `nameEncryptionKey = HKDF-SHA256(…, info="encryptionKey", 16B)`；可见时 TLV 直接放 token，隐藏时放 AES-GCM(12B IV ‖ 密文 ‖ 16B tag, AAD=token) | R15 `PROTOCOL.md:62-83` | source-reviewed | no |
+| F-25 | transport | `SecureMessage{header_and_body=1, signature=2}`、`HeaderAndBody{header=1, body=2}`、`Header{signature_scheme=1(HMAC_SHA256=1), encryption_scheme=2(AES_256_CBC=2), iv=5, public_metadata=6}` | R18 `src/main/proto/securemessage.proto:24-69` | source-reviewed（规范） | yes |
+| F-26 | transport | `public_metadata` = `GcmMetadata{type=1, version=2}`，D2D 消息用 `type=DEVICE_TO_DEVICE_MESSAGE(13)`、`version=1` | R18 `src/main/proto/securegcm.proto:250-285`；R15 `PROTOCOL.md:177` | source-reviewed（两来源一致） | yes |
+| F-27 | control | `OfflineFrame{version=1(V1=1), v1=2}`、`V1Frame{type=1(PAYLOAD_TRANSFER=3), payload_transfer=4}`、`PayloadTransferFrame{packet_type=1(DATA=1,CONTROL=2,PAYLOAD_ACK=3), payload_header=2, payload_chunk=3, control_message=4}`、`PayloadHeader{id=1,type=2(BYTES=1,FILE=2,STREAM=3),total_size=3,is_sensitive=4,file_name=5,parent_folder=6}`、`PayloadChunk{flags=1(LAST_CHUNK=0x1),offset=2,body=3,index=4}` | R17 2ea517e `connections/implementation/proto/offline_wire_formats.proto:26-215` | source-reviewed（官方 proto） | yes |
+| F-28 | control | introduction 的 `FileMetadata{name=1,type=2,payload_id=3,size=4,mime_type=5,id=6,parent_folder=7,is_sensitive_content=9}` 与 `ConnectionResponseFrame.Status{ACCEPT=1,REJECT=2,NOT_ENOUGH_SPACE=3,...}` | R15 `NearbyShare/ProtobufSource/wire_format.proto:30-73,248-267`（该文件由 R15 汇集自 Chromium，见 provenance 的许可注记） | source-reviewed（仅取字段号事实） | yes |
+| F-29 | transport | D2D 消息 `DeviceToDeviceMessage{message=1, sequence_number=2}`，序号必须递增（首条为 1，双方各自独立计数） | R18 `src/main/proto/device_to_device_messages.proto:18-27`；R15 `PROTOCOL.md:183` | source-reviewed（T21 采用严格 +1 策略） | yes |
 
 ## B. 与本仓实现的关系（T20 范围）
 
-- **实现**：F-05（TCP framing 结构 + 本仓保守上限）、F-06..F-11、F-12（实现侧规则）、F-13（仅 P256_SHA512）、
-  F-14、F-15（HKDF-SHA256）、F-16（长度由调用方给出）、F-17（标注为兼容启发式）、F-18、F-21（状态机顺序）。
-- **不实现**：F-01/F-02/F-04/F-24（发现与 QR，P-F02-1/3 未关闭）、F-19/F-20/F-22/F-23（传输层与 payload，T21+）。
+- **T20 已实现**：F-05（TCP framing 结构 + 本仓保守上限）、F-06..F-11、F-12（实现侧规则）、
+  F-13（仅 P256_SHA512）、F-14、F-15（HKDF-SHA256）、F-16、F-17（标注为兼容启发式）、F-18、F-21。
+- **T21 已实现（headless 部分）**：F-19/F-25/F-26/F-29（D2D 密钥链 + SecureMessage 信封 + 序号）、
+  F-22/F-27/F-28（introduction 的报价投影、response 状态、payload 分块与 LAST_CHUNK 语义）；
+  落盘走 `interop-file` 的预算/顺序写/原子发布，文件名穿越由 FILE-05 规则拒绝。
+- **不实现**：F-01/F-02/F-04/F-24（发现与 QR，P-F02-1/3 未关闭）、F-23（keep-alive，真机才需要）、
+  paired-key encryption/result 帧（本 profile 的 LAN 收文件路径不依赖它）、`PAYLOAD_ACK`（未实现，显式返回）。
 - 因此 `impl/crates/proto-quickshare` 里**没有**任何 mDNS/BLE/QR/GMS 代码——这是机器检查项（`tools/test_quickshare_gate.py` QS-02）。
 
 ## C. 能力分声明（禁止一个布尔值概括）
