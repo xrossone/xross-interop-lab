@@ -43,6 +43,9 @@ L4 clients → L3 platform head（能力提供者角色）→ L2 services（产�
   - 若 interop 作为**第一方角色**随产品分发（composition root 之一）→ 可用 control.v1 全权；
   - 若作为**独立进程/第三方形态**（当前 lab 的 standalone 主打）→ 应走 `xross.client.v1` 的
     scoped action seam，或等用户为它定产品形态。**这是一个待用户/架构裁决点**，不自行选定。
+  - **2026-09-15 用户转达的架构评审（待采纳）**：建议不二选一——产品集成侧做第一方 bridge
+    （bridge 之内才可及 control 面），协议执行侧一律独立低权限进程走 scoped seam；见 §9 第 3 条与
+    [../docs/goal-phase-2.md](../docs/goal-phase-2.md) T0。
 - 客户端不持有协议逻辑的方针（L4/§5）与我们的"CLI/headless 权威、Playground 只是消费者"一致。
 
 ## 4. 能力平面（媒体/原生能力的唯一合法形状）
@@ -106,7 +109,9 @@ north-star §4（多处按日期收窄，均用户裁决）现行边界：
 
 1. T11 endpoint registry：采用"默认不跨协议合并 + 来源单列"（§7），与主仓 `one_list.rs` 的立场一致。
 2. T12 platform probe：形状对齐 capability plane（只读 probe、报告 remedy、不自动改系统配置——CORE-09）。
-3. 集成 seam 待裁决：第一方角色（control.v1）vs 独立进程（client.v1 scoped actions）——记入待用户裁决清单。
+3. 集成 seam（**建议，2026-09-15 用户转达的架构评审，待采纳**）：不二选一——first-party bridge 在 xrossd
+   内（协议名到此为止）+ 协议执行放独立低权限 worker（scoped 能力面；产品化目标 client.v1，落地前不得用
+   control.v1 全权）。落 ADR-003，见 [../docs/goal-phase-2.md](../docs/goal-phase-2.md) T0。
 4. interop 媒体首批**不上 fabric**（§5 成文依据），先本地呈现/落盘；将来上产品需用户开 scope 行。
 5. 命名继续 `interop.*`，不碰 `xross.*` 保留空间（§2）。
 6. F01 复用目标锁定主仓 adapter（§6）；本文与 T03 映射共同构成集成输入。

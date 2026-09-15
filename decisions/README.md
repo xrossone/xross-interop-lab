@@ -17,8 +17,14 @@
 - **T05 provider 放行**：`provider-adoption.json` / `source-allowlist.json` 中所有
   `production_approved` 仍为 `false`。核心是 F01 LocalSend profile 是否保持 P0 且走 reuse（主仓 adapter）；
   其余（GStreamer 插件矩阵、windows-rs intake 等）按计划推进项。
-- **集成形态**：interop 进产品时作为第一方角色（`xross.control.v1`）还是独立进程
-  （`xross.client.v1` 公开 seam）——见 [../research/xross-top-level-design.md](../research/xross-top-level-design.md) §3。
+- **执行与信任边界（阶段 2 T0，ADR-003）**：建议不再二选一——产品集成用 xrossd 内**第一方 interop
+  bridge**（协议名到 bridge 为止），协议执行放**独立低权限 worker**（只走 scoped 能力面；产品化目标是
+  `xross.client.v1`，在它落地前不得用 control.v1 全权）。来源：用户 2026-09-15 转达的架构评审，
+  **待用户明示采纳**（采纳后 ADR status 由 `proposed` 升 `accepted`）。见
+  [../docs/goal-phase-2.md](../docs/goal-phase-2.md) T0 与
+  [../research/xross-top-level-design.md](../research/xross-top-level-design.md) §3/§9。
+- **阶段 3 scope 行**：首个真机 vertical（AirPlay via UxPlay 外部引擎 / Quick Share LAN 接收）需用户
+  新开 scope（外部引擎二进制、真机矩阵、可能的抓包批准）——清单由阶段 2 T5 产出。
 - **xross-dev 基线复核**：T03 映射锚定 `099b6c72`，xross-dev HEAD 已前移；
   首次实现对接前复核映射是否仍成立（`tools/test_xross_baseline.py` 会提示）。
 

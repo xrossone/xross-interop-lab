@@ -32,7 +32,8 @@ references/repositories.json    # 来源清单（64 项，均未放行）
 references/sources.lock.json    # 本机实际 HEAD + 许可文件 hash（2026-09-15）
 references/external/<slug>      # → /Volumes/Portable2TB/ExtDev/others/<slug> 的 symlink（不入库）
 references/research/xross-interop-plan-2026-09-15/  # 设计输入包（勿修改）
-docs/goal-phase-1.md            # 基础阶段 goal prompt
+docs/goal-phase-1.md            # 基础阶段 goal prompt（已完成）
+docs/goal-phase-2.md            # 阶段 2 goal prompt（T11–T13 收尾 + 执行边界 ADR + seam 模拟实证）
 docs/research/airplay-research.md  # AirPlay 真机 POC 记录（UxPlay/shairplay-rust）
 research/                       # 来源 intake + 逐 profile dossier（T02/T04 产出）
 specs-reviewed/                 # 审查后的 wire spec（F01/M01 实质；其余 review-pending）
@@ -77,7 +78,10 @@ tools/                          # 仓库检查脚本与测试（python3 -m unitt
   供应链审计已过；Gate 2 真机进行中（transient 视频链路已通，画质/音频/PIN 待解）；Gate 3/4 未开始。
 
 **未开始**：T11（多发现源 endpoint registry）、T12（platform probe/radio lease）、T13（worker
-supervisor 真实隔离）、T15+ 协议 provider 实现。
+supervisor 真实隔离）、T15+ 协议 provider 实现。阶段 2 的 goal prompt 已就绪：
+[docs/goal-phase-2.md](docs/goal-phase-2.md)——T0 执行与信任边界 ADR-003（建议形态为 first-party
+bridge + 隔离低权限 worker，**待用户采纳**，见 [decisions/README.md](decisions/README.md) 待裁决清单）、
+T1–T3 即上列三项、T4 seam 模拟实证、T5 首个真机 vertical gate。
 
 Agent 工作规则、禁止事项与汇报格式见 [AGENTS.md](AGENTS.md)；基础阶段执行提示词见
 [docs/goal-phase-1.md](docs/goal-phase-1.md)（已执行完毕，期末报告见
