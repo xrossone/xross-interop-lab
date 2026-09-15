@@ -29,8 +29,12 @@ pub struct OfferEntry {
 }
 
 impl OfferEntry {
+    /// 域形状校验：目录 components **与 display_name** 都必须能作为单个路径段。
+    /// display_name 是不受信任文本；域层拒绝穿越/分隔符/控制字符形状，
+    /// 更严格的平台规则（Windows 保留名、冒号/ADS）在 interop-file/T08 的落盘边界。
     pub fn validate(&self) -> Result<(), Error> {
-        validate_components(self.relative_components.as_deref())
+        validate_components(self.relative_components.as_deref())?;
+        validate_name(&self.display_name)
     }
 }
 
@@ -67,20 +71,45 @@ fn validate_components(components: Option<&[String]>) -> Result<(), Error> {
         return Ok(());
     };
     for c in components {
-        if c.is_empty() || c == "." || c == ".." {
-            return Err(Error::new(
-                ErrorCode::InvalidFrame,
-                format!("非法路径组件 {c:?}"),
-            )
-            .with_phase("offered"));
-        }
-        if c.bytes().any(|b| b == 0 || b == b'/' || b == b'\\') {
-            return Err(Error::new(
-                ErrorCode::InvalidFrame,
-                format!("路径组件含分隔符/NUL：{c:?}"),
-            )
-            .with_phase("offered"));
-        }
+        validate_component(c)?;
     }
     Ok(())
+}
+
+/// 单个路径段（也用于 display_name）：非空、非 `.`/`..`、无 NUL/控制字符/分隔符、长度受限。
+fn validate_component(c: &str) -> Result<(), Error> {
+    if c.is_empty() || c == "." || c == ".." {
+        return Err(Error::new(
+            ErrorCode::InvalidFrame,
+            format!("非法路径组件 {c:?}"),
+        )
+        .with_phase("offered"));
+    }
+    if c.len() > 255 {
+        return Err(Error::new(
+            ErrorCode::InvalidFrame,
+            format!("路径组件超过 255 字节：{c:?}"),
+        )
+        .with_phase("offered"));
+    }
+    if c.bytes().any(|b| b == 0 || b < 0x20 || b == 0x7f) {
+        return Err(Error::new(
+            ErrorCode::InvalidFrame,
+            format!("路径组件含 NUL/控制字符：{c:?}"),
+        )
+        .with_phase("offered"));
+    }
+    if c.contains('/') || c.contains('\\') {
+        return Err(Error::new(
+            ErrorCode::InvalidFrame,
+            format!("路径组件含分隔符：{c:?}"),
+        )
+        .with_phase("offered"));
+    }
+    Ok(())
+}
+
+fn validate_name(name: &str) -> Result<(), Error> {
+    validate_component(name)
+        .map_err(|_| Error::new(ErrorCode::InvalidFrame, format!("非法显示名 {name:?}")).with_phase("offered"))
 }

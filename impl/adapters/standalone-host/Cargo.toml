@@ -9,3 +9,8 @@ publish.workspace = true
 interop-contract = { path = "../../crates/interop-contract" }
 interop-policy = { path = "../../crates/interop-policy" }
 interop-runtime = { path = "../../crates/interop-runtime" }
+
+[dev-dependencies]
+interop-file = { path = "../../crates/interop-file" }
+interop-platform = { path = "../../crates/interop-platform" }
+interop-testkit = { path = "../../crates/interop-testkit" }

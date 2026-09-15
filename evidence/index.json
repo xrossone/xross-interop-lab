@@ -12,6 +12,14 @@
    "notes": "ADR-003 执行与信任边界（用户 2026-09-15 采纳，accepted）+ decisions 台账同步 + ADR 纪律测试恢复（ADR-01..04）"
   },
   {
+   "id": "run-2026-09-15-t4-seam-simulation",
+   "kind": "run-manifest",
+   "level": "simulated",
+   "date": "2026-09-15",
+   "path": "evidence/2026-09-15-t4-seam-simulation/run-manifest.json",
+   "notes": "T4 seam 模拟实证（文件面 offer→准入→原子落盘→事件投影 + 媒体面本地 spool/崩溃隔离）；**simulated**：fixture wire，非真机"
+  },
+  {
    "id": "run-2026-09-15-t13-worker-supervisor",
    "kind": "run-manifest",
    "level": "build-verified",

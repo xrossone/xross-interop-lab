@@ -1,0 +1,54 @@
+{
+ "schema_version": 1,
+ "run_id": "2026-09-15-t4-seam-simulation",
+ "task": "T4 · seam 模拟实证（文件面 + 最小媒体面）",
+ "kind": "simulated",
+ "evidence_level": "simulated",
+ "is_test_evidence": true,
+ "synthetic": true,
+ "base_commit": "b5d2dd5（T13 提交）",
+ "case_ids": [
+  "T4-FILE",
+  "T4-MEDIA"
+ ],
+ "result": "pass",
+ "commands": [
+  {
+   "seq": 1,
+   "purpose": "seam 模拟闭环（文件面 + 媒体面）",
+   "command": "cargo test --manifest-path impl/Cargo.toml -p standalone-host --test e2e_seam",
+   "exit_code": 0,
+   "result": "pass：3 tests（文件面主干、文件面负向、媒体面最小形状）"
+  },
+  {
+   "seq": 2,
+   "purpose": "全 workspace 回归 + 静态检查",
+   "command": "cargo test --manifest-path impl/Cargo.toml --workspace; cargo clippy --manifest-path impl/Cargo.toml --workspace --all-targets",
+   "exit_code": 0,
+   "result": "pass：69 tests 全绿（66 → 69）；clippy 0 warnings"
+  }
+ ],
+ "acceptance_mapping": {
+  "T4-FILE": "fixture 外来 offer（F01 形状，非真 wire）→ registry 观察/路由（方向=接收需对端声明 send，仅安全候选）→ 准入签发 Entry scoped grant → HostPorts 开 sink + testkit 固定 seed 分片写入 → interop-file hash 校验 + no-follow + 同 fs rename 原子落盘（receipt.sha256 与 payload 一致、文件在 spool root 内）→ EventBus 投影 started/progress/published（无 gap、cursor 连续、published 事件携带 receipt hash）",
+  "T4-MEDIA": "renderer 声明 encoded/pcm 可接收 mirror（URL-only TV 请求 mirror → unsupported-feature，URL cast 不冒充镜像）；canonical tracks 音视频分轨保留 clock domain；本地录制只写 spool root 内（无对 peer 的发布路径）；media_open 无渲染器时显式 platform-unavailable（不开假窗口）；network_listen 默认拒绝（不存在第二 fabric/后台监听）；worker 崩溃只影响挂靠会话（其余 Active）且留下清理记录；取消幂等单清理；absolute deadline 回收"
+ },
+ "extra_coverage": {
+  "fail_closed": "无 grant 的 content_read → auth-denied；Vault 等非 Entry scope 整单拒绝（STANDALONE 可签发集合只有 Entry）；未启用 profile → platform-unavailable",
+  "budget_and_shape": "超预算写入 → resource-limit 且临时文件被删除、无发布物；display_name/components 的穿越/分隔符/控制字符在**域层**拒绝（本次补齐：OfferEntry::validate 原先只查 components 不查 display_name）；Windows 保留名由 interop-file 落盘边界拒绝（域层放行、文件层拦截）",
+  "symlink": "目标目录被替换为 symlink → commit 阶段 no-follow 检查 invalid-frame，且 root 之外无任何写入"
+ },
+ "artifacts": [
+  {
+   "path": "impl/adapters/standalone-host/tests/e2e_seam.rs"
+  },
+  {
+   "path": "impl/crates/interop-contract/src/offer.rs"
+  },
+  {
+   "path": "impl/adapters/standalone-host/Cargo.toml"
+  }
+ ],
+ "credentials_redacted": true,
+ "license_route_approved": false,
+ "notes": "**证据等级 = simulated**：wire/peer/媒体会话全部由 testkit 与 fixture 构造，没有真实协议栈、没有真机、没有网络行为——不得据此声称任何 provider 可用。本 run 的价值是证明 seam 形状成立（发现→路由→准入→落盘→事件投影 全链是真实代码路径）与负向语义 fail-closed。发现并修复的缺口：OfferEntry::validate 未校验 display_name（域层），已补齐；interop-file 的 Windows 保留名/冒号规则保持更严（分层各司其职）。"
+}

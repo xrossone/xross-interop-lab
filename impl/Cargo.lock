@@ -234,8 +234,11 @@ name = "standalone-host"
 version = "0.1.0"
 dependencies = [
  "interop-contract",
+ "interop-file",
+ "interop-platform",
  "interop-policy",
  "interop-runtime",
+ "interop-testkit",
 ]
 
 [[package]]
