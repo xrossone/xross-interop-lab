@@ -15,13 +15,14 @@
 | T02 | `45eb5b3` | file-core+airplay 19 项来源 intake + allowlist + 一致性测试 |
 | T03 | `a11fe51` | xross-dev 集成映射（锚定 099b6c72）+ baseline + 测试 |
 | T04 | `01484ce` | F01/F02/M01/M05/M07/M08 六 dossier + evidence index + specs-reviewed |
-| T05 | `760d8a4` | provider-adoption（7 项决议）+ approved-inputs + review-log |
+| T05 | `760d8a4`→`19f5379` | provider-adoption（7 项决议）+ approved-inputs + review-log；`19f5379` 按用户裁决修正：localsend-rs 移出输入、shairplay-rust 降为仅协议参考 |
 | T06 | `41211e5` | interop-contract：ids/capability/offer/media/error + golden + JSON Schema |
 | T07 | `078115b` | interop-policy grant + interop-runtime FakeHost + standalone-host |
 | T08 | `a537af6` | interop-file：path/spool/integrity |
 | T09 | `d4957d0` | interop-ipc frame/auth/server + apps/interopd 骨架 |
 | T10 | `7aeff2f` | interop-runtime session/events/limits |
 | T14 | `922aee3` | interop-testkit + evidence/run.schema.json |
+| 顶层设计 | `6ab018e` | xross-dev 顶层设计对齐简报（读于 a483bd14） |
 
 新增/改动文件共 **70+**（逐 task 见各 commit 与 `evidence/<run-id>/run-manifest.json`）。
 
@@ -39,8 +40,7 @@
 
 ## 3. 使用的 source/fixture IDs 与新引入依赖
 
-- **Source IDs**：R01–R19（intake 与 dossier）、xross-dev@099b6c72（映射）、
-  xross-dev@099b6c72（映射）；全部与 `references/sources.lock.json` 一致（测试强制）。（用户自有 `~/Dev/localsend-rs` 经 2026-09-15 澄清属另一项目，已移出输入清单。）
+- **Source IDs**：R01–R19（intake 与 dossier）、xross-dev@099b6c72（映射）；全部与 `references/sources.lock.json` 一致（测试强制）。（用户自有 `~/Dev/localsend-rs` 经 2026-09-15 澄清属另一项目，已移出输入清单。）
 - **Fixture**：`impl/crates/interop-testkit/tests/fixtures/sample.bin`（自制，算法与 SHA-256 记录在案）；
   其余测试 fixture 均为测试内人工构造（无第三方测试向量复制）。
 - **新引入依赖**（全部记录在 run manifest，SEC-07）：`serde`/`serde_json`（序列化）、
