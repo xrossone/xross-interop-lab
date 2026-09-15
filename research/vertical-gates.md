@@ -104,7 +104,7 @@
 |---|---|---|---|
 | **S1** | 允许把**用户已构建的 UxPlay 二进制**接入为外部 receiver 引擎（worker 进程，不改编、不链接、不复制源码） | GPL 产物的运行与分发边界（T05 的组合审查未闭合） | 记录二进制来源与 hash，跑 T30-01（具名设备 + 首帧证据） |
 | **S2** | 允许**真机互联测试**（用户自有 iPhone/iPad + 本机），含 10/30/60 分钟长跑与重连矩阵 | 需要你的设备和在场时间；证据要写设备/OS 版本 | 执行 §1.4 的 A1–A8 |
-| **S3** | 允许 **lab 网段抓包 + 脱敏**（Quick Share 线 P-F02-1；AirPlay 线的兼容语料同理） | 抓包涉及你的网络与设备流量 | 抓包一次 LAN 发现过程 → 脱敏 → `evidence/` 记 hash |
+| **S3** | 允许 **lab 网段抓包 + 脱敏**（Quick Share 线 P-F02-1；AirPlay 线的兼容语料同理）——**2026-09-15 用户批准并主动配合真机** | 抓包涉及你的网络与设备流量 | 步骤见 [capture-runbook.md](capture-runbook.md)：抓取 A（发现）/ B（传输）→ 脱敏 → `evidence/` 记 hash。AirPlay 侧抓包要接收端在线，随 S1/S2 |
 | **S4** | xross-dev 侧 **interop bridge 落地窗口**（ADR-003 的产品集成侧） | 主仓当前焦点是付费后端，排期由你定 | 与主仓排期对齐后开 bridge 任务 |
 | **S5** | **provider 放行**（`production_approved` 仍全 false） | T05 保留给用户的放行权；首个 vertical 的结论先进 lab 证据，不发布 | 逐 provider 走"批准 → 组合审查 → release manifest 放行" |
 
