@@ -595,6 +595,23 @@ pub fn render_human(r: &DemoReport, section: Option<&str>) -> String {
             d.renderer["bad_callback"]["mentions_t42_04"],
             d.renderer["unsubscribe_ok"]
         ));
+        if !d.gena.is_null() {
+            let g = &d.gena;
+            out.push_str(&format!(
+                "GENA 通知（T42+） : SID={} 初始 SEQ={} 合并窗口={} ms（来源取值）；投递 {} 条；Content-Length=正文+2：{} 无 XML 声明={}\n",
+                text(&g["subscription_sid"]),
+                g["initial_seq"],
+                g["coalesce_window_ms"],
+                g["delivered_notifications"],
+                g["content_length_is_body_plus_two"],
+                g["no_xml_declaration"]
+            ));
+            out.push_str(&format!(
+                "  LastChange      : 内嵌文档先整体转义再进 propertyset={}（来源把转义责任交给值的一方）\n",
+                g["last_change_escaped_before_propertyset"]
+            ));
+            out.push_str(&format!("  传输            : {}\n", text(&g["transport"])));
+        }
         for b in &d.blocked {
             out.push_str(&format!("  · blocked: {b}\n"));
         }

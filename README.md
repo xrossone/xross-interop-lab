@@ -177,6 +177,18 @@ tools/                          # 仓库检查脚本与测试（python3 -m unitt
   demo 新增 `wfd` 段（`xinterop-demo wfd`，见 D-11）。测试逼出四处实现缺陷（M3 查询正文是**裸参数名**、
   M13 正文是裸 `wfd_idr_request`、keep-alive 基准、M13/M16 应用控制 URI），详见 run manifest 的 red→green 记录。
 
+- **T42+ DLNA GENA 通知构造与调度（headless 切片）**：`specs-reviewed/m07` 增 F-23..F-29（R46 pupnp 设备侧 +
+  R49 rygel 服务侧行级来源）——NOTIFY 字节（`NT: upnp:event`/`NTS: upnp:propchange`/`SID`/`SEQ`，
+  且 **`Content-Length` 是正文字节 + 2**，因为正文以 `\n\n` 结尾）、propertyset 正文（`<e:property>` 每变量一条，
+  **不发送 XML 声明**——来源把宏留着并注释「与其他 UPnP 厂商不互操作」）、LastChange 的内嵌文档
+  （`<Event xmlns="…AVT/|…RCS/"><InstanceID val="0">` + `<VAR val="…"/>`，带通道的变量多一个 `channel`）。
+  两条容易做错的来源事实被固化进实现与测试：① propertyset 构造把值**原样**写入 ⇒ **转义责任在产値的一方**，
+  而 LastChange 的值正是一份内嵌 XML ⇒ 必须先整体转义；② `SEQ` **从 0 开始**（初始事件）后严格 +1。
+  合并窗口 **150 ms 是来源实现取值**（rygel），本仓可配并如实标注。实现 `crates/proto-upnp/src/gena.rs`：
+  只产出通知**字节**与记账，**不建立任何回调连接**——字节交给调用方实现的 `NotifyTransport`
+  （lab gate 机器检查模块内无网络客户端）。demo `dlna` 段新增 GENA 子块（D-17）。
+  证据：[evidence/2026-09-15-t42p-dlna-gena-notify](evidence/2026-09-15-t42p-dlna-gena-notify/run-manifest.json)。
+
 - **T22headless Quick Share 断开与确认帧（headless 切片）**：`specs-reviewed/f02` 增 F-34..F-40（R17 官方 proto
   + 参考实现 + NearDrop 行级来源）——`DisconnectionFrame`（外层 `DISCONNECTION(6)`/字段 7，`request_safe_to_disconnect=1`、
   `ack_safe_to_disconnect=2`）与 `PAYLOAD_ACK`（`packet_type=3`，只带 `payload_header{id,total_size=-1}`）。

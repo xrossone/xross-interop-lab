@@ -16,6 +16,7 @@
 
 pub mod dmc;
 pub mod dmr;
+pub mod gena;
 pub mod dms;
 pub mod soap;
 pub mod ssdp;

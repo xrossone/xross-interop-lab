@@ -1,0 +1,83 @@
+{
+  "schema_version": 1,
+  "run_id": "2026-09-15-t42p-dlna-gena-notify",
+  "task": "T42+ · DLNA/UPnP GENA 通知的构造与调度（headless；不建立回调连接）",
+  "kind": "manual",
+  "evidence_level": "build-verified",
+  "is_test_evidence": true,
+  "synthetic": false,
+  "base_commit": "ad54c96（T42+ gate：F-23..F-29 + 语料 dl-025..030 + 纪律测试）",
+  "case_ids": [
+    "T42p-01",
+    "T42p-02",
+    "T42p-03"
+  ],
+  "result": "pass",
+  "commands": [
+    {
+      "seq": 1,
+      "purpose": "事实固化：设备侧从 pupnp、服务侧从 rygel 取行级事实",
+      "command": "grep -n / sed -n on references/external/r46-pupnp/upnp/src/gena/gena_device.c, upnp/src/inc/gena.h; r49-rygel src/librygel-renderer/rygel-changelog.vala, rygel-av-transport.vala, rygel-rendering-control.vala",
+      "exit_code": 0,
+      "result": "pass：F-23..F-29 全部有行级出处。三条只有读源码才能拿到的要点——① 通知正文**不发送 XML 声明**（来源把宏留着并注释「与其他 UPnP 厂商不互操作」）；② propertyset 构造把值**原样**写入、不做转义 ⇒ **转义责任在产値的一方**，而 LastChange 的值正是一份内嵌 XML 文档；③ `SEQ` 初始为 **0**，自增后为负则回绕到 1。另：来源的 `Content-Length` 是**正文字节 + 2**（正文以 \\n\\n 结尾）"
+    },
+    {
+      "seq": 2,
+      "purpose": "red：先写语料映射的验收测试（gena 模块尚不存在）",
+      "command": "cargo test --manifest-path impl/Cargo.toml -p proto-upnp --test dlna_gena",
+      "exit_code": 101,
+      "result": "fail：无法编译（模块与 API 不存在），确认验收测试先于实现落地"
+    },
+    {
+      "seq": 3,
+      "purpose": "green：gena.rs 实现（构造 + 转义 + SEQ + 合并窗口）",
+      "command": "cargo test --manifest-path impl/Cargo.toml -p proto-upnp",
+      "exit_code": 0,
+      "result": "pass：proto-upnp 40 tests（新增 gena 模块 7 例 + dlna_gena.rs 7 例）。覆盖：头集合与 Content-Length+2 怪癖、不写 XML 声明、e:property 形状、LastChange 内嵌文档与 channel 变体、转义表、SEQ 0→1→2、SID/回调形状拒绝、合并窗口（150 ms 来源取值 + 可配）"
+    },
+    {
+      "seq": 4,
+      "purpose": "自审：去掉一条恒真断言",
+      "command": "cargo test --manifest-path impl/Cargo.toml -p proto-upnp",
+      "exit_code": 0,
+      "result": "pass：实现期我写下的 `assert!(body.contains(\"&lt;\") == false || true)` 是**恒真**的（永远不会失败）——自查时删除。这类断言等于噪声，必须清掉"
+    },
+    {
+      "seq": 5,
+      "purpose": "demo 接入：dlna 段的 GENA 子块 + D-17",
+      "command": "cargo test --manifest-path impl/Cargo.toml -p interop-demo --test demo_cli",
+      "exit_code": 0,
+      "result": "pass：17 tests。JSON 与人类输出给出：初始事件 SEQ=0、合并窗口 150 ms 把两条变化合成一条、Content-Length=正文+2、无 XML 声明、LastChange 内嵌文档已整体转义、AVT/RCS 命名空间、投递 2 条（初始 + 合并），并打印第一条通知的原始字节"
+    },
+    {
+      "seq": 6,
+      "purpose": "全量回归 + 静态检查 + lab 纪律（含「gena 模块不得做网络 I/O」机器检查）",
+      "command": "cargo test --manifest-path impl/Cargo.toml --workspace; cargo clippy --manifest-path impl/Cargo.toml --workspace --all-targets; python3 -m unittest discover -s tools",
+      "exit_code": 0,
+      "result": "pass：impl 241 → **256** tests 全绿；clippy 0 warnings；lab 89 tests OK（GENA 实现检查由 skip 转为实际执行）"
+    }
+  ],
+  "acceptance_mapping": {
+    "T42p-01": "NOTIFY 字节形状（F-23/F-24）：请求行 `NOTIFY <路径> HTTP/1.1`、`Content-Type: text/xml; charset=\"utf-8\"`、`Content-Length: <正文字节数 + 2>`（来源既有行为）、`NT: upnp:event`、`NTS: upnp:propchange`、`SID`、`SEQ`；正文 `<e:propertyset xmlns:e=\"urn:schemas-upnp-org:event-1-0\">` + 每变量一个 `<e:property>` + `</e:propertyset>` 且以两个换行结尾；**不发送 XML 声明**（与来源的注释一致）",
+    "T42p-02": "LastChange 的转义责任（F-25/F-26）：内嵌文档 `<Event xmlns=\"…\"><InstanceID val=\"0\"><VAR val=\"…\"/></InstanceID></Event>`（带通道的变量多一个 `channel`）；该文档作为字符串放进 `<LastChange>` 前必须**整体转义**（`& < > \" '` 五个字符），且测试同时验证「未转义形态可被检出」——使这条规则可判定而非口头约定。AVT 与 RCS 两个命名空间分别覆盖",
+    "T42p-03": "SEQ 与合并窗口（F-27/F-28）：新订阅的初始事件 `SEQ=0`、之后严格 +1；`LastChange` 的多次变化在**来源取值 150 ms** 的窗口内合并成一条通知（窗口可配为 0 表示不合并，属本仓策略）；投递**只产出字节**——`NotifyTransport` 由调用方实现，demo 用记录型 transport，lab gate 机器检查 `gena.rs` 里不出现 `std::net`/`TcpStream`/`reqwest`/`Command::new`"
+  },
+  "extra_coverage": {
+    "negative_shapes": "SID 不是 `uuid:` 形式、回调路径不是绝对路径、SID 为空 → 一律 invalid-frame",
+    "capability_split": "能力表把 GENA 拆成三行：订阅校验（T42 已有）/ 通知构造与调度（本切片）/ **回调连接（仍 not-implemented）**；F-22 由「投递不实现」改成**范围声明**——构造在本仓、连接不在本仓",
+    "no_io_boundary": "renderer 控制路径「不做网络 I/O」的既有 gate 检查继续通过；新增的 gena 模块另有一条同向检查"
+  },
+  "artifacts": [
+    {"path": "impl/crates/proto-upnp/src/gena.rs", "note": "通知构造 + 转义 + SEQ + 合并调度（T42+ 主体）"},
+    {"path": "impl/crates/proto-upnp/src/lib.rs", "note": "注册 gena 模块"},
+    {"path": "impl/crates/proto-upnp/tests/dlna_gena.rs", "note": "7 例（按语料 dl-025..030 映射）"},
+    {"path": "specs-reviewed/m07-dlna-upnp-av.md", "note": "F-23..F-29 字段行 + F-22 范围声明改写 + 能力表三行"},
+    {"path": "evidence/dlna/corpus-plan.json", "note": "dl-025..dl-030（全自制）"},
+    {"path": "tools/test_dlna_gate.py", "note": "89 例（T42+ 新增 4 例）"},
+    {"path": "impl/apps/interop-demo/src/dlna.rs", "note": "GENA 子块（记录型 transport）"},
+    {"path": "impl/apps/interop-demo/tests/demo_cli.rs", "note": "D-17"}
+  ],
+  "credentials_redacted": true,
+  "license_route_approved": false,
+  "notes": "evidence_level=build-verified：只证明**通知字节与记账**按字段表正确，**未接入任何真实控制点**、没有发出过一个真实 HTTP 请求（这是设计使然：本仓不建连接）。真实 TV/手机控制点是否接受这些通知仍待 P-M07-1。R46/R49 只做行级事实引用，未复制表达"
+}

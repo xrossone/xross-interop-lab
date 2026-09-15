@@ -756,3 +756,50 @@ fn d16_quickshare_disconnection_and_payload_ack() {
     assert!(text.contains("PAYLOAD_ACK（T22）"), "{text}");
     assert!(text.contains("keep-alive 协商"), "{text}");
 }
+
+/// D-17：DLNA GENA 通知构造与调度（T42+）——字节形状、转义责任、SEQ 与合并窗口。
+#[test]
+fn d17_dlna_gena_notify_construction() {
+    let (code, v) = run_json(&["dlna", "--json"]);
+    assert_eq!(code, 0);
+    let g = &v["dlna"]["gena"];
+
+    // 字节形状：头集合 + Content-Length = 正文 + 2（来源怪癖）+ 不发送 XML 声明。
+    assert_eq!(g["content_length_is_body_plus_two"], true);
+    assert_eq!(g["no_xml_declaration"], true);
+    let raw = g["raw_first_notification"].as_str().expect("原始字节");
+    assert!(raw.starts_with("NOTIFY /evt HTTP/1.1\r\n"), "{raw}");
+    for needle in [
+        "Content-Type: text/xml; charset=\"utf-8\"",
+        "NT: upnp:event",
+        "NTS: upnp:propchange",
+        "SEQ: 0",
+        "<e:propertyset xmlns:e=\"urn:schemas-upnp-org:event-1-0\">",
+    ] {
+        assert!(raw.contains(needle), "缺 {needle}：{raw}");
+    }
+    assert!(!raw.contains("<?xml"), "不得发送 XML 声明（F-24）");
+
+    // 转义：LastChange 的内嵌文档先整体转义再进 propertyset（F-25）。
+    assert_eq!(g["last_change_escaped_before_propertyset"], true);
+    assert!(raw.contains("&lt;Event"), "内嵌文档必须被转义：{raw}");
+    assert!(!raw.contains("<Event xmlns"), "未转义形态不得出现");
+
+    // SEQ 与合并：初始事件 SEQ=0，窗口内两条变化合成一条。
+    assert_eq!(g["initial_seq"], 0);
+    assert_eq!(g["coalesce_window_ms"], 150, "来源实现取值");
+    assert_eq!(g["coalesced_into_one_notify"], true);
+    assert_eq!(g["delivered_notifications"], 2, "初始事件 + 一条合并通知");
+
+    // 命名空间与传输边界。
+    assert_eq!(g["namespace_avt"], "urn:schemas-upnp-org:metadata-1-0/AVT/");
+    assert_eq!(g["namespace_rcs"], "urn:schemas-upnp-org:metadata-1-0/RCS/");
+    assert!(g["transport"].as_str().unwrap_or("").contains("不建立连接"), "{g:?}");
+
+    // 人类输出复述。
+    let out = Command::new(bin()).arg("dlna").output().expect("可执行");
+    assert_eq!(out.status.code(), Some(0));
+    let text = String::from_utf8_lossy(&out.stdout);
+    assert!(text.contains("GENA 通知（T42+）"), "{text}");
+    assert!(text.contains("不建立连接"), "{text}");
+}

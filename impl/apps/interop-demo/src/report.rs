@@ -76,6 +76,8 @@ pub struct DlnaReport {
     pub leases: serde_json::Value,
     pub xml: serde_json::Value,
     pub renderer: serde_json::Value,
+    /// GENA 通知构造与调度（T42+）。
+    pub gena: serde_json::Value,
     pub blocked: Vec<String>,
 }
 

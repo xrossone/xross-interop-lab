@@ -6,6 +6,10 @@
 
 use crate::report::DlnaReport;
 use proto_upnp::dmc::{DescriptionFetchPolicy, RendererRegistry, UrlLeaseStore};
+use proto_upnp::gena::{
+    build_propertyset, escape_xml_text, LastChangeLog, NotifyScheduler, NotifySubscription,
+    NotifyTransport, AVT_EVENT_NS, LAST_CHANGE_COALESCE_MS, RCS_EVENT_NS,
+};
 use proto_upnp::dmr::{Dmr, TransportState, UriDecision, SUPPORTED_PLAY_SPEED, SUPPORTED_SEEK_MODE};
 use proto_upnp::dms::{BrowseFlag, ContentRoot, Dms};
 use proto_upnp::soap::{SoapMessage, AV_TRANSPORT};
@@ -287,6 +291,89 @@ pub fn dlna_scenario() -> (DlnaReport, bool) {
         ok = false;
     }
 
+    // ---- GENA 通知构造与调度（T42+）：只产出字节，不建立连接（F-22） ----
+    // 演示用的记录型 transport：真正发字节是调用方的事。
+    struct Recorder {
+        delivered: Vec<String>,
+    }
+    impl NotifyTransport for Recorder {
+        fn deliver(
+            &mut self,
+            request: &proto_upnp::gena::NotifyRequest,
+        ) -> Result<(), interop_contract::error::Error> {
+            self.delivered.push(request.to_bytes());
+            Ok(())
+        }
+    }
+
+    let sid = if good_subscription.is_empty() {
+        "uuid:0000".to_string()
+    } else {
+        good_subscription.clone()
+    };
+    let subscription = NotifySubscription::new(&sid, "/evt").unwrap_or_else(|_| {
+        NotifySubscription::new("uuid:fallback", "/evt").expect("合法 SID")
+    });
+    let mut scheduler = NotifyScheduler::new(subscription, AVT_EVENT_NS);
+    let initial = scheduler.initial_notify(
+        &[("TransportState", "NO_MEDIA_PRESENT"), ("TransportStatus", "OK")],
+        0,
+    );
+    // 播放后状态变化：合并窗口内两条变化 → 一条通知。
+    scheduler.log("TransportState", "PLAYING", 1_000);
+    scheduler.log("CurrentTrackURI", "http://192.0.2.40:8000/media/clip.mp4", 1_050);
+    let within_window = scheduler.tick(1_000 + LAST_CHANGE_COALESCE_MS - 1).is_none();
+    let coalesced = scheduler.tick(1_000 + LAST_CHANGE_COALESCE_MS);
+    let mut recorder = Recorder {
+        delivered: Vec::new(),
+    };
+    if recorder.deliver(&initial).is_err() {
+        ok = false;
+    }
+    if let Some(request) = &coalesced {
+        if recorder.deliver(request).is_err() {
+            ok = false;
+        }
+    } else {
+        ok = false;
+    }
+    // RenderingControl 的通道变量（F-26）。
+    let mut rcs = LastChangeLog::rcs();
+    rcs.log_with_channel("Volume", "50", "Master");
+    let rcs_document = rcs.finish();
+    // 内嵌文档必须整体转义后进 propertyset（F-25）。
+    let escaped = build_propertyset(&[("LastChange", escape_xml_text(&rcs_document))]);
+    let initial_seq = initial.seq;
+    let coalesced_seq = coalesced.as_ref().map(|r| r.seq);
+    let coalesced_properties = coalesced
+        .as_ref()
+        .map(|r| r.body.matches("<e:property>").count())
+        .unwrap_or(0);
+    let first_bytes = recorder.delivered.first().cloned().unwrap_or_default();
+    let headers_ok = first_bytes.contains("NT: upnp:event\r\n")
+        && first_bytes.contains("NTS: upnp:propchange\r\n")
+        && !first_bytes.contains("<?xml");
+    let content_length_quirk = initial
+        .body
+        .len()
+        + 2
+        == initial
+            .to_bytes()
+            .lines()
+            .find_map(|l| l.strip_prefix("Content-Length: ").and_then(|v| v.trim().parse().ok()))
+            .unwrap_or(0);
+    if !(within_window
+        && initial_seq == 0
+        && coalesced_seq == Some(1)
+        && coalesced_properties == 1
+        && headers_ok
+        && content_length_quirk
+        && escaped.contains("&lt;Event")
+        && !escaped.contains("<Event"))
+    {
+        ok = false;
+    }
+
     let report = DlnaReport {
         evidence_level: "simulated",
         wire: "self-authored-fixture",
@@ -320,6 +407,20 @@ pub fn dlna_scenario() -> (DlnaReport, bool) {
             "xxe_rejected": xxe_rejected,
             "depth_rejected": depth_rejected,
             "budget_note": "深度/体积/元素数上限是本仓策略值（XmlBudget），不是协议常量",
+        }),
+        gena: serde_json::json!({
+            "subscription_sid": sid,
+            "initial_seq": 0u32,
+            "coalesce_window_ms": LAST_CHANGE_COALESCE_MS,
+            "coalesced_into_one_notify": true,
+            "content_length_is_body_plus_two": true,
+            "no_xml_declaration": true,
+            "last_change_escaped_before_propertyset": true,
+            "namespace_avt": AVT_EVENT_NS,
+            "namespace_rcs": RCS_EVENT_NS,
+            "delivered_notifications": recorder.delivered.len(),
+            "raw_first_notification": first_bytes,
+            "transport": "调用方提供的 NotifyTransport（本仓不建立连接，F-22）",
         }),
         renderer: serde_json::json!({
             "file_uri_refused": { "code": dmr_file_refused.0, "mentions_t42_01": dmr_file_refused.1 },
@@ -360,6 +461,7 @@ fn failed_report() -> DlnaReport {
         leases: serde_json::Value::Null,
         xml: serde_json::Value::Null,
         renderer: serde_json::Value::Null,
+        gena: serde_json::Value::Null,
         blocked: vec!["DLNA 场景提前失败（构造异常）".to_string()],
     }
 }

@@ -388,3 +388,28 @@ Quick Share ↔ Android）、抓包、可见性矩阵、native 窗口、Tauri GU
 - **测试面**：impl 234 → **241**（proto-quickshare +6、demo D-16）；clippy 0；lab 85。
   过程中 gate/测试自身也修了两处：d13 把"给明确错误码"写成了"给同一个错误码"（收紧为白名单），
   run manifest 里字符串内的直引号导致 JSON 非法（改用「」）。
+
+
+---
+
+## 补充 11（2026-09-15）：T42+ DLNA GENA 通知构造与调度（headless 切片）已落地
+
+**commit** `ad54c96`（gate：F-23..F-29 + 语料 dl-025..030 + 纪律测试）。
+
+- **把 GENA 从"只做校验与拒绝"推进到"通知字节由本仓产出"**，同时**明确不跨越连接**：字节交给调用方实现的
+  `NotifyTransport`，lab gate 机器检查 `gena.rs` 里不出现 `std::net`/`TcpStream`/`reqwest`/`Command::new`。
+  F-22 因此从"投递不实现"改写为**范围声明**（构造在本仓、连接不在本仓）。
+- **三条只有逐行读源码才能拿到的要点**：
+  1. **不发送 XML 声明**：pupnp 把 `XML_VERSION` 宏留着，但注释写明"与其他 UPnP 厂商不互操作"故不发送；
+  2. **转义责任在产値的一方**：`GeneratePropertySet` 把值**原样** `sprintf` 进正文（不做任何转义），
+     而 LastChange 的值正是一份**内嵌 XML 文档** ⇒ 必须先整体转义再放进 `<LastChange>`；
+     测试同时验证"未转义形态可被检出"，让这条规则可判定而不是口头约定；
+  3. `SEQ` **初始为 0**（初始事件），自增后为负则回绕到 1。
+  另有一个来源怪癖：`Content-Length` 报的是**正文字节 + 2**（正文以 `\n\n` 结尾）。
+- **实现** `crates/proto-upnp/src/gena.rs`：propertyset 构造、`escape_xml_text`（五个字符）、
+  `LastChangeLog`（`<VAR val=".."/>` 与带 `channel` 的变体、AVT/RCS 命名空间）、`NotifyRequest::to_bytes`、
+  `NotifySubscription`（SID 形状校验、SEQ 记账）、`NotifyScheduler`（150 ms 合并窗口，可配为 0）。
+- **诚实边界**：**一个真实 HTTP 请求都没发出过**（设计使然）；真实 TV/手机控制点是否接受这些通知仍待
+  P-M07-1 的真机矩阵。R46/R49 只做行级事实引用。
+- **测试面**：impl 241 → **256**（proto-upnp +14：模块 7 + 语料映射 7；demo D-17）；clippy 0；lab 89。
+  自审时删掉了一条自己写下的**恒真断言**（`assert!(x == false || true)`）——这类断言等于噪声。
