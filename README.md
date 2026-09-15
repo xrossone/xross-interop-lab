@@ -25,15 +25,20 @@ impl/                           # 实现 workspace（plans/01 代码路径映射
                                 # 会话注册表/事件/取消（T10）
   crates/interop-ipc/           # 本地控制面：长度前缀 JSON-RPC + hello 认证
   crates/interop-testkit/       # fake clock/确定性分片/fixture 登记/run manifest
+  crates/interop-media/         # 媒体形态/三时钟域/format tracker/有界帧队列 + null/file sink（T28/T29）
+  crates/proto-airplay/         # AirPlay legacy 控制链：严格 RTSP/能力门禁/Bonjour 类型/keying seam（T32）
+  crates/proto-quickshare/      # Quick Share/UKEY2：TCP framing/握手状态机/payload gate（T19/T20）
   adapters/standalone-host/     # standalone 显式 policy + 最小权限 host
   apps/interopd/                # headless daemon 骨架（UDS 0600）
+  apps/interop-demo/            # headless demo CLI：发现/会话/sink/XMD1/Quick Share（T5）
   schemas/interop-api.schema.json
 references/repositories.json    # 来源清单（64 项，均未放行）
 references/sources.lock.json    # 本机实际 HEAD + 许可文件 hash（2026-09-15）
 references/external/<slug>      # → /Volumes/Portable2TB/ExtDev/others/<slug> 的 symlink（不入库）
 references/research/xross-interop-plan-2026-09-15/  # 设计输入包（勿修改）
 docs/goal-phase-1.md            # 基础阶段 goal prompt（已完成）
-docs/goal-phase-2.md            # 阶段 2 goal prompt（T11–T13 收尾 + 执行边界 ADR + seam 模拟实证）
+docs/goal-phase-2.md            # 阶段 2 goal prompt（已完成）
+docs/goal-phase-3.md            # 阶段 3 goal prompt（投屏 + 近场传送协议核心，headless 优先）
 docs/research/airplay-research.md  # AirPlay 真机 POC 记录（UxPlay/shairplay-rust）
 research/                       # 来源 intake + 逐 profile dossier（T02/T04 产出）
 specs-reviewed/                 # 审查后的 wire spec（F01/M01 实质；其余 review-pending）
@@ -51,7 +56,7 @@ tools/                          # 仓库检查脚本与测试（python3 -m unitt
 `catalogued → source-reviewed → build-verified → simulated → device-verified → release-qualified`；
 受阻任务标 `blocked` 并写明障碍与重评条件。README 声明、模拟自通、未固定 commit 一律不升级证据等级。
 
-## 当前状态（2026-09-15，阶段 2：T11–T13 收尾 + 执行边界 + seam 模拟实证 完成）
+## 当前状态（2026-09-15，阶段 3：投屏 + 近场传送协议核心，headless 部分完成）
 
 **阶段 2（2026-09-15，全部完成）**
 
@@ -103,10 +108,39 @@ tools/                          # 仓库检查脚本与测试（python3 -m unitt
 - **T01/T06–T10/T14 实现**：契约/策略/存储/IPC/会话/测试基建，见
   [evidence/2026-09-15-phase-1-final-report.md](evidence/2026-09-15-phase-1-final-report.md)。
 
-**未开始 / 待批准**：T28/T29（媒体形态与 sink，T30 前置）、T30（UxPlay provider 闭环，
-需 scope S1/S2）、T19–T21（Quick Share，待 P-F02-1/2/3 关闭与 S3 抓包批准）、xross-dev 侧
-bridge 窗口（S4）、provider 放行（S5）。阶段 2 的 goal prompt 见
-[docs/goal-phase-2.md](docs/goal-phase-2.md)，执行结果见
+**阶段 3 实现（headless 优先，2026-09-15）**
+
+- **T28 媒体形态/时钟/数据帧**：`crates/interop-media`（Encoded/Pcm/NativeOnly/Resource 四类 source、
+  三时钟域分离、format 变化必须 decoder reset、有界帧队列）+ `interop-ipc::media_frame` 的 36 字节
+  XMD1 头（未知 critical flag 拒绝、>16MiB 分配前 `resource-limit`）；native 只传 opaque id。
+- **T29 sink**：null sink（无 DISPLAY/音频设备也能统计）、file sink（自有内容落盘 + 帧索引）、
+  44.1k→48k 显式 resample（147/160，时长不变）；native 窗口 sink **明确返回 `platform-unavailable`**
+  （不以屏幕录制假装 raw output），留待桌面会话手动验证。
+- **T31 AirPlay gate**：[specs-reviewed/m01](specs-reviewed/m01-airplay-legacy-mirror.md) 的字段级事实表
+  （每行带来源）、能力分声明（视频/音频/PIN 分开，全 blocked）、FairPlay 永久 vendor-gated、
+  [evidence/airplay-corpus](evidence/airplay-corpus/corpus-plan.json) 语料计划 + `tools/test_airplay_gate.py`。
+- **T32 AirPlay 控制链**：`crates/proto-airplay` —— 严格 RTSP framing（缺失/重复 `Content-Length` 拒绝、
+  长度检查先于分配）、能力广告**由实现清单推导**（广告未实现 codec = 能力测试失败）、
+  两种 Bonjour 服务类型、keying seam（默认 `UnavailableKeying` → SETUP 503、认证前零分配）、
+  100 次快速断开无 session/端口残留。
+- **T19/T20 Quick Share / UKEY2**：[specs-reviewed/f02](specs-reviewed/f02-quickshare-lan.md) 的 F-01..F-24
+  字段表（每行来源 + 状态 + 是否准入实现）+ 两处**规范/实现冲突的具名裁决**（F-12 cipher 选择、F-15 HKDF 哈希）；
+  `crates/proto-quickshare` 实现 TCP 4 字节大端 framing、UKEY2 三消息状态机（真实 P-256 ECDH /
+  SHA-512 commitment / HKDF-SHA256）、Alert 码表、重放拒绝、payload gate（未核对 4 位确认码不放行）。
+  **发现/QR/传输加密/payload 层未实现**（P-F02-1/3 未关闭），gate 测试机器保证实现里没有发现代码。
+- **headless demo**：`apps/interop-demo`（`xinterop-demo [run|discovery|session|sink|media|qshare] [--json]`）
+  把上述各层跑成真实状态输出：注册表不合并 identity、SETUP 503/401 与 131072 B 分配时机、sink 统计与
+  显式 resample、XMD1 往返与负向、UKEY2 握手与分片等价；输出恒带 `evidence_level=simulated` + blocked +
+  待用户手动清单（见 [evidence/2026-09-15-t5-demo-cli](evidence/2026-09-15-t5-demo-cli/demo-report.txt)）。
+- **验证**：`cargo test --manifest-path impl/Cargo.toml --workspace` **113 tests 全绿**；clippy 0 warnings；
+  `python3 -m unittest discover -s tools` **39 tests OK**。每 task 的 run manifest 见
+  [evidence/index.json](evidence/index.json)。
+
+**未开始 / 待批准**：T30（UxPlay provider 闭环，需 scope S1/S2）、T33/T34（AirPlay 音视频接收真机）、
+T21/T22（Quick Share 传输加密与 payload 闭环，待 P-F02-1/2/3 关闭与 S3 抓包批准）、
+xross-dev 侧 bridge 窗口（S4）、provider 放行（S5）；native 窗口 sink 与 Tauri demo 壳留桌面会话。
+阶段 3 的 goal prompt 见 [docs/goal-phase-3.md](docs/goal-phase-3.md)，执行结果见
+[evidence/2026-09-15-phase-3-final-report.md](evidence/2026-09-15-phase-3-final-report.md)；阶段 2 见
 [evidence/2026-09-15-phase-2-final-report.md](evidence/2026-09-15-phase-2-final-report.md)。
 
 Agent 工作规则、禁止事项与汇报格式见 [AGENTS.md](AGENTS.md)；基础阶段执行提示词见
