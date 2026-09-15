@@ -131,6 +131,117 @@ class AirPlayGate(unittest.TestCase):
             "自制 fixture 至少覆盖 discovery/control/pairing/frame 四类",
         )
 
+    # ---- T34（2026-09-15）：AP1/AP2 音频 profile 与配对存储 ----
+
+    def test_t34_audio_profile_rows_are_sourced(self):
+        """音频 profile 的每一行都必须能指回 UxPlay/shaiplay-rust 的具体位置。"""
+        facts = section(self.spec, FACTS_HEADING)
+        ct_rows = [cells for cells in table_rows(facts) if cells and cells[0].startswith("ct=")]
+        self.assertEqual(
+            {cells[0] for cells in ct_rows},
+            {"ct=1", "ct=2", "ct=4", "ct=8"},
+            f"ct 四值表不完整：{ct_rows}",
+        )
+        for cells in ct_rows:
+            self.assertTrue(
+                "renderers/audio_renderer.c" in cells[-1],
+                f"{cells[0]} 的来源必须落到 caps 定义行：{cells[-1]}",
+            )
+        packed = [c for c in table_rows(facts) if c and c[0].startswith("0x0004")]
+        self.assertTrue(packed, "必须登记 AP2 打包 audioFormat 的 0x00040000 行")
+        ssrc = [c for c in table_rows(facts) if c and c[0].startswith("0x0000FACE")]
+        self.assertTrue(ssrc, "必须登记 RTP SSRC 魔数行")
+        # 打包值与 SSRC 是两套：两行的来源必须指向不同文件
+        self.assertIn("codec/alac.rs", packed[0][-1])
+        self.assertIn("codec/aac.rs", ssrc[0][-1])
+        joined = " ".join(" ".join(c) for c in table_rows(facts))
+        for needle in ("103", "120", "130", "audioBufferSize", "OneTimePairingRequired", "bit 9"):
+            self.assertIn(needle, joined, f"T34 字段表缺内容：{needle}")
+        self.assertIn(
+            "not RTP SSRC values",
+            joined,
+            "必须写明 AP2 打包值与 RTP SSRC 魔数不是一回事（避免把两套编号混用）",
+        )
+
+    def test_t34_pair_store_facts_and_endpoints_are_sourced(self):
+        facts = section(self.spec, FACTS_HEADING)
+        joined = " ".join(" ".join(c) for c in table_rows(facts))
+        for needle in (
+            "/pair-setup-pin",
+            "/pair-verify",
+            "/fp-setup",
+            "pk,device_id,name",
+            "MemoryPairingStore",
+            "PairingStore",
+            "470",
+        ):
+            self.assertIn(needle, joined, f"配对存储字段表缺内容：{needle}")
+        self.assertIn("TLV8", joined, "必须写明配对**不是** TLV8（A 仓 grep 零命中）")
+        # 禁止边界小节必须存在且写明不得引入加密实现（要点列表，不是表格）
+        bounds = section(self.spec, "### T34 禁止边界")
+        self.assertTrue(bounds, "必须有『T34 禁止边界』小节")
+        for needle in ("禁止推断", "不实现", "SRP", "vendor"):
+            self.assertIn(needle, bounds, f"禁止边界缺内容：{needle}")
+
+    def test_t34_capability_rows_keep_unimplemented_parts_honest(self):
+        caps = section(self.spec, CAPS_HEADING)
+        rows = list(table_rows(caps))
+        buffered = next((r for r in rows if r and r[0].startswith("AP2 buffered")), None)
+        self.assertIsNotNone(buffered, "能力表必须有 AP2 buffered（103）行")
+        self.assertIn("not-implemented", buffered[1], f"103 必须标 not-implemented：{buffered}")
+        handshake = next((r for r in rows if r and r[0].startswith("配对握手")), None)
+        self.assertIsNotNone(handshake, "能力表必须有配对握手行")
+        self.assertIn("not-implemented", handshake[1], f"配对握手必须标 not-implemented：{handshake}")
+        store = next((r for r in rows if r and r[0].startswith("配对存储")), None)
+        self.assertIsNotNone(store, "能力表必须有配对存储行")
+        self.assertIn("headless", store[1])
+        self.assertIn("不得据此声称设备已认证", store[2], "存储行必须写明它不构成认证")
+        fp = next((r for r in rows if r and "/fp-setup" in r[0]), None)
+        self.assertIsNotNone(fp, "能力表必须有 /fp-setup 行")
+        self.assertIn("vendor-gated", fp[1])
+
+    def test_t34_corpus_covers_profiles_and_store(self):
+        ids = {e["id"] for e in self.corpus["entries"]}
+        must = {
+            "fx-airplay-setup-audio-ap1",
+            "fx-airplay-setup-audio-ap1-negative",
+            "fx-airplay-audio-format-packed",
+            "fx-airplay-audio-ssrc-magic",
+            "fx-airplay-stream-type-unsupported",
+            "fx-airplay-pairstore-roundtrip",
+            "fx-airplay-pairstore-no-auth-claim",
+            "fx-airplay-pairing-endpoints-policy",
+        }
+        self.assertTrue(must <= ids, f"缺少 T34 语料：{must - ids}")
+        for e in self.corpus["entries"]:
+            if e["id"] in must:
+                self.assertEqual(e["authored"], "self", f"{e['id']} 必须自制")
+                self.assertFalse(e["device_required"], f"{e['id']} 不是真机条目")
+
+    def test_t34_impl_has_no_crypto_and_no_fairplay(self):
+        """T34 的实现面：音频 profile 与配对存储都不得含加密原语或 FairPlay 路径。"""
+        src = LAB / "impl/crates/proto-airplay/src"
+        if not src.is_dir():
+            self.skipTest("proto-airplay 尚未落地")
+        primitives = ("srp", "x25519", "curve25519", "ed25519", "sha1", "sha2", "hmac", "aes",
+                      "chacha", "poly1305", "playfair")
+        files = sorted(src.glob("*.rs"))
+        self.assertTrue(files, "crate 必须有源文件")
+        for path in files:
+            text = path.read_text(encoding="utf-8").lower()
+            for token in primitives:
+                self.assertNotIn(
+                    token, text, f"{path.name} 出现加密原语符号：{token}（T34 只做帧与存储层）"
+                )
+        # FairPlay 只允许作为"不实现"的 seam 文档出现在 keying.rs（T32 既有）
+        for path in files:
+            if path.name == "keying.rs":
+                continue
+            self.assertNotIn(
+                "fairplay material", path.read_text(encoding="utf-8").lower(),
+                f"{path.name} 不得持有 FairPlay 材料",
+            )
+
     def test_spec_field_tables_all_have_resolvable_sources(self):
         facts = section(self.spec, FACTS_HEADING)
         self.assertTrue(facts, "spec 必须有字段级事实表小节")
