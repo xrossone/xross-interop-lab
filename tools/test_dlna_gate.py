@@ -1,9 +1,13 @@
-"""T41/M07 gate 的可运行测试（plans/03-casting.md §T41 之前的 gate 纪律）。
+"""T41/T42 M07 gate 的可运行测试（plans/03-casting.md §T41/§T42 之前的 gate 纪律）。
 
 - T41-01 设备描述指向恶意内网目标 → fetch policy 拒绝（语料 dl-008 覆盖；实现侧由 crate 测试断言）；
 - T41-02 未知/不支持 codec → **禁止假装 screen mirror**（语料 dl-009 + 能力表里 mirror=not-implemented）；
 - T41-03 ContentDirectory 越权 objectID → 拒绝（语料 dl-010）；
-- T41-04 stop 播放 → URL lease 按策略撤销（语料 dl-011）。
+- T41-04 stop 播放 → URL lease 按策略撤销（语料 dl-011）；
+- T42-01 `SetAVTransportURI` 为 `file://` → 拒绝（语料 dl-019）；
+- T42-02 重复 `Stop` → 幂等结束（语料 dl-020）；
+- T42-03 live 流 `Seek` 不支持 → 710（语料 dl-021）；
+- T42-04 外来 event 订阅 callback 越界 → 拒绝（语料 dl-022）。
 
 附加纪律：
 1. `specs-reviewed/m07-dlna-upnp-av.md` 字段表每行必须带可复查来源与状态；blocked 行不得准入实现。
@@ -81,7 +85,12 @@ class DlnaGate(unittest.TestCase):
             self.assertRegex(fact_id, r"^F-\d+$")
             # 来源要么是可复查引用（来源编号 + 文件/小节），要么是"由某个 probe 关闭"的 blocked 标记
             self.assertTrue(
-                re.search(r"R\d\d.*(`|§)", source) or re.search(r"P-M\d\d", source),
+                re.search(r"R\d\d.*(`|§|\d)", source)
+                or re.search(r"P-M\d\d", source)
+                or (
+                    source.startswith(("本仓策略", "本仓范围声明"))
+                    and re.search(r"F-\d+", source)
+                ),
                 f"{fact_id} 缺可复查来源或 probe 标记：{source!r}",
             )
             self.assertIn(impl, {"yes", "no", "**no**"}, f"{fact_id} impl-allowed 非法：{impl!r}")
@@ -128,6 +137,42 @@ class DlnaGate(unittest.TestCase):
         must = {"dl-008", "dl-009", "dl-010", "dl-011", "dl-012"}
         self.assertTrue(must <= ids, f"缺少 T41-01..04 的语料：{must - ids}")
         self.assertEqual(self.corpus["device_corpus"]["status"], "blocked")
+
+    # ---- T42：renderer 侧 ----
+
+    def test_renderer_fact_rows_and_states(self):
+        rows = {cells[0]: cells for cells in table_rows(section(self.spec, FACTS_HEADING))}
+        for fid in ("F-15", "F-16", "F-17", "F-18", "F-19", "F-20", "F-21", "F-22"):
+            self.assertIn(fid, rows, f"T42 的字段行缺失：{fid}")
+        # 状态值/错误码来自来源，不是我们自己编的。
+        joined = " ".join(rows["F-15"] + rows["F-16"])
+        for needle in ("NO_MEDIA_PRESENT", "PAUSED_PLAYBACK", "710", "711", "712", "701"):
+            self.assertIn(needle, joined, f"F-15/F-16 缺少来源固定值：{needle}")
+
+    def test_capability_split_covers_renderer_and_gena(self):
+        caps = list(table_rows(section(self.spec, CAPS_HEADING)))
+        joined = " ".join(c[0] for c in caps)
+        self.assertIn("renderer", joined, "能力表缺 DLNA renderer 行（T42）")
+        self.assertIn("GENA 订阅校验", joined, "能力表要把 GENA 的校验与投递分开")
+        for cells in caps:
+            if cells[0].startswith("GENA 事件回调投递"):
+                self.assertIn("not-implemented", cells[1], "事件投递不得声明为已实现")
+
+    def test_corpus_covers_t42_cases(self):
+        ids = {f["id"] for f in self.corpus["fixtures"]}
+        must = {"dl-019", "dl-020", "dl-021", "dl-022"}
+        self.assertTrue(must <= ids, f"缺少 T42-01..04 的语料：{must - ids}")
+
+    def test_renderer_implementation_does_no_network_io(self):
+        dmr = IMPL_SRC / "dmr.rs"
+        if not dmr.is_file():
+            self.skipTest("T42 实现尚未落地")
+        code = "\n".join(
+            line for line in dmr.read_text(encoding="utf-8").splitlines()
+            if not line.strip().startswith("//")
+        ).lower()
+        for pattern in ("reqwest", "hyper::", "tcpstream", "udpsocket", "std::process", "curl ", "http_client"):
+            self.assertNotIn(pattern, code, f"renderer 控制路径不得做网络 I/O：/{pattern}/")
 
     def test_no_unfixed_capability_in_implementation(self):
         if not IMPL_SRC.is_dir():

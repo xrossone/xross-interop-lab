@@ -10,42 +10,150 @@
     "XML 预算类 fixture 的期望值引用本仓策略常量，不冒充协议常量"
   ],
   "fixtures": [
-    { "id": "dl-001", "kind": "positive", "layer": "ssdp", "fact_ref": "F-02",
+    {
+      "id": "dl-001",
+      "kind": "positive",
+      "layer": "ssdp",
+      "fact_ref": "F-02",
       "description": "M-SEARCH：`MAN: \"ssdp:discover\"` + MX=2 + ST=urn:…:device:MediaRenderer:1",
-      "expected": "解析成功；method/st/mx/man 全部就绪" },
-    { "id": "dl-002", "kind": "negative", "layer": "ssdp", "fact_ref": "F-02",
+      "expected": "解析成功；method/st/mx/man 全部就绪"
+    },
+    {
+      "id": "dl-002",
+      "kind": "negative",
+      "layer": "ssdp",
+      "fact_ref": "F-02",
       "description": "缺 MAN / MAN 值不是 ssdp:discover / MX 超出上限（>5）/ 方法为 GET",
-      "expected": "invalid-frame（不回 M-SEARCH 之外的语义）" },
-    { "id": "dl-003", "kind": "positive", "layer": "ssdp", "fact_ref": "F-03,F-04",
+      "expected": "invalid-frame（不回 M-SEARCH 之外的语义）"
+    },
+    {
+      "id": "dl-003",
+      "kind": "positive",
+      "layer": "ssdp",
+      "fact_ref": "F-03,F-04",
       "description": "NOTIFY：NTS=ssdp:alive（带 LOCATION/CACHE-CONTROL/USN）与 NTS=ssdp:byebye",
-      "expected": "alive 进入 registry；byebye 移除；USN 相同的重复通告按更新处理（不重复建条）" },
-    { "id": "dl-004", "kind": "negative", "layer": "ssdp", "fact_ref": "F-04",
+      "expected": "alive 进入 registry；byebye 移除；USN 相同的重复通告按更新处理（不重复建条）"
+    },
+    {
+      "id": "dl-004",
+      "kind": "negative",
+      "layer": "ssdp",
+      "fact_ref": "F-04",
       "description": "超长头（>8KiB）、头数量超限、USN 为空、LOCATION 缺失",
-      "expected": "invalid-frame / resource-limit（解析前拒绝）" },
-    { "id": "dl-005", "kind": "positive", "layer": "soap", "fact_ref": "F-05,F-06",
+      "expected": "invalid-frame / resource-limit（解析前拒绝）"
+    },
+    {
+      "id": "dl-005",
+      "kind": "positive",
+      "layer": "soap",
+      "fact_ref": "F-05,F-06",
       "description": "SetAVTransportURI / Play / Seek / Stop / GetTransportInfo 的 SOAP 信封（自制）",
-      "expected": "动作名与参数解析正确；构造的回包可被同一解析器读回" },
-    { "id": "dl-006", "kind": "negative", "layer": "soap", "fact_ref": "F-05,F-06",
+      "expected": "动作名与参数解析正确；构造的回包可被同一解析器读回"
+    },
+    {
+      "id": "dl-006",
+      "kind": "negative",
+      "layer": "soap",
+      "fact_ref": "F-05,F-06",
       "description": "SOAPACTION 服务类型不符（其它服务/未知服务）、动作名未知、必需参数缺失、InstanceID 非法",
-      "expected": "unsupported-feature / invalid-frame（不做尽力解析）" },
-    { "id": "dl-007", "kind": "negative", "layer": "xml", "fact_ref": "F-12",
+      "expected": "unsupported-feature / invalid-frame（不做尽力解析）"
+    },
+    {
+      "id": "dl-007",
+      "kind": "negative",
+      "layer": "xml",
+      "fact_ref": "F-12",
       "description": "含 DOCTYPE/ENTITY 的 XML、深度超预算、元素数超预算、属性数超预算、体积超预算、非法标签名",
-      "expected": "invalid-frame / resource-limit；预算是本仓策略值" },
-    { "id": "dl-008", "kind": "negative", "layer": "dmc", "fact_ref": "F-04,F-12",
+      "expected": "invalid-frame / resource-limit；预算是本仓策略值"
+    },
+    {
+      "id": "dl-008",
+      "kind": "negative",
+      "layer": "dmc",
+      "fact_ref": "F-04,F-12",
       "description": "LOCATION 指向 file://、含 userinfo、指向 127.0.0.1/169.254.169.254/link-local/组播",
-      "expected": "fetch policy 拒绝（T41-01），不发起抓取、不建 registry 条目" },
-    { "id": "dl-009", "kind": "negative", "layer": "dmc", "fact_ref": "F-09,F-13",
+      "expected": "fetch policy 拒绝（T41-01），不发起抓取、不建 registry 条目"
+    },
+    {
+      "id": "dl-009",
+      "kind": "negative",
+      "layer": "dmc",
+      "fact_ref": "F-09,F-13",
       "description": "renderer 只声明 rtsp 或未知 MIME，请求 http-get 推送",
-      "expected": "拒绝并说明只支持已声明的 http-get 协议；**不得回退成镜像**（T41-02）" },
-    { "id": "dl-010", "kind": "negative", "layer": "dms", "fact_ref": "F-07,F-08",
+      "expected": "拒绝并说明只支持已声明的 http-get 协议；**不得回退成镜像**（T41-02）"
+    },
+    {
+      "id": "dl-010",
+      "kind": "negative",
+      "layer": "dms",
+      "fact_ref": "F-07,F-08",
       "description": "Browse 的 ObjectID 不在批准目录、RequestedCount 超上限、BrowseFlag 未知",
-      "expected": "701 / resource-limit / 402（T41-03）" },
-    { "id": "dl-011", "kind": "invariant", "layer": "dmc", "fact_ref": "T41-04",
+      "expected": "701 / resource-limit / 402（T41-03）"
+    },
+    {
+      "id": "dl-011",
+      "kind": "invariant",
+      "layer": "dmc",
+      "fact_ref": "T41-04",
       "description": "SetAVTransportURI → Play 之后 Stop（以及超时/取消）",
-      "expected": "URL lease 立即撤销：撤销后同一入口不可再取（T41-04）" },
-    { "id": "dl-012", "kind": "invariant", "layer": "gate", "fact_ref": "F-13,F-14",
+      "expected": "URL lease 立即撤销：撤销后同一入口不可再取（T41-04）"
+    },
+    {
+      "id": "dl-012",
+      "kind": "invariant",
+      "layer": "gate",
+      "fact_ref": "F-13,F-14",
       "description": "任何地方尝试断言品牌/镜像能力",
-      "expected": "字段表里 F-13/F-14 保持 impl_allowed=no；实现里不得出现品牌名或 mirror 声明" }
+      "expected": "字段表里 F-13/F-14 保持 impl_allowed=no；实现里不得出现品牌名或 mirror 声明"
+    },
+    {
+      "id": "dl-019",
+      "kind": "negative",
+      "layer": "dmr",
+      "fact_ref": "F-21,T42-01",
+      "description": "外来 `SetAVTransportURI` 的 CurrentURI 为 `file:///etc/passwd`（本地路径）或带 userinfo / 指向 loopback、链路本地、云元数据地址",
+      "expected": "unsupported-feature（scheme 不支持）/ permission-required（策略拒绝）；**不产生任何播放入口**"
+    },
+    {
+      "id": "dl-020",
+      "kind": "positive",
+      "layer": "dmr",
+      "fact_ref": "F-15,T42-02",
+      "description": "重复 `Stop`（NO_MEDIA_PRESENT 与 STOPPED 两种状态下各一次）",
+      "expected": "幂等结束：状态保持 STOPPED/NO_MEDIA_PRESENT，返回成功而不是错误"
+    },
+    {
+      "id": "dl-021",
+      "kind": "negative",
+      "layer": "dmr",
+      "fact_ref": "F-16,F-17,T42-03",
+      "description": "对 live 流（duration 未知）执行 `Seek`；以及 `Unit = ABS_TIME/TRACK_NR` 等本仓未实现的单位",
+      "expected": "710（Seek mode not supported）——明确不支持状态，不静默忽略、不改位置"
+    },
+    {
+      "id": "dl-022",
+      "kind": "negative",
+      "layer": "gena",
+      "fact_ref": "F-10,F-21,T42-04",
+      "description": "`SUBSCRIBE` 的 `CALLBACK` 指向 file://、含 userinfo、指向 loopback/链路本地/云元数据，或给出多个回调 URL",
+      "expected": "permission-required / invalid-frame；订阅不建立（T42-04）"
+    },
+    {
+      "id": "dl-023",
+      "kind": "positive",
+      "layer": "gena",
+      "fact_ref": "F-10",
+      "description": "合法的 `SUBSCRIBE`（单个 http 回调 + `NT: upnp:event` + `TIMEOUT: Second-1800`）与随后的 `UNSUBSCRIBE`（带 SID）",
+      "expected": "订阅建立并可退订；订阅数超上限 → 明确拒绝（不上抛无界列表）"
+    },
+    {
+      "id": "dl-024",
+      "kind": "negative",
+      "layer": "dmr",
+      "fact_ref": "F-18,F-19",
+      "description": "RenderingControl `SetVolume` 超出 0..100 或非整数；未知动作名；服务类型与动作不匹配（AVTransport 动作发到 RenderingControl）",
+      "expected": "invalid-frame / unsupported-feature，且通过 SOAP Fault 返回（未知动作不得静默成功）"
+    }
   ],
   "device_corpus": {
     "status": "blocked",

@@ -22,6 +22,14 @@
 | F-10 | events | GENA：`SUBSCRIBE`/`UNSUBSCRIBE`，回调地址在 `CALLBACK` 头，订阅标识 `SID`，通知含 `SEQ`；服务端对订阅数有上限 | R46 `upnp/src/gena/gena_device.c:289-333,520-604,1511` | source-reviewed | yes |
 | F-11 | device desc | 设备/服务描述是 XML（`<scpd>` + `specVersion`/`actionList`/`serviceStateTable`）；描述 URL 来自 SSDP 的 `LOCATION` | R49 `data/xml/AVTransport2.xml.in:1-8`；R46 的 LOCATION（F-04） | source-reviewed | yes |
 | F-12 | xml | 描述/控制消息是任意 XML：DTD/外部实体必须禁（XXE）；深度/体积/元素数/属性数预算属**本仓策略**（P-M07-2），不是协议常量 | 本仓策略（`impl/crates/proto-upnp/src/xml.rs` 常量与测试）；威胁面参考 R46 `upnp/src/gena/gena_device.c:1511`（订阅洪泛） | source-reviewed（策略由本仓定义） | yes |
+| F-15 | control | AVTransport `TransportState` 允许值：`STOPPED`/`PAUSED_PLAYBACK`/`PAUSED_RECORDING`/`PLAYING`/`RECORDING`/`TRANSITIONING`/`NO_MEDIA_PRESENT`；`TransportStatus`：`OK`/`ERROR_OCCURRED` | R49 dc8a47d `data/xml/AVTransport2.xml.in:445-451,459-460` | source-reviewed | yes |
+| F-16 | control | AVTransport 错误码语义：`701` = Transition not available、`710` = Seek mode not supported、`711` = Illegal seek target、`712` = Play mode not supported | R49 `src/librygel-renderer/rygel-av-transport.vala:481,499,529,535,554,560,573,584,598,610,659` | source-reviewed | yes |
+| F-17 | control | `Seek` 的 `Unit` 允许值：`ABS_TIME`/`REL_TIME`/`TRACK_NR`/`ABS_COUNT`/`REL_COUNT`/`X_DLNA_REL_BYTE`；`TransportPlaySpeed` 是自由字符串（默认 `1`，无允许值列表） | R49 `data/xml/AVTransport2.xml.in:716-725,595-598` | source-reviewed（本仓只实现 `REL_TIME`，其余 → 710） | yes |
+| F-18 | control | RenderingControl 动作集：`ListPresets`/`SelectPreset`/`GetMute`/`SetMute`/`GetVolume`/`SetVolume`；`Volume` 为 `ui2`、范围 0..100、步长 1 | R49 `data/xml/RenderingControl2.xml.in:10,26,42,63,143-149` | source-reviewed | yes |
+| F-19 | control | AVTransport 状态变量：`CurrentTransportActions`(string)、`CurrentTrackURI`、`CurrentMediaDuration`、`NumberOfTracks`(ui4, 0..512) | R49 `data/xml/AVTransport2.xml.in:475-477,632-635,656-668` | source-reviewed | yes |
+| F-20 | control | 服务类型串：AVTransport 声明 `:2` 与 `:1` 两个版本；RenderingControl 为 `:2` | R49 `src/librygel-renderer/rygel-av-transport.vala:35,37`、`src/librygel-renderer/rygel-rendering-control.vala:30` | source-reviewed | yes |
+| F-21 | policy | renderer 侧对外来 `CurrentURI` 的策略（只接受 http(s)；`file://` 与内网/元数据目标拒绝；改动 URI 需用户同意）与 GENA 回调地址策略（同一类检查）属**本仓策略**——字段表只固定字段形状（F-04/F-10），没有规定策略阈值 | 本仓策略（引用 F-04、F-10 与 T42-01/T42-04） | source-reviewed（策略由本仓定义） | yes |
+| F-22 | events | **GENA 事件投递本切片不实现**：只做订阅校验（头形状/回调策略/退订/数量上限），不建立回调连接、不推送事件 | 本仓范围声明（F-10 只固定头与上限） | source-reviewed（本仓范围：只做校验与拒绝） | yes |
 | F-13 | 能力 | `protocolInfo` 的具体 MIME 矩阵与品牌差异（三星/LG/Sony 各代）**未固化** | P-M07-1 未关闭 | blocked（impl 不准入） | no |
 | F-14 | 时序 | `SetAVTransportURI` 之后 `Play` 的时序容忍度（品牌差异）**未固化** | P-M07-1 未关闭 | blocked（impl 不准入） | no |
 
@@ -41,8 +49,10 @@
 | SSDP 发现（解析请求/通告，构造响应） | `source-reviewed`（T41 实现） | 真机发现矩阵未做（P-M07-1） |
 | DMC 控制（AVTransport 动作） | `source-reviewed`（T41 实现） | 真机 TV 时序与 protocolInfo 未验（P-M07-1） |
 | 受限 DMS（ContentDirectory Browse） | `source-reviewed`（T41 实现） | 真机拉流未验（T42/T24） |
+| DLNA renderer（接收 AVTransport/RenderingControl 动作） | `source-reviewed`（T42 实现） | 真机控制器（库存 TV/手机 App）未验（P-M07-1） |
 | **屏幕镜像（screen mirroring）** | `not-implemented` | DLNA 是"媒体 URL 推送"，**不假装镜像**（T41-02） |
-| GENA 事件回调投递 | `not-implemented` | 只做解析/预算；NAT 与多接口行为待真机复核 |
+| GENA 订阅校验（头/回调策略/退订/上限） | `source-reviewed`（T42 实现） | 真机控制器订阅行为未验（P-M07-1） |
+| GENA 事件回调投递 | `not-implemented` | 只做校验与拒绝，不建立回调连接（F-22）；NAT 与多接口行为待真机复核 |
 | 真实 TV 兼容矩阵 | `blocked` | P-M07-1：需库存 TV 与用户在场 |
 
 ## D. 语料规则（`evidence/dlna/`）
