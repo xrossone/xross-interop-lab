@@ -11,6 +11,7 @@
 #![forbid(unsafe_code)]
 #![allow(clippy::result_large_err)]
 
+pub mod dlna;
 pub mod mirror;
 pub mod quickshare;
 pub mod report;
@@ -27,6 +28,7 @@ pub const BLOCKED: &[&str] = &[
     "native window sink 未实现：无 GUI 自动化，且不以屏幕录制假装 raw output",
     "Quick Share 发现与 QR 路径未实现（P-F02-1/3 未关闭）：不写未固化的发现字节",
     "AirPlay 镜像无 decoder/无窗口：能路由到 sink，但不能显示（能力广告保持为空）",
+    "DLNA 发现/抓取未实现（只有编解码与策略）：SSDP 组播收发与描述 HTTP 抓取待网络策略批准",
 ];
 
 /// 待用户手动测试清单（真机/交互/GUI/外部引擎）。
@@ -38,6 +40,7 @@ pub const MANUAL_TESTS: &[&str] = &[
     "本机广播的 mDNS/TXT 字节与真实接收端对照（AirPlay features 位值固化需要真机抓包）",
     "与 stock Android 完成一次 Quick Share 握手并比对 4 位确认码（裁决 F-12/F-15 两处规范/实现冲突）",
     "AirPlay 真机镜像（iPhone/iPad → 本机）与 30 分钟墙钟长跑（drift/丢帧/RSS 趋势）——需 S1/S2",
+    "DLNA 真机矩阵：库存 TV 的 protocolInfo 与实际 SetAVTransportURI→Play 时序（P-M07-1）",
 ];
 
 /// 跑全部场景并汇总（JSON 与人类输出共用同一份数据）。
@@ -48,6 +51,7 @@ pub fn compute_report() -> DemoReport {
     let (media_plane, m_ok) = scenarios::media_scenario();
     let (qshare, q_ok) = quickshare::quickshare_scenario();
     let (mirror, r_ok) = mirror::mirror_scenario();
+    let (dlna, l_ok) = dlna::dlna_scenario();
     let generated_unix_ms = std::time::SystemTime::now()
         .duration_since(std::time::UNIX_EPOCH)
         .map(|d| d.as_millis())
@@ -58,13 +62,14 @@ pub fn compute_report() -> DemoReport {
         evidence_level: EVIDENCE_LEVEL,
         wire: WIRE,
         generated_unix_ms,
-        ok: d_ok && s_ok && k_ok && m_ok && q_ok && r_ok,
+        ok: d_ok && s_ok && k_ok && m_ok && q_ok && r_ok && l_ok,
         discovery,
         session,
         sink,
         media_plane,
         quickshare: qshare,
         mirror,
+        dlna,
         blocked: BLOCKED.iter().map(|s| s.to_string()).collect(),
         manual_tests: MANUAL_TESTS.iter().map(|s| s.to_string()).collect(),
     }
@@ -281,6 +286,62 @@ pub fn render_human(r: &DemoReport, section: Option<&str>) -> String {
         }
     }
 
+    if want("dlna") {
+        let d = &r.dlna;
+        out.push_str("\n## DLNA/UPnP AV（T41）\n");
+        out.push_str(&format!(
+            "SSDP              : M-SEARCH 往返={} 通告往返={}\n",
+            d.ssdp["search_roundtrip"], d.ssdp["notify_roundtrip"]
+        ));
+        for case in d.ssdp["rejects"].as_array().into_iter().flatten() {
+            out.push_str(&format!(
+                "  - {:<24} {}\n",
+                case["case"].as_str().unwrap_or(""),
+                case["outcome"].as_str().unwrap_or("")
+            ));
+        }
+        out.push_str(&format!(
+            "注册表            : renderer={}；推送 video/mp4={} hevc 拒绝={} rtsp 拒绝={}\n",
+            d.registry["renderers"],
+            d.registry["push_video_mp4"],
+            d.registry["push_video_hevc_refused"],
+            d.registry["push_rtsp_refused"]
+        ));
+        for case in d.registry["policy_rejects"].as_array().into_iter().flatten() {
+            out.push_str(&format!(
+                "  - 抓取策略拒绝 {:<10} {}\n",
+                case["case"].as_str().unwrap_or(""),
+                case["outcome"].as_str().unwrap_or("")
+            ));
+        }
+        out.push_str(&format!(
+            "SOAP              : 动作往返={} Fault(701)={}\n",
+            d.soap["actions_roundtrip"], d.soap["fault_has_701"]
+        ));
+        for case in d.soap["rejects"].as_array().into_iter().flatten() {
+            out.push_str(&format!(
+                "  - {:<16} {}\n",
+                case["case"].as_str().unwrap_or(""),
+                case["outcome"].as_str().unwrap_or("")
+            ));
+        }
+        out.push_str(&format!(
+            "受限 DMS          : 根子项={} 越权 objectID={} 超分页={}\n",
+            d.dms["root_children"], d.dms["forbidden_object_code"], d.dms["over_count_code"]
+        ));
+        out.push_str(&format!(
+            "URL lease         : Stop 前={} Stop 后={}\n",
+            d.leases["live_before_stop"], d.leases["live_after_stop"]
+        ));
+        out.push_str(&format!(
+            "XML 加固          : XXE 拒绝={} 深度拒绝={}\n",
+            d.xml["xxe_rejected"], d.xml["depth_rejected"]
+        ));
+        for b in &d.blocked {
+            out.push_str(&format!("  · blocked: {b}\n"));
+        }
+    }
+
     if want("mirror") {
         let m = &r.mirror;
         out.push_str("\n## AirPlay 镜像路径（T33）\n");
@@ -413,6 +474,7 @@ pub fn parse_args(args: &[String]) -> Result<(Option<&'static str>, bool), Strin
             "media" => section = Some("media"),
             "qshare" | "quickshare" => section = Some("qshare"),
             "mirror" => section = Some("mirror"),
+            "dlna" => section = Some("dlna"),
             "--help" | "-h" => return Err("help".to_string()),
             other => return Err(format!("未知子命令 {other:?}")),
         }

@@ -259,6 +259,38 @@ fn d09_airplay_mirror_path() {
     assert!(!m["blocked"].as_array().expect("blocked").is_empty());
 }
 
+/// D-10：DLNA/UPnP AV 段——SSDP/SOAP 往返、抓取策略、能力检查、受限 DMS、URL lease 撤销。
+#[test]
+fn d10_dlna_control_path() {
+    let (code, v) = run_json(&["dlna", "--json"]);
+    assert_eq!(code, 0);
+    let d = &v["dlna"];
+    assert_eq!(d["evidence_level"], "simulated");
+    assert_eq!(d["ssdp"]["search_roundtrip"], true);
+    assert_eq!(d["ssdp"]["notify_roundtrip"], true);
+    assert_eq!(d["ssdp"]["rejects"].as_array().expect("rejects").len(), 4, "M-SEARCH/NOTIFY 负向");
+    assert_eq!(d["registry"]["renderers"], 1);
+    let policy_rejects = d["registry"]["policy_rejects"].as_array().expect("policy");
+    assert_eq!(policy_rejects.len(), 5);
+    for case in policy_rejects {
+        assert_eq!(case["outcome"], "PermissionRequired", "T41-01：策略拒绝用 permission-required");
+    }
+    assert_eq!(d["registry"]["push_video_mp4"], true);
+    assert_eq!(d["registry"]["push_video_hevc_refused"], true, "T41-02：未声明 codec 必须拒绝");
+    assert_eq!(d["registry"]["push_rtsp_refused"], true, "未声明协议必须拒绝");
+    assert_eq!(d["soap"]["actions_roundtrip"], true);
+    assert_eq!(d["soap"]["fault_has_701"], true);
+    assert_eq!(d["soap"]["rejects"].as_array().expect("soap rejects").len(), 3);
+    assert_eq!(d["dms"]["root_children"], 2);
+    assert_eq!(d["dms"]["forbidden_object_code"], 701, "T41-03：越权 objectID → 701");
+    assert_eq!(d["dms"]["over_count_code"], 402);
+    assert_eq!(d["leases"]["live_before_stop"], true);
+    assert_eq!(d["leases"]["live_after_stop"], false, "T41-04：Stop 必须撤销 URL lease");
+    assert_eq!(d["xml"]["xxe_rejected"], true, "XXE 必须被拒");
+    assert_eq!(d["xml"]["depth_rejected"], true);
+    assert!(!d["blocked"].as_array().expect("blocked").is_empty());
+}
+
 /// D-07：blocked 与待用户手动清单必须随输出给出（本阶段不允许"看起来全绿"）。
 #[test]
 fn d07_blocked_and_manual_lists_are_reported() {

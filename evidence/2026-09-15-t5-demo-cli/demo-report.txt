@@ -56,7 +56,7 @@ TEARDOWN 后       : stream=false reserved_ports=0
 喂入帧数          : 6
 null  sink        : frames=6 bytes=2071 pts=[Some(0)..Some(166665)] codec=h264 dims=1920x1080 changes=1
 file  sink        : frames=6 bytes=2055 pts=[Some(0)..Some(166665)] codec=h264 dims=1920x1080 changes=1
-      落盘 /var/folders/n6/tx2574_56h33v09wbc2hk_nm0000gn/T/xinterop-demo-70309.bin（2055 字节）
+      落盘 /var/folders/n6/tx2574_56h33v09wbc2hk_nm0000gn/T/xinterop-demo-95320.bin（2055 字节）
 音频              : resample 44100Hz→48000Hz ratio=147/160 frames 441→480（10ms→10ms, speed_ratio=1.000）
 native 窗口       : unavailable（platform-unavailable）
 20000x12000       : resource-limit（area=240000000 > max_pixels=67108864）
@@ -69,6 +69,31 @@ native 窗口       : unavailable（platform-unavailable）
   - 未知 kind=9                        rejected invalid-frame
   - 未知 critical flag 0x80000000      rejected invalid-frame
   - 声明 payload 17MiB（无实际数据）          rejected resource-limit
+
+## DLNA/UPnP AV（T41）
+SSDP              : M-SEARCH 往返=true 通告往返=true
+  - 缺 MAN 的 M-SEARCH         InvalidFrame
+  - MX 超上限(60)               InvalidFrame
+  - 未知方法 GET                 InvalidFrame
+  - 未知 NTS                   InvalidFrame
+注册表            : renderer=1；推送 video/mp4=true hevc 拒绝=true rtsp 拒绝=true
+  - 抓取策略拒绝 loopback   PermissionRequired
+  - 抓取策略拒绝 云元数据       PermissionRequired
+  - 抓取策略拒绝 file://    PermissionRequired
+  - 抓取策略拒绝 https      PermissionRequired
+  - 抓取策略拒绝 userinfo   PermissionRequired
+SOAP              : 动作往返=true Fault(701)=true
+  - 未知动作             UnsupportedFeature
+  - 服务类型不符           UnsupportedFeature
+  - InstanceID≠0     UnsupportedFeature
+受限 DMS          : 根子项=2 越权 objectID=701 超分页=402
+URL lease         : Stop 前=true Stop 后=false
+XML 加固          : XXE 拒绝=true 深度拒绝=true
+  · blocked: 真实 TV 的 protocolInfo 矩阵与 SetAVTransportURI→Play 时序：P-M07-1（需库存 TV 与用户在场）
+  · blocked: SSDP 组播收发与描述 HTTP 抓取：需网络策略批准（本切片只做编解码/策略/授权）
+  · blocked: 媒体字节拉取（DMS 侧 read lease 与 HTTP GET 服务）：T24/T42
+  · blocked: GENA 事件订阅投递与 NAT/多接口行为：未实现（只做了解析与预算）
+  · blocked: 屏幕镜像：DLNA 不提供该能力，本节点也不假装提供（T41-02）
 
 ## AirPlay 镜像路径（T33）
   - configure 1920x1080    ok
@@ -87,7 +112,7 @@ native 窗口       : unavailable（platform-unavailable）
 ## Quick Share / UKEY2（T19/T20）
 framing           : 4 字节大端长度前缀，本仓上限 5242880 B（非协议常量，F-05）
 握手              : cipher="P256_SHA512(100)" key_schedule="HKDF-SHA256" established=true
-双方一致          : auth=true next_secret=true pin=true（pin="7502"）
+双方一致          : auth=true next_secret=true pin=true（pin="8930"）
 分片等价          : true（[1048576,1,7] 种切分）
   - commitment 不符（ClientFinish 被改）     BadMessageData
   - random 31 字节                       BadRandom
@@ -117,6 +142,7 @@ F-15 冲突         : 采用 "HKDF-SHA256"；"与 stock Android 的成功握手 
   - native window sink 未实现：无 GUI 自动化，且不以屏幕录制假装 raw output
   - Quick Share 发现与 QR 路径未实现（P-F02-1/3 未关闭）：不写未固化的发现字节
   - AirPlay 镜像无 decoder/无窗口：能路由到 sink，但不能显示（能力广告保持为空）
+  - DLNA 发现/抓取未实现（只有编解码与策略）：SSDP 组播收发与描述 HTTP 抓取待网络策略批准
 
 ## 待用户手动测试
   - 真机投屏矩阵（iPhone/iPad → 本机：发现/连接/视频/音频/旋转/重连/10-30-60 分钟）——需 S1/S2
@@ -126,5 +152,6 @@ F-15 冲突         : 采用 "HKDF-SHA256"；"与 stock Android 的成功握手 
   - 本机广播的 mDNS/TXT 字节与真实接收端对照（AirPlay features 位值固化需要真机抓包）
   - 与 stock Android 完成一次 Quick Share 握手并比对 4 位确认码（裁决 F-12/F-15 两处规范/实现冲突）
   - AirPlay 真机镜像（iPhone/iPad → 本机）与 30 分钟墙钟长跑（drift/丢帧/RSS 趋势）——需 S1/S2
+  - DLNA 真机矩阵：库存 TV 的 protocolInfo 与实际 SetAVTransportURI→Play 时序（P-M07-1）
 
 汇总：全部场景断言通过（evidence_level=simulated，非真机）

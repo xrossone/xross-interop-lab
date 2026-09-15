@@ -262,6 +262,7 @@ dependencies = [
  "interop-runtime",
  "proto-airplay",
  "proto-quickshare",
+ "proto-upnp",
  "serde",
  "serde_json",
 ]

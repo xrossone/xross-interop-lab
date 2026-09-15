@@ -1,0 +1,296 @@
+//! DLNA/UPnP AV 场景（T41）：SSDP/SOAP/XML/策略/租约的本地闭环。
+//!
+//! 诚实前提：**没有网络**——不发组播、不抓描述、不连 TV；所有报文都是自制 fixture。
+//! 因此这些数字证明的是"编解码/策略/授权/租约正确"，不是"发现到你的电视了"。
+//! 真实 TV 矩阵（P-M07-1）与拉流（T42）在 blocked 清单里。
+
+use crate::report::DlnaReport;
+use proto_upnp::dmc::{DescriptionFetchPolicy, RendererRegistry, UrlLeaseStore};
+use proto_upnp::dms::{BrowseFlag, ContentRoot, Dms};
+use proto_upnp::soap::{SoapMessage, AV_TRANSPORT};
+use proto_upnp::ssdp::{build_alive, build_search, SsdpMessage};
+use proto_upnp::xml::{parse_document, XmlBudget};
+
+/// `(case, outcome)` 列表 → JSON 对象数组（人类输出与 JSON 输出一致可读）。
+fn pairs_json(pairs: &[(String, String)]) -> Vec<serde_json::Value> {
+    pairs
+        .iter()
+        .map(|(case, outcome)| serde_json::json!({ "case": case, "outcome": outcome }))
+        .collect()
+}
+
+pub fn dlna_scenario() -> (DlnaReport, bool) {
+    let mut ok = true;
+
+    // ---- SSDP：构造 + 回读 + 负向 ----
+    let search = match build_search("urn:schemas-upnp-org:device:MediaRenderer:1", 2) {
+        Ok(b) => b,
+        Err(_) => return (failed_report(), false),
+    };
+    let search_ok = SsdpMessage::parse(&search).is_ok();
+    let alive = build_alive(
+        "upnp:rootdevice",
+        "uuid:11111111-2222-3333-4444-555555555555::upnp:rootdevice",
+        "http://192.0.2.44:49152/desc.xml",
+        1800,
+    );
+    let notify_ok = SsdpMessage::parse(&alive).is_ok();
+    let mut rejects: Vec<(String, String)> = Vec::new();
+    for (label, bytes) in [
+        ("缺 MAN 的 M-SEARCH", b"M-SEARCH * HTTP/1.1\r\nMX: 2\r\nST: ssdp:all\r\n\r\n".to_vec()),
+        ("MX 超上限(60)", b"M-SEARCH * HTTP/1.1\r\nMAN: \"ssdp:discover\"\r\nMX: 60\r\nST: ssdp:all\r\n\r\n".to_vec()),
+        ("未知方法 GET", b"GET / HTTP/1.1\r\nST: ssdp:all\r\n\r\n".to_vec()),
+        ("未知 NTS", b"NOTIFY * HTTP/1.1\r\nNT: upnp:rootdevice\r\nNTS: ssdp:peekaboo\r\nUSN: u::r\r\n\r\n".to_vec()),
+    ] {
+        match SsdpMessage::parse(&bytes) {
+            Ok(_) => {
+                ok = false;
+                rejects.push((label.to_string(), "accepted(unexpected)".to_string()));
+            }
+            Err(e) => rejects.push((label.to_string(), format!("{:?}", e.code))),
+        }
+    }
+    if !(search_ok && notify_ok) {
+        ok = false;
+    }
+
+    // ---- 注册表：抓取策略与能力检查 ----
+    let mut registry = RendererRegistry::new(1800);
+    let policy = DescriptionFetchPolicy::default();
+    let mut policy_rejects: Vec<(String, String)> = Vec::new();
+    let add = |reg: &mut RendererRegistry, usn: &str, location: &str, ok: &mut bool| {
+        let msg = build_alive("upnp:rootdevice", usn, location, 1800);
+        match SsdpMessage::parse(&msg).and_then(|m| {
+            reg.observe(&m, 0)
+                .map_err(|e| interop_contract::error::Error::new(
+                    interop_contract::error::ErrorCode::InvalidFrame,
+                    e.to_string(),
+                ))
+        }) {
+            Ok(_) => true,
+            Err(_) => {
+                *ok = false;
+                false
+            }
+        }
+    };
+    let renderer_usn = "uuid:aaaa::upnp:rootdevice";
+    let renderer_ok = add(&mut registry, renderer_usn, "http://192.0.2.44:49152/desc.xml", &mut ok);
+    for (label, location) in [
+        ("loopback", "http://127.0.0.1/desc.xml"),
+        ("云元数据", "http://169.254.169.254/latest/meta-data/"),
+        ("file://", "file:///etc/passwd"),
+        ("https", "https://192.0.2.44/desc.xml"),
+        ("userinfo", "http://user:pw@192.0.2.44/desc.xml"),
+    ] {
+        // 先是策略本身，再确认 registry 也按同一策略拒绝（两处都必须拒绝）
+        let policy_code = match policy.check(location) {
+            Ok(_) => {
+                ok = false;
+                "accepted(unexpected)".to_string()
+            }
+            Err(e) => format!("{:?}", e.code),
+        };
+        let msg = build_alive("upnp:rootdevice", "uuid:bbbb::upnp:rootdevice", location, 1800);
+        let registry_refused = match SsdpMessage::parse(&msg) {
+            Ok(m) => match registry.observe(&m, 0) {
+                Ok(_) => {
+                    ok = false;
+                    false
+                }
+                Err(_) => true,
+            },
+            Err(_) => false,
+        };
+        if !registry_refused {
+            ok = false;
+        }
+        policy_rejects.push((label.to_string(), policy_code));
+    }
+    if !renderer_ok {
+        ok = false;
+    }
+    let _ = registry.set_protocol_info(
+        renderer_usn,
+        &["http-get:*:video/mp4:*".to_string(), "http-get:*:audio/mpeg:*".to_string()],
+    );
+    let push_mp4 = registry.check_push_capability(renderer_usn, "http-get", "video/mp4").is_ok();
+    let push_hevc = registry
+        .check_push_capability(renderer_usn, "http-get", "video/hevc")
+        .map_err(|e| e.code())
+        == Err(interop_contract::error::ErrorCode::UnsupportedProfile);
+    let push_rtsp = registry
+        .check_push_capability(renderer_usn, "rtsp", "video/mp4")
+        .is_err();
+    if !(push_mp4 && push_hevc && push_rtsp) {
+        ok = false;
+    }
+
+    // ---- SOAP：动作构造/回读 + 负向 + Fault ----
+    let mut soap_ok = true;
+    for (action, args) in [
+        ("SetAVTransportURI", vec![("InstanceID", "0"), ("CurrentURI", "http://192.0.2.10:8000/media/clip.mp4"), ("CurrentURIMetaData", "")]),
+        ("Play", vec![("InstanceID", "0"), ("Speed", "1")]),
+        ("Stop", vec![("InstanceID", "0")]),
+    ] {
+        match SoapMessage::request(AV_TRANSPORT, action, &args) {
+            Ok(m) => match SoapMessage::parse(&m.encode()) {
+                Ok(p) if p.action_name() == action => {
+                    if action == "SetAVTransportURI" {
+                        let soapaction = m.soapaction_header();
+                        if !soapaction.contains("#SetAVTransportURI") {
+                            soap_ok = false;
+                        }
+                    }
+                }
+                _ => soap_ok = false,
+            },
+            Err(_) => soap_ok = false,
+        }
+    }
+    let soap_rejects = vec![
+        (
+            "未知动作".to_string(),
+            match SoapMessage::parse_raw(
+                br#"<s:Envelope xmlns:s="http://schemas.xmlsoap.org/soap/envelope/"><s:Body><u:LaunchMissiles xmlns:u="urn:schemas-upnp-org:service:AVTransport:1"><InstanceID>0</InstanceID></u:LaunchMissiles></s:Body></s:Envelope>"#,
+            ) {
+                Ok(_) => {
+                    ok = false;
+                    "accepted(unexpected)".to_string()
+                }
+                Err(e) => format!("{:?}", e.code),
+            },
+        ),
+        (
+            "服务类型不符".to_string(),
+            match SoapMessage::request(AV_TRANSPORT, "Browse", &[("ObjectID", "0"), ("BrowseFlag", "BrowseDirectChildren"), ("RequestedCount", "1")]) {
+                Ok(_) => {
+                    ok = false;
+                    "accepted(unexpected)".to_string()
+                }
+                Err(e) => format!("{:?}", e.code),
+            },
+        ),
+        (
+            "InstanceID≠0".to_string(),
+            match SoapMessage::request(AV_TRANSPORT, "Play", &[("InstanceID", "7"), ("Speed", "1")]) {
+                Ok(_) => {
+                    ok = false;
+                    "accepted(unexpected)".to_string()
+                }
+                Err(e) => format!("{:?}", e.code),
+            },
+        ),
+    ];
+    let fault = SoapMessage::fault(701, "No such object").encode();
+    let fault_ok = String::from_utf8_lossy(&fault).contains("701");
+    if !(soap_ok && fault_ok) {
+        ok = false;
+    }
+
+    // ---- DMS：授权与分页 ----
+    let dms = Dms::new(vec![ContentRoot::new(
+        "0",
+        vec![("music", "Music"), ("video", "Video")],
+        vec!["mp3", "mp4"],
+    )]);
+    let root = dms.browse("0", BrowseFlag::BrowseDirectChildren, 0, 10);
+    let forbidden = dms.browse("../etc", BrowseFlag::BrowseDirectChildren, 0, 10);
+    let over_count = dms.browse("0", BrowseFlag::BrowseDirectChildren, 0, 10_000);
+    let dms_ok = root.is_ok()
+        && forbidden.as_ref().map(|_| false).unwrap_or(true)
+        && forbidden.map_err(|e| e.code()) == Err(701)
+        && over_count.map_err(|e| e.code()) == Err(402);
+    if !dms_ok {
+        ok = false;
+    }
+
+    // ---- URL lease：Stop 撤销 ----
+    let mut leases = UrlLeaseStore::new(60_000);
+    let url = "http://192.0.2.10:8000/media/clip.mp4";
+    let before_stop = match leases.grant(url, 0) {
+        Ok(_) => leases.is_live(url, 1),
+        Err(_) => false,
+    };
+    leases.revoke_for_url(url);
+    let after_stop = leases.is_live(url, 2);
+    if !(before_stop && !after_stop) {
+        ok = false;
+    }
+
+    // ---- XML 加固 ----
+    let xxe_rejected = parse_document(
+        br#"<!DOCTYPE foo [<!ENTITY xxe SYSTEM "file:///etc/passwd">]><root>&xxe;</root>"#,
+        XmlBudget::default(),
+    )
+    .is_err();
+    let mut deep = String::new();
+    for _ in 0..40 {
+        deep.push_str("<a>");
+    }
+    for _ in 0..40 {
+        deep.push_str("</a>");
+    }
+    let depth_rejected = parse_document(deep.as_bytes(), XmlBudget::default()).is_err();
+    if !(xxe_rejected && depth_rejected) {
+        ok = false;
+    }
+
+    let report = DlnaReport {
+        evidence_level: "simulated",
+        wire: "self-authored-fixture",
+        ssdp: serde_json::json!({
+            "search_roundtrip": search_ok,
+            "notify_roundtrip": notify_ok,
+            "rejects": pairs_json(&rejects),
+        }),
+        registry: serde_json::json!({
+            "renderers": registry.len(),
+            "policy_rejects": pairs_json(&policy_rejects),
+            "push_video_mp4": push_mp4,
+            "push_video_hevc_refused": push_hevc,
+            "push_rtsp_refused": push_rtsp,
+        }),
+        soap: serde_json::json!({
+            "actions_roundtrip": soap_ok,
+            "rejects": pairs_json(&soap_rejects),
+            "fault_has_701": fault_ok,
+        }),
+        dms: serde_json::json!({
+            "root_children": root.map(|r| r.total_matches).unwrap_or(0),
+            "forbidden_object_code": 701,
+            "over_count_code": 402,
+        }),
+        leases: serde_json::json!({
+            "live_before_stop": before_stop,
+            "live_after_stop": after_stop,
+        }),
+        xml: serde_json::json!({
+            "xxe_rejected": xxe_rejected,
+            "depth_rejected": depth_rejected,
+            "budget_note": "深度/体积/元素数上限是本仓策略值（XmlBudget），不是协议常量",
+        }),
+        blocked: vec![
+            "真实 TV 的 protocolInfo 矩阵与 SetAVTransportURI→Play 时序：P-M07-1（需库存 TV 与用户在场）".to_string(),
+            "SSDP 组播收发与描述 HTTP 抓取：需网络策略批准（本切片只做编解码/策略/授权）".to_string(),
+            "媒体字节拉取（DMS 侧 read lease 与 HTTP GET 服务）：T24/T42".to_string(),
+            "GENA 事件订阅投递与 NAT/多接口行为：未实现（只做了解析与预算）".to_string(),
+            "屏幕镜像：DLNA 不提供该能力，本节点也不假装提供（T41-02）".to_string(),
+        ],
+    };
+    (report, ok)
+}
+
+fn failed_report() -> DlnaReport {
+    DlnaReport {
+        evidence_level: "simulated",
+        wire: "self-authored-fixture",
+        ssdp: serde_json::Value::Null,
+        registry: serde_json::Value::Null,
+        soap: serde_json::Value::Null,
+        dms: serde_json::Value::Null,
+        leases: serde_json::Value::Null,
+        xml: serde_json::Value::Null,
+        blocked: vec!["DLNA 场景提前失败（构造异常）".to_string()],
+    }
+}

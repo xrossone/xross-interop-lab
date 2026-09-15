@@ -24,8 +24,24 @@ pub struct DemoReport {
     pub media_plane: MediaPlaneReport,
     pub quickshare: QuickShareReport,
     pub mirror: MirrorReport,
+    pub dlna: DlnaReport,
     pub blocked: Vec<String>,
     pub manual_tests: Vec<String>,
+}
+
+// ---------- DLNA/UPnP AV（T41）----------
+
+#[derive(Debug, Clone, Serialize)]
+pub struct DlnaReport {
+    pub evidence_level: &'static str,
+    pub wire: &'static str,
+    pub ssdp: serde_json::Value,
+    pub registry: serde_json::Value,
+    pub soap: serde_json::Value,
+    pub dms: serde_json::Value,
+    pub leases: serde_json::Value,
+    pub xml: serde_json::Value,
+    pub blocked: Vec<String>,
 }
 
 // ---------- AirPlay 镜像路径（T33）----------
