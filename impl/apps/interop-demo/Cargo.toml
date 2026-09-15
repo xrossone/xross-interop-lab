@@ -1,0 +1,26 @@
+[package]
+name = "interop-demo"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+publish.workspace = true
+
+# headless demo（docs/goal-phase-3.md T5）：把已实现的核心跑成可复核的真实状态输出。
+# 无 GUI、无网络、无第三方引擎：所有 wire 报文自制，输出如实标注 evidence_level 与 blocked。
+[lib]
+name = "interop_demo"
+path = "src/lib.rs"
+
+[[bin]]
+name = "xinterop-demo"
+path = "src/main.rs"
+
+[dependencies]
+interop-contract = { path = "../../crates/interop-contract" }
+interop-ipc = { path = "../../crates/interop-ipc" }
+interop-media = { path = "../../crates/interop-media" }
+interop-platform = { path = "../../crates/interop-platform" }
+interop-runtime = { path = "../../crates/interop-runtime" }
+proto-airplay = { path = "../../crates/proto-airplay" }
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"

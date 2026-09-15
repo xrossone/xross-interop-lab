@@ -73,6 +73,20 @@ dependencies = [
 ]
 
 [[package]]
+name = "interop-demo"
+version = "0.1.0"
+dependencies = [
+ "interop-contract",
+ "interop-ipc",
+ "interop-media",
+ "interop-platform",
+ "interop-runtime",
+ "proto-airplay",
+ "serde",
+ "serde_json",
+]
+
+[[package]]
 name = "interop-file"
 version = "0.1.0"
 dependencies = [

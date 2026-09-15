@@ -1,0 +1,460 @@
+{
+  "tool": "xinterop-demo",
+  "interface_version": "interop.api/0.1",
+  "evidence_level": "simulated",
+  "wire": "self-authored-fixture",
+  "generated_unix_ms": 1789444474025,
+  "ok": true,
+  "discovery": {
+    "evidence_level": "simulated",
+    "local_interfaces": {
+      "status": "observed",
+      "value": [
+        "lo0",
+        "gif0",
+        "stf0",
+        "anpi2",
+        "anpi1",
+        "anpi0",
+        "en4",
+        "en5",
+        "en6",
+        "en1",
+        "en2",
+        "en3",
+        "en7",
+        "bridge0",
+        "ap1",
+        "en0",
+        "awdl0",
+        "llw0",
+        "utun0",
+        "utun1",
+        "utun2",
+        "utun3",
+        "vmenet0",
+        "bridge100",
+        "vmenet1",
+        "bridge101",
+        "utun4",
+        "utun5",
+        "utun6"
+      ]
+    },
+    "local_probe_commands": [
+      {
+        "args": [
+          "-l"
+        ],
+        "exit_code": 0,
+        "lines": 1,
+        "program": "/sbin/ifconfig"
+      }
+    ],
+    "platform_support": {
+      "media_outputs": {
+        "status": "not-run",
+        "why": "native/file sink 属阶段 3（T29）；T07 mock host 对媒体显式拒绝——不得声称可用"
+      },
+      "wifi_display": {
+        "status": "unavailable",
+        "why": "macOS 无公开 WFD/Sink API——plans/01 T12：没有实现的 Mac WFD 明确不可用"
+      },
+      "wifi_p2p": {
+        "status": "unavailable",
+        "why": "macOS 无公开 Wi-Fi Direct (P2P) API；AWDL 为 Apple 私有，不探测、不假设"
+      }
+    },
+    "mdns_service_types": [
+      "_airplay._tcp",
+      "_raop._tcp"
+    ],
+    "txt_pairs": [
+      [
+        "txtvers",
+        "1"
+      ]
+    ],
+    "txt_rdata_hex": "09747874766572733d31",
+    "feature_string_status": "待固化：AirPlay TXT features 位值的真实映射未固化（T31 字段表），不编造",
+    "implemented_discovery_sources": [
+      {
+        "source": "fake",
+        "network": false
+      }
+    ],
+    "registry": {
+      "ttl_s": 30,
+      "authority_rows": [
+        {
+          "subject": "airplay-legacy-mirror@ep_fake_1",
+          "source": "mdns",
+          "profile_id": "airplay-legacy-mirror",
+          "display_name": "客厅电视",
+          "identity_claim": null,
+          "addresses": [
+            {
+              "host": "192.0.2.10",
+              "port": 7000,
+              "interface": "en0",
+              "secure": false,
+              "expires_at_ms": 1030000
+            }
+          ],
+          "capabilities": [
+            {
+              "profile_id": "airplay-legacy-mirror",
+              "role": "receive",
+              "provider_id": "proto-airplay",
+              "available": false,
+              "state": "blocked",
+              "prerequisites": [
+                "S1：外部引擎/FairPlay 材料获批"
+              ]
+            }
+          ]
+        },
+        {
+          "subject": "airplay-legacy-mirror@ep_fake_2",
+          "source": "ssdp",
+          "profile_id": "airplay-legacy-mirror",
+          "display_name": "客厅电视",
+          "identity_claim": "airplay:02:00:00:00:00:01",
+          "addresses": [
+            {
+              "host": "192.0.2.10",
+              "port": 7000,
+              "interface": "en0",
+              "secure": false,
+              "expires_at_ms": 1030000
+            }
+          ],
+          "capabilities": [
+            {
+              "profile_id": "airplay-legacy-mirror",
+              "role": "receive",
+              "provider_id": "proto-airplay",
+              "available": false,
+              "state": "blocked",
+              "prerequisites": [
+                "S1：外部引擎/FairPlay 材料获批"
+              ]
+            }
+          ]
+        }
+      ],
+      "same_name_same_address_rows": 2,
+      "alias_groups": [
+        {
+          "alias": "客厅电视（用户认定同一台）",
+          "members": [
+            "ep_fake_1",
+            "ep_fake_2"
+          ]
+        }
+      ],
+      "expiry": {
+        "sendable_before_ttl": 1,
+        "sendable_after_ttl": 0,
+        "sendable_after_interface_down": 0
+      },
+      "interface_down_affected": [
+        "ep_fake_1",
+        "ep_fake_2"
+      ]
+    },
+    "notes": [
+      "地址用 TEST-NET 文档地址（192.0.2.0/24）：不指向真实设备",
+      "fake 源不产生网络行为：真实 mDNS/SSDP 源未实现（见 blocked）",
+      "对端声明的能力一律 available=false：声明不是证据"
+    ]
+  },
+  "session": {
+    "transport": "rtsp/1.0-frame",
+    "framing": {
+      "max_header_bytes": 8192,
+      "max_body_bytes": 262144,
+      "max_headers": 64
+    },
+    "protocol_hardening": [
+      {
+        "case": "POST 缺 Content-Length",
+        "outcome": "rejected",
+        "error_code": "invalid-frame"
+      },
+      {
+        "case": "重复 Content-Length",
+        "outcome": "rejected",
+        "error_code": "invalid-frame"
+      },
+      {
+        "case": "Content-Length: 999999",
+        "outcome": "rejected",
+        "error_code": "resource-limit"
+      },
+      {
+        "case": "body 截断（声明 10 实际 3）",
+        "outcome": "rejected",
+        "error_code": "invalid-frame"
+      }
+    ],
+    "production_keying": {
+      "keying": "unavailable(vendor-gated)",
+      "warning": null,
+      "advertised_features": [],
+      "steps": [
+        {
+          "step": "GET /info",
+          "bytes_in": 65,
+          "status": 200,
+          "response_bytes": 117,
+          "error_code": null,
+          "state_after": "unauthenticated",
+          "has_stream": false,
+          "allocated_video_bytes": 0
+        },
+        {
+          "step": "POST /pair-setup-pin",
+          "bytes_in": 105,
+          "status": 200,
+          "response_bytes": 47,
+          "error_code": null,
+          "state_after": "unauthenticated",
+          "has_stream": false,
+          "allocated_video_bytes": 0
+        },
+        {
+          "step": "POST /fp-setup",
+          "bytes_in": 115,
+          "status": null,
+          "response_bytes": 0,
+          "error_code": "vendor-gated",
+          "state_after": "unauthenticated",
+          "has_stream": false,
+          "allocated_video_bytes": 0
+        },
+        {
+          "step": "SETUP /stream",
+          "bytes_in": 74,
+          "status": 503,
+          "response_bytes": 64,
+          "error_code": null,
+          "state_after": "unauthenticated",
+          "has_stream": false,
+          "allocated_video_bytes": 0
+        },
+        {
+          "step": "TEARDOWN /stream",
+          "bytes_in": 57,
+          "status": 200,
+          "response_bytes": 47,
+          "error_code": null,
+          "state_after": "ended",
+          "has_stream": false,
+          "allocated_video_bytes": 0
+        }
+      ],
+      "setup_status": 503,
+      "state_after_setup": "unauthenticated",
+      "has_stream_after_setup": false,
+      "allocated_video_bytes_after_setup": 0,
+      "has_stream_after_teardown": false,
+      "reserved_ports_after_teardown": 0,
+      "fp_setup_error": "vendor-gated",
+      "tracked_sessions_after_disconnect": 0
+    },
+    "test_keying": {
+      "keying": "fake-test-only",
+      "warning": "自造密钥字节（非任何真实材料）：只用于演示状态机与资源记账",
+      "advertised_features": [],
+      "steps": [
+        {
+          "step": "GET /info",
+          "bytes_in": 65,
+          "status": 200,
+          "response_bytes": 106,
+          "error_code": null,
+          "state_after": "unauthenticated",
+          "has_stream": false,
+          "allocated_video_bytes": 0
+        },
+        {
+          "step": "POST /pair-setup-pin",
+          "bytes_in": 105,
+          "status": 200,
+          "response_bytes": 47,
+          "error_code": null,
+          "state_after": "authenticated",
+          "has_stream": false,
+          "allocated_video_bytes": 0
+        },
+        {
+          "step": "POST /fp-setup",
+          "bytes_in": 115,
+          "status": 200,
+          "response_bytes": 47,
+          "error_code": null,
+          "state_after": "authenticated",
+          "has_stream": false,
+          "allocated_video_bytes": 0
+        },
+        {
+          "step": "SETUP /stream",
+          "bytes_in": 74,
+          "status": 200,
+          "response_bytes": 47,
+          "error_code": null,
+          "state_after": "streaming",
+          "has_stream": true,
+          "allocated_video_bytes": 131072
+        },
+        {
+          "step": "PLAY /stream",
+          "bytes_in": 53,
+          "status": 200,
+          "response_bytes": 47,
+          "error_code": null,
+          "state_after": "streaming",
+          "has_stream": true,
+          "allocated_video_bytes": 131072
+        },
+        {
+          "step": "TEARDOWN /stream",
+          "bytes_in": 57,
+          "status": 200,
+          "response_bytes": 47,
+          "error_code": null,
+          "state_after": "ended",
+          "has_stream": false,
+          "allocated_video_bytes": 0
+        }
+      ],
+      "setup_status": 200,
+      "state_after_setup": "streaming",
+      "has_stream_after_setup": true,
+      "allocated_video_bytes_after_setup": 131072,
+      "has_stream_after_teardown": false,
+      "reserved_ports_after_teardown": 0,
+      "fp_setup_error": null,
+      "tracked_sessions_after_disconnect": 0
+    },
+    "churn": {
+      "iterations": 100,
+      "active_sessions": 0,
+      "reserved_ports": 0,
+      "tracked_sessions": 0
+    },
+    "concurrency_cap": {
+      "max_sessions": 1,
+      "second_accept": "busy",
+      "after_disconnect": "accepted"
+    }
+  },
+  "sink": {
+    "frames_fed": 6,
+    "null": {
+      "kind": "null",
+      "frames": 6,
+      "bytes": 2071,
+      "first_pts": 0,
+      "last_pts": 166665,
+      "format_changes": 1,
+      "codec": "h264",
+      "dimensions": "1920x1080",
+      "path": null,
+      "file_size_bytes": null
+    },
+    "file": {
+      "kind": "file",
+      "frames": 6,
+      "bytes": 2055,
+      "first_pts": 0,
+      "last_pts": 166665,
+      "format_changes": 1,
+      "codec": "h264",
+      "dimensions": "1920x1080",
+      "path": "/var/folders/n6/tx2574_56h33v09wbc2hk_nm0000gn/T/xinterop-demo-68492.bin",
+      "file_size_bytes": 2055
+    },
+    "audio": {
+      "plan": {
+        "kind": "resample",
+        "source_rate": 44100,
+        "device_rate": 48000,
+        "ratio_num": 147,
+        "ratio_den": 160
+      },
+      "frames_in": 441,
+      "frames_out": 480,
+      "duration_ms_in": 10,
+      "duration_ms_out": 10,
+      "speed_ratio": 1.0
+    },
+    "passthrough": {
+      "kind": "passthrough",
+      "source_rate": 48000,
+      "device_rate": 48000,
+      "ratio_num": 1,
+      "ratio_den": 1
+    },
+    "native_window": {
+      "case": "native window sink",
+      "outcome": "unavailable",
+      "error_code": "platform-unavailable"
+    },
+    "oversized_dimensions": {
+      "requested": "20000x12000",
+      "area": 240000000,
+      "max_pixels": 67108864,
+      "error_code": "resource-limit"
+    }
+  },
+  "media_plane": {
+    "header_len": 36,
+    "max_payload": 16777216,
+    "known_flags": 7,
+    "roundtrip": {
+      "payload_bytes": 64,
+      "encoded_bytes": 100,
+      "consumed": 100,
+      "decoded_equal": true,
+      "header_hex": "584d44310001000100000007000000010000000000000001000000000000823500000040"
+    },
+    "negatives": [
+      {
+        "case": "截断头（20 < 36 字节）",
+        "outcome": "rejected",
+        "error_code": "invalid-frame"
+      },
+      {
+        "case": "未知 kind=9",
+        "outcome": "rejected",
+        "error_code": "invalid-frame"
+      },
+      {
+        "case": "未知 critical flag 0x80000000",
+        "outcome": "rejected",
+        "error_code": "invalid-frame"
+      },
+      {
+        "case": "声明 payload 17MiB（无实际数据）",
+        "outcome": "rejected",
+        "error_code": "resource-limit"
+      }
+    ]
+  },
+  "blocked": [
+    "FairPlay/设备认证材料永久 vendor-gated：没有 keying 的 SETUP 一律 503，不建流不分配缓冲",
+    "S1：外部引擎（UxPlay 等）与解码链路未获批 → 音视频接收实现缺席，能力广告为空",
+    "真实 mDNS/SSDP 网络发现源未实现（只有 fake 源）：真机发现矩阵需 S2 设备与用户在场",
+    "Quick Share 字节格式未固化（P-F02-1 抓包、P-F02-3 可见性矩阵未关闭）→ 不写 wire 字段",
+    "native window sink 未实现：无 GUI 自动化，且不以屏幕录制假装 raw output"
+  ],
+  "manual_tests": [
+    "真机投屏矩阵（iPhone/iPad → 本机：发现/连接/视频/音频/旋转/重连/10-30-60 分钟）——需 S1/S2",
+    "Quick Share 抓包（P-F02-1）与两台 Android 可见性矩阵（P-F02-3）——需 S3",
+    "Tauri demo 壳 GUI 交互验证（窗口/渲染/点击）——headless CLI 覆盖不到",
+    "native 视频窗口 sink：只能在桌面会话内验证（不以屏幕录制假装 raw output）",
+    "本机广播的 mDNS/TXT 字节与真实接收端对照（AirPlay features 位值固化需要真机抓包）"
+  ]
+}

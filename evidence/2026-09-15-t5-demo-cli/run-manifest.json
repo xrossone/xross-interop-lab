@@ -1,0 +1,90 @@
+{
+ "schema_version": 1,
+ "run_id": "2026-09-15-t5-demo-cli",
+ "task": "T5 · headless demo app（发现/会话/sink/数据面 CLI）",
+ "kind": "manual",
+ "evidence_level": "simulated",
+ "is_test_evidence": true,
+ "synthetic": false,
+ "base_commit": "b56c591（T32 提交）",
+ "case_ids": [
+  "D-01",
+  "D-02",
+  "D-03",
+  "D-04",
+  "D-05",
+  "D-06",
+  "D-07"
+ ],
+ "result": "pass",
+ "commands": [
+  {
+   "seq": 1,
+   "purpose": "red：demo 场景未实现（stub 二进制只退 2，stdout 无 JSON）",
+   "command": "cargo test --manifest-path impl/Cargo.toml -p interop-demo",
+   "exit_code": 101,
+   "result": "fail：7 failed（“stdout 必须是合法 JSON：EOF while parsing a value”，d06 期望退出码 0 实得 2）"
+  },
+  {
+   "seq": 2,
+   "purpose": "green：demo 验收套件",
+   "command": "cargo test --manifest-path impl/Cargo.toml -p interop-demo",
+   "exit_code": 0,
+   "result": "pass：7 tests（D-01..D-07；含真实二进制子进程执行 CARGO_BIN_EXE_xinterop-demo）"
+  },
+  {
+   "seq": 3,
+   "purpose": "全 workspace 回归 + 静态检查 + lab 检查",
+   "command": "cargo test --manifest-path impl/Cargo.toml --workspace; cargo clippy --manifest-path impl/Cargo.toml --workspace --all-targets; python3 -m unittest discover -s tools",
+   "exit_code": 0,
+   "result": "pass：97 tests 全绿（90 → 97，无回归）；clippy 0 warnings；lab 32 tests OK"
+  },
+  {
+   "seq": 4,
+   "purpose": "真实运行并留存 demo 输出（人类可读 + JSON 同一份数据）",
+   "command": "cargo run -p interop-demo -- run --json; cargo run -p interop-demo -- run",
+   "exit_code": 0,
+   "result": "pass：退出码 0，stderr 空；输出见本目录 demo-report.json / demo-report.txt"
+  }
+ ],
+ "acceptance_mapping": {
+  "D-01": "`xinterop-demo run --json` 退出码 0；tool/interface_version(interop.api/0.1)/ok=true；evidence_level=simulated、wire=self-authored-fixture（不冒充真机）",
+  "D-02": "发现面：同名同址两条观察（mdns + ssdp）→ authority 两行不合并；TTL 前 1 → TTL 后 0；接口断开后 0；已实现发现源只有 fake(network=false)；features 位串状态含『待固化』",
+  "D-03": "会话面：生产 keying（FairPlay 位置留空）配对不推进状态、SETUP 503、has_stream=false、allocated=0、/fp-setup=vendor-gated、广告能力空；测试 keying 走完 SETUP 200→streaming→131072 B→TEARDOWN 回收；4 条 framing 负向全部 rejected；100 次快速连接断开无残留；并发上限 busy",
+  "D-04": "sink 面：null frames=6/bytes=2071/format_changes=1；file 落盘 2055 字节（= 统计字节，codec config 不进内容文件）；44.1k→48k 显式 resample 147/160 且 441→480 帧、10ms→10ms（不变速）；同率 passthrough；native 窗口 platform-unavailable；20000x12000 → resource-limit（分配前）",
+  "D-05": "数据面：XMD1 头 36 字节、往返 equal=true、consumed=全长；4 条负向（截断头/未知 kind/未知 critical flag/声明 17MiB）全部按规定错误码拒绝，其中超限为 resource-limit（分配前）",
+  "D-06": "未知子命令退出码 2；人类可读输出含 xinterop-demo/SETUP/503/vendor-gated/待固化 等关键结论",
+  "D-07": "blocked 与待用户手动测试清单随 run 输出给出，两条清单均非空且含真机项"
+ },
+ "artifacts": [
+  {
+   "path": "impl/apps/interop-demo/Cargo.toml"
+  },
+  {
+   "path": "impl/apps/interop-demo/src/lib.rs"
+  },
+  {
+   "path": "impl/apps/interop-demo/src/main.rs"
+  },
+  {
+   "path": "impl/apps/interop-demo/src/report.rs"
+  },
+  {
+   "path": "impl/apps/interop-demo/src/scenarios.rs"
+  },
+  {
+   "path": "impl/apps/interop-demo/tests/demo_cli.rs"
+  },
+  {
+   "path": "evidence/2026-09-15-t5-demo-cli/demo-report.json",
+   "note": "一次真实运行的 JSON 输出（含临时落盘路径与时间戳；非真机）"
+  },
+  {
+   "path": "evidence/2026-09-15-t5-demo-cli/demo-report.txt",
+   "note": "同一份数据的人类可读渲染"
+  }
+ ],
+ "credentials_redacted": true,
+ "license_route_approved": false,
+ "notes": "demo 只跑本机已实现核心：不联网、不开窗口、不加载第三方引擎。**证据等级 simulated**——wire 全是自制 fixture，未连接任何真实设备；真机互通仍在 manual_tests 清单里。Tauri 壳未做（留待需要人看界面时）。"
+}

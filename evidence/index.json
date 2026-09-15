@@ -4,6 +4,14 @@
  "notes": "证据登记簿：dossier/specs 中的 evidence_refs 必须指向这里登记的 id（tools/test_dossiers.py 强制）。kind 词表：run-manifest | device-run | source-tree | page-review | user-observation。",
  "entries": [
   {
+   "id": "run-2026-09-15-t5-demo-cli",
+   "kind": "run-manifest",
+   "level": "simulated",
+   "date": "2026-09-15",
+   "path": "evidence/2026-09-15-t5-demo-cli/run-manifest.json",
+   "notes": "T5 headless demo（发现/会话/sink/XMD1 数据面 CLI，D-01..D-07）：输出为真实 crate 执行结果，但 wire 自制、未连真机 → simulated"
+  },
+  {
    "id": "run-2026-09-15-t32-airplay-control",
    "kind": "run-manifest",
    "level": "build-verified",
