@@ -1,0 +1,180 @@
+"""T19 验收 case 的可运行测试（plans/02-files.md §T19）。
+
+- T19-01 只有对端被发现但握手失败 → 状态不能记 transfer 成功（语料里必须有该 invariant 条目）。
+- T19-02 二维码打开可发现 ≠ 认证 → 仍需完整会话 + 确认码（实现侧由 T20 断言；本处检查语料与能力表）。
+- T19-03 文档与两实现冲突 → 必须记录冲突行、给出裁决与**具名真机实验**（不是"以后再查"）。
+
+附加纪律：
+1. `specs-reviewed/f02-quickshare-lan.md` 字段表的每一行都要有可复查来源（`Rnn …` 形式）与状态；
+   状态为 blocked/待固化的行不得被标为可进入实现。
+2. 未固化 wire 不写实现：状态 blocked 的行不得出现在实现清单里，且 `impl/crates/proto-quickshare/src`
+   不得出现发现/QR/GMS 相关代码（mDNS、BLE、quickshare.google、advertisingContext 等）。
+
+运行（lab 根目录）：python3 -m unittest discover -s tools -p 'test_*.py'
+"""
+
+import json
+import re
+import unittest
+from pathlib import Path
+
+LAB = Path(__file__).resolve().parent.parent
+SPEC = LAB / "specs-reviewed/f02-quickshare-lan.md"
+INPUTS = LAB / "provenance/quickshare-inputs.json"
+CORPUS = LAB / "evidence/quickshare/corpus-plan.json"
+GAP = LAB / "research/quickshare/gap-analysis.md"
+IMPL_SRC = LAB / "impl/crates/proto-quickshare/src"
+
+FACTS_HEADING = "## A. 字段级事实表"
+CAPS_HEADING = "## C. 能力分声明"
+HEADER_LABELS = {"#", "能力"}
+
+# 实现上下文里绝不允许出现的发现/QR/GMS 痕迹（P-F02-1/3 未关闭）。
+# 短词用词边界匹配，避免 "available" 里的 "ble" 这类误报。
+FORBIDDEN_IN_IMPL = [
+    r"_fc9f5ed42c8a",
+    r"quickshare\.google",
+    r"advertisingcontext",
+    r"encryptionkey",
+    r"\bmdns\b",
+    r"\bbonjour\b",
+    r"\bble\b",
+    r"\bgms\b",
+]
+
+
+def section(text: str, heading: str) -> str:
+    start = text.find(heading)
+    if start < 0:
+        return ""
+    rest = text[start + len(heading):]
+    nxt = rest.find("\n## ")
+    return rest if nxt < 0 else rest[:nxt]
+
+
+def table_rows(block: str):
+    for line in block.splitlines():
+        line = line.strip()
+        if not line.startswith("|"):
+            continue
+        cells = [c.strip() for c in line.strip("|").split("|")]
+        if all(set(c) <= set("-: ") for c in cells):
+            continue
+        if cells and cells[0] in HEADER_LABELS:
+            continue
+        yield cells
+
+
+class QuickShareGate(unittest.TestCase):
+    @classmethod
+    def setUpClass(cls):
+        for p in (SPEC, INPUTS, CORPUS, GAP):
+            if not p.is_file():
+                raise AssertionError(f"T19 产出缺失：{p.relative_to(LAB)}")
+        cls.spec = SPEC.read_text(encoding="utf-8")
+        cls.corpus = json.loads(CORPUS.read_text(encoding="utf-8"))
+
+    # ---- 字段表纪律 ----
+
+    def test_fact_rows_have_sources_and_status(self):
+        rows = list(table_rows(section(self.spec, FACTS_HEADING)))
+        self.assertGreaterEqual(len(rows), 20, "字段表行数太少：T19 要覆盖 discovery/ukey2/framing/auth/transport")
+        for cells in rows:
+            self.assertGreaterEqual(len(cells), 6, f"字段表列数不足：{cells}")
+            fact_id, _layer, _fact, source, status, impl = cells[:6]
+            self.assertRegex(fact_id, r"^F-\d+$", f"行号形状不对：{cells}")
+            self.assertRegex(
+                source,
+                r"R\d\d.*(`|§)",
+                f"{fact_id} 缺少可复查来源（来源编号 + 文件/小节）：{source!r}",
+            )
+            self.assertTrue(status, f"{fact_id} 缺状态")
+            self.assertIn(impl, {"yes", "**no**", "no"}, f"{fact_id} impl-allowed 值非法：{impl!r}")
+
+    def test_unfixed_rows_are_not_allowed_into_implementation(self):
+        blocked_rows = []
+        for cells in table_rows(section(self.spec, FACTS_HEADING)):
+            fact_id, _layer, _fact, _src, status, impl = cells[:6]
+            if "blocked" in status or "待固化" in status or "no" == impl.replace("*", ""):
+                blocked_rows.append(fact_id)
+            if "blocked" in status:
+                self.assertIn(impl, {"no", "**no**"}, f"{fact_id} 状态 blocked 却允许进入实现")
+        self.assertGreaterEqual(len(blocked_rows), 3, f"至少要标出未固化行：{blocked_rows}")
+
+    def test_conflicts_recorded_with_adjudication_and_named_experiment(self):
+        """T19-03：文档/实现冲突必须具名记录并给出裁决 + 具名真机实验。"""
+        conflict_lines = [l for l in self.spec.splitlines() if "冲突行" in l]
+        self.assertGreaterEqual(len(conflict_lines), 2, "F-12/F-15 两条冲突必须记录")
+        text = self.spec
+        for needle in ("P256_SHA512", "HKDF-SHA256", "真机实验", "P-F02-2"):
+            self.assertIn(needle, text, f"冲突裁决信息缺失：{needle}")
+        self.assertRegex(text, r"具名", "冲突行必须写明具名真机实验")
+
+    # ---- 能力分声明 ----
+
+    def test_capability_split_has_discovery_and_auth_separately(self):
+        caps = list(table_rows(section(self.spec, CAPS_HEADING)))
+        self.assertGreaterEqual(len(caps), 5, "能力必须分开声明（发现/握手/传输/payload/反向/可见性/确认码）")
+        joined = " ".join(c[0] for c in caps)
+        for needle in ("发现", "握手", "payload"):
+            self.assertIn(needle, joined, f"能力表缺少 {needle}")
+        for cells in caps:
+            status = cells[1]
+            self.assertTrue(
+                any(k in status for k in ("blocked", "not-implemented", "source-reviewed")),
+                f"能力状态必须是已知词表：{cells}",
+            )
+        for cells in caps:
+            if "blocked" in cells[1]:
+                self.assertIn("P-F02", cells[2], f"blocked 能力必须写障碍/重评条件：{cells}")
+
+    # ---- 语料纪律 ----
+
+    def test_corpus_covers_t19_invariants_and_negatives(self):
+        fixtures = self.corpus["fixtures"]
+        ids = {f["id"] for f in fixtures}
+        self.assertGreaterEqual(len(ids), 10)
+        for f in fixtures:
+            for key in ("id", "kind", "layer", "fact_ref", "description", "expected"):
+                self.assertIn(key, f, f"语料条目缺字段：{f.get('id')}")
+            self.assertRegex(f["fact_ref"], r"F-\d+|T19-\d+", f"{f['id']} 必须引用字段表行或 T19 case")
+        kinds = {f["kind"] for f in fixtures}
+        self.assertIn("negative", kinds)
+        self.assertIn("fragmentation", kinds)
+        must_have = {"qs-011", "qs-012", "qs-013"}
+        self.assertTrue(must_have <= ids, f"缺少 T19-01/T19-02 的 invariant 语料：{must_have - ids}")
+        device = self.corpus.get("device_corpus", {})
+        self.assertEqual(device.get("status"), "blocked", "真机语料必须标 blocked（需用户抓包）")
+
+    def test_no_invented_wire_for_blocked_layers(self):
+        """状态 blocked 的字段表行不得出现在实现源码里（未固化的字节不许写）。"""
+        if not IMPL_SRC.is_dir():
+            self.skipTest("T20 实现尚未落地")
+        raw = "\n".join(p.read_text(encoding="utf-8") for p in IMPL_SRC.rglob("*.rs"))
+        # 注释行允许如实写"发现不在本 crate"；扫的是**代码行**。
+        code = "\n".join(
+            line for line in raw.splitlines() if not line.strip().startswith("//")
+        )
+        text = code.lower()
+        for pattern in FORBIDDEN_IN_IMPL:
+            self.assertIsNone(
+                re.search(pattern, text),
+                f"实现里出现了未固化发现的痕迹：/{pattern}/",
+            )
+
+    # ---- 来源清单纪律 ----
+
+    def test_provenance_lists_boundaries_and_restricted_sources(self):
+        data = json.loads(INPUTS.read_text(encoding="utf-8"))
+        entries = {e["id"]: e for e in data["entries"]}
+        for rid in ("R15", "R16", "R17", "R18", "R19"):
+            self.assertIn(rid, entries, f"缺少来源登记：{rid}")
+            for key in ("commit_ref", "license", "use", "boundary", "allowed_in_crate"):
+                self.assertIn(key, entries[rid], f"{rid} 缺字段 {key}")
+        self.assertFalse(entries["R16"]["allowed_in_crate"], "R16 restricted 不得进入实现上下文")
+        self.assertFalse(entries["R19"]["allowed_in_crate"], "R19 GPL 不得进入实现上下文")
+        self.assertEqual(data["device_evidence"]["status"], "none", "本阶段不得声称器件证据")
+
+
+if __name__ == "__main__":
+    unittest.main()

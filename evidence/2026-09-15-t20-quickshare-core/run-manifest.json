@@ -1,0 +1,86 @@
+{
+ "schema_version": 1,
+ "run_id": "2026-09-15-t20-quickshare-core",
+ "task": "T20 · Quick Share 受限安全会话核心（UKEY2 握手 + TCP framing + payload gate）",
+ "kind": "manual",
+ "evidence_level": "build-verified",
+ "is_test_evidence": true,
+ "synthetic": false,
+ "base_commit": "T19 提交（gate 产出）",
+ "case_ids": [
+  "T20-01",
+  "T20-02",
+  "T20-03",
+  "T20-04"
+ ],
+ "result": "pass",
+ "commands": [
+  {
+   "seq": 1,
+   "purpose": "red：crate 尚无实现（测试引用不存在的模块）",
+   "command": "cargo test --manifest-path impl/Cargo.toml -p proto-quickshare",
+   "exit_code": 101,
+   "result": "fail：could not compile（9 处 unresolved import：wire/framing/handshake/session/crypto）"
+  },
+  {
+   "seq": 2,
+   "purpose": "green：T20 验收套件 + 单测",
+   "command": "cargo test --manifest-path impl/Cargo.toml -p proto-quickshare",
+   "exit_code": 0,
+   "result": "pass：15 tests（验收 9 + 单测 6；含真实 P-256 ECDH / SHA-512 commitment / HKDF）"
+  },
+  {
+   "seq": 3,
+   "purpose": "全 workspace 回归 + 静态检查 + lab 检查",
+   "command": "cargo test --manifest-path impl/Cargo.toml --workspace; cargo clippy --manifest-path impl/Cargo.toml --workspace --all-targets; python3 -m unittest discover -s tools",
+   "exit_code": 0,
+   "result": "pass：112 tests 全绿（97 → 112）；clippy 0 warnings；lab 39 tests OK"
+  }
+ ],
+ "acceptance_mapping": {
+  "T20-01": "commitment 不符（ClientFinish 的 public_key 被换）→ Alert BAD_MESSAGE_DATA(4)、未建立、无会话密钥；会话层再证：payloads_delivered=0，deliver_payload_bytes → GateRefusal::NotEstablished；确认码错误 → pairing-failed 且计数仍为 0",
+  "T20-02": "同一 ClientInit（同 random/commitment）二次提交 → INCORRECT_MESSAGE；含 random 复用检查；会话层第二次 ClientInit 同样告警且不建立",
+  "T20-03": "帧长度 > 上限 → resource-limit（读取前）；长度 0 → invalid-frame；protobuf 截断 → invalid-frame；varint 11 字节 → invalid-frame；合法 ClientInit 逐字节截断全扫一遍无 panic",
+  "T20-04": "四种分片（整段/1 字节/混合 2-5-13/固定 7）得到 byte-identical 结果：建立状态、payload 计数、auth 串、确认码全部一致（服务端固定熵以排除随机差异）"
+ },
+ "extra_coverage": {
+  "spec_alert_codes": "random 31 字节 → BAD_RANDOM(101)；version=2 → BAD_VERSION(100)；空 commitments → BAD_HANDSHAKE_CIPHER(102)；未实现 cipher CURVE25519 → 102；next_protocol 不匹配 → BAD_NEXT_PROTOCOL(103)；外层类型不符 → BAD_MESSAGE_TYPE(2)",
+  "conflict_fixation": "F-15（HKDF-SHA256 vs 规范文本 SHA-512）固化为断言：两个变体派生的 auth 串必须不同；默认实现用实现侧（HKDF-SHA256）",
+  "deadline": "握手超时（本仓策略 60s）→ Alert 且会话终止，后续喂入被拒",
+  "crypto_realism": "P-256 ECDH（p256 crate）、DHS=SHA-256(x)、commitment=SHA-512、HKDF-SHA256 派生 auth/next；密钥 Debug 打码；固定标量仅测试注入"
+ },
+ "artifacts": [
+  {
+   "path": "impl/crates/proto-quickshare/Cargo.toml"
+  },
+  {
+   "path": "impl/crates/proto-quickshare/src/lib.rs"
+  },
+  {
+   "path": "impl/crates/proto-quickshare/src/wire.rs",
+   "note": "UKEY2 消息 protobuf 最小子集（字段号出自 F-06..F-10）；未知字段跳过、未知类型码拒绝"
+  },
+  {
+   "path": "impl/crates/proto-quickshare/src/framing.rs",
+   "note": "4 字节大端长度前缀 + 分片无关解码；默认上限 5 MiB（R15 值，标注为非协议常量）"
+  },
+  {
+   "path": "impl/crates/proto-quickshare/src/crypto.rs",
+   "note": "P-256/SHA-2/HKDF 组合 + 4 位确认码（F-17 启发式）；规范变体仅供冲突固化"
+  },
+  {
+   "path": "impl/crates/proto-quickshare/src/handshake.rs",
+   "note": "客户端/服务端状态机、Alert 码表、commitment 先验后解析、random 复用拒绝"
+  },
+  {
+   "path": "impl/crates/proto-quickshare/src/session.rs",
+   "note": "framing+握手+超时+payload gate（T19-01/T19-02 不变量）"
+  },
+  {
+   "path": "impl/crates/proto-quickshare/tests/quickshare_crypto.rs"
+  }
+ ],
+ "credentials_redacted": true,
+ "license_route_approved": false,
+ "notes": "**证据等级 build-verified**：握手与 framing 在本机可证（真实密码原语、真实字节流、分片等价）。**不是** device-verified：没有与任何真实 Android 设备握手，PIN 一致性未验证；F-12/F-15 两处规范/实现冲突需真机裁决。发现/QR/传输加密/payload 层明确未实现（gate 测试机器保证实现里没有发现痕迹）。"
+}

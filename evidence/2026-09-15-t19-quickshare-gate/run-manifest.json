@@ -1,0 +1,76 @@
+{
+ "schema_version": 1,
+ "run_id": "2026-09-15-t19-quickshare-gate",
+ "task": "T19 · Quick Share wire/来源 gate（P-F02-2 source-review；P-F02-1/3 blocked）",
+ "kind": "manual",
+ "evidence_level": "source-reviewed",
+ "is_test_evidence": true,
+ "synthetic": false,
+ "base_commit": "f296a2d（T5 提交）",
+ "case_ids": [
+  "T19-01",
+  "T19-02",
+  "T19-03"
+ ],
+ "result": "pass",
+ "commands": [
+  {
+   "seq": 1,
+   "purpose": "red：T19 gate 测试不存在 → lab 套件不含该纪律",
+   "command": "python3 -m unittest discover -s tools",
+   "exit_code": 0,
+   "result": "pass 但无 T19 纪律（此前的 32 tests 全部通过，说明缺的正是新纪律）"
+  },
+  {
+   "seq": 2,
+   "purpose": "green：T19 纪律测试（字段表来源/能力分声明/冲突具名裁决/语料不变量）",
+   "command": "python3 -m unittest tools.test_quickshare_gate -v",
+   "exit_code": 0,
+   "result": "pass：7 tests（6 通过 + 1 因 T20 未落地先 skip，T20 落地后转为实检）"
+  },
+  {
+   "seq": 3,
+   "purpose": "全 lab 回归",
+   "command": "python3 -m unittest discover -s tools",
+   "exit_code": 0,
+   "result": "pass：39 tests OK（32 → 39）"
+  },
+  {
+   "seq": 4,
+   "purpose": "来源比对（只读；不构建第三方代码）",
+   "command": "只读 grep/sed 于 /Volumes/Portable2TB/ExtDev/others/{r15-neardrop,r17-nearby,r18-ukey2,r19-rquickshare}",
+   "exit_code": 0,
+   "result": "facts 固化：commit 校验一致（R15 8f1fdc7 / R17 2ea517e / R18 10fc737 / R19 378d8ae / R16 9fba4ee）"
+  }
+ ],
+ "acceptance_mapping": {
+  "T19-01": "语料 qs-012（被发现但握手失败）已登记为 invariant；实现侧由 T20 的 t20_01b 断言：握手失败后 payloads_delivered=0 且 deliver 被拒（NotEstablished）",
+  "T19-02": "语料 qs-013（握手完成但未核对确认码）已登记；实现侧由 t19_02 断言：QR provenance 只记录、不改变认证，gate 需 ConfirmationRequired→确认码核对",
+  "T19-03": "规范与两实现冲突两条（F-12 cipher 选择规则、F-15 HKDF 哈希）都写进字段表并给出裁决（以实现侧为准）+ 具名真机实验（与 stock Android/Pixel/Samsung 对跑）；F-15 由测试 f15_hkdf_hash_conflict... 固化为可执行断言"
+ },
+ "artifacts": [
+  {
+   "path": "specs-reviewed/f02-quickshare-lan.md",
+   "note": "F-01..F-24 字段级事实表（每行来源+状态+impl-allowed）；能力分声明；语料规则；安全审查"
+  },
+  {
+   "path": "research/quickshare/gap-analysis.md",
+   "note": "已知/未知分层、本次关闭范围、仍 blocked 的 4 项（含重评条件）"
+  },
+  {
+   "path": "provenance/quickshare-inputs.json",
+   "note": "R15/R16/R17/R18/R19 逐来源用途/许可/边界；R16 restricted、R19 GPL 均 allowed_in_crate=false"
+  },
+  {
+   "path": "evidence/quickshare/corpus-plan.json",
+   "note": "13 条自制 fixture（含负向/分片/invariant），每条引用字段表行；真机语料 status=blocked"
+  },
+  {
+   "path": "tools/test_quickshare_gate.py",
+   "note": "7 条纪律测试（字段表来源、blocked 不准入实现、冲突具名裁决、能力分声明、语料不变量、来源边界、实现无发现痕迹）"
+  }
+ ],
+ "credentials_redacted": true,
+ "license_route_approved": false,
+ "notes": "P-F02-2 关闭到 **source-reviewed**：UKEY2 绑定链的字段/派生公式已固化（R18 规范+proto 为主，R15 逆向文档与实现交叉）。**未做**：真机握手、抓包、可见性矩阵——因此 discovery 与 QR 相关行 impl-allowed=no，实现里没有一行发现代码（由 gate 测试机器检查）。"
+}

@@ -4,6 +4,22 @@
  "notes": "证据登记簿：dossier/specs 中的 evidence_refs 必须指向这里登记的 id（tools/test_dossiers.py 强制）。kind 词表：run-manifest | device-run | source-tree | page-review | user-observation。",
  "entries": [
   {
+   "id": "run-2026-09-15-t20-quickshare-core",
+   "kind": "run-manifest",
+   "level": "build-verified",
+   "date": "2026-09-15",
+   "path": "evidence/2026-09-15-t20-quickshare-core/run-manifest.json",
+   "notes": "T20 UKEY2 握手 + TCP framing + payload gate（T20-01..04；真实 P-256/SHA-512/HKDF；分片等价）；未与真机握手"
+  },
+  {
+   "id": "run-2026-09-15-t19-quickshare-gate",
+   "kind": "run-manifest",
+   "level": "source-reviewed",
+   "date": "2026-09-15",
+   "path": "evidence/2026-09-15-t19-quickshare-gate/run-manifest.json",
+   "notes": "T19 Quick Share wire/来源 gate（F-01..F-24 字段表 + 冲突具名裁决 + 语料计划；P-F02-2 关闭到 source-reviewed，P-F02-1/3 仍 blocked）"
+  },
+  {
    "id": "run-2026-09-15-t5-demo-cli",
    "kind": "run-manifest",
    "level": "simulated",

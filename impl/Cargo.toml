@@ -10,6 +10,7 @@ members = [
     "crates/interop-runtime",
     "crates/interop-testkit",
     "crates/proto-airplay",
+    "crates/proto-quickshare",
     "adapters/standalone-host",
     "apps/interopd",
     "apps/interop-cli",

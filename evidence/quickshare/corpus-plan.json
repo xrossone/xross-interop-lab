@@ -1,0 +1,123 @@
+{
+  "schema_version": 1,
+  "profile_id": "quickshare.lan.v1",
+  "created_at": "2026-09-15",
+  "scope": "T19/T20 的自制语料计划：UKEY2 握手与 TCP framing。**全部自制**（按 specs-reviewed/f02 字段表的字段号构造）；不含任何抓包或第三方字节",
+  "fixture_rules": [
+    "每个 fixture 必须注明它验证字段表的哪一行（fact_ref）与期望结果",
+    "负向 fixture 必须写明期望错误码（Alert 码或本仓错误码），不允许『只要失败就行』",
+    "真机语料（抓包/真机 log）后置：由用户执行，pcap 不入库",
+    "自制密钥材料只用于测试（确定性标量）；生产路径不得使用任何固定标量"
+  ],
+  "fixtures": [
+    {
+      "id": "qs-001",
+      "kind": "positive",
+      "layer": "framing",
+      "fact_ref": "F-05",
+      "description": "4 字节大端长度前缀 + Ukey2Message(CLIENT_INIT)；长度 = 消息体长度",
+      "expected": "解析出 1 条完整消息；剩余字节为 0"
+    },
+    {
+      "id": "qs-002",
+      "kind": "negative",
+      "layer": "framing",
+      "fact_ref": "F-05",
+      "description": "声明长度 6 MiB（> 本仓上限），后无数据",
+      "expected": "invalid-frame（resource-limit 语义），**不分配**、不 panic"
+    },
+    {
+      "id": "qs-003",
+      "kind": "negative",
+      "layer": "framing",
+      "fact_ref": "F-05",
+      "description": "声明长度 0",
+      "expected": "invalid-frame（空帧无意义）"
+    },
+    {
+      "id": "qs-004",
+      "kind": "fragmentation",
+      "layer": "framing",
+      "fact_ref": "F-05",
+      "description": "同一条 qs-001 字节流按 1/3/7/任意边界切分喂入（含一次只给 1 字节）",
+      "expected": "结果与整段喂入完全一致（同消息、同错误、同状态）"
+    },
+    {
+      "id": "qs-005",
+      "kind": "positive",
+      "layer": "handshake",
+      "fact_ref": "F-08,F-09,F-10,F-11,F-16",
+      "description": "客户端+服务端两实例对跑：ClientInit→ServerInit→ClientFinish；commitment 用 SHA-512(含封装的 ClientFinish)",
+      "expected": "双方 auth 串一致、next secret 一致、4 位码一致；状态到 Established"
+    },
+    {
+      "id": "qs-006",
+      "kind": "negative",
+      "layer": "handshake",
+      "fact_ref": "F-11",
+      "description": "ClientFinish 的 public_key 被替换成另一把密钥（commitment 不再匹配）",
+      "expected": "pairing-failed（Alert BAD_MESSAGE_DATA 语义），**不进入 Established**、不交付 payload"
+    },
+    {
+      "id": "qs-007",
+      "kind": "negative",
+      "layer": "handshake",
+      "fact_ref": "F-08",
+      "description": "重放：把上一条 ClientInit（同 32 字节 random、同 commitment）再次发给已收过它的服务端",
+      "expected": "拒绝（INCORRECT_MESSAGE/非法状态），会话不推进"
+    },
+    {
+      "id": "qs-008",
+      "kind": "negative",
+      "layer": "handshake",
+      "fact_ref": "F-07,F-08",
+      "description": "ClientInit.random 为 31 字节；version=2；cipher_commitments 为空；next_protocol 不匹配",
+      "expected": "分别返回 BAD_RANDOM=101 / BAD_VERSION=100 / BAD_HANDSHAKE_CIPHER=102 / BAD_NEXT_PROTOCOL=103，全部致命"
+    },
+    {
+      "id": "qs-009",
+      "kind": "negative",
+      "layer": "wire",
+      "fact_ref": "F-06",
+      "description": "protobuf 截断（长度前缀声明的长度大于实际字段）、varint 溢出（10 字节以上）、字段长度溢出 32 位",
+      "expected": "invalid-frame；无 panic、无越界分配"
+    },
+    {
+      "id": "qs-010",
+      "kind": "negative",
+      "layer": "auth",
+      "fact_ref": "F-15,F-16",
+      "description": "两实例使用不同哈希假设（HKDF-SHA256 vs 规范文本的 SHA-512）",
+      "expected": "auth 串不同 → 确认码不同 → 会话不得建立（把 F-15 冲突固化成可执行断言）"
+    },
+    {
+      "id": "qs-011",
+      "kind": "negative",
+      "layer": "auth",
+      "fact_ref": "F-17",
+      "description": "确认码不匹配（一方给错码）",
+      "expected": "pairing-failed；已建立的密钥不得用于任何 payload（payload gate 关闭）"
+    },
+    {
+      "id": "qs-012",
+      "kind": "invariant",
+      "layer": "session",
+      "fact_ref": "T19-01,T19-02",
+      "description": "只有『被发现』（QR/可见性标记）而握手未完成/失败",
+      "expected": "会话状态不得是 transfer 成功；payload 交付计数必须为 0"
+    },
+    {
+      "id": "qs-013",
+      "kind": "invariant",
+      "layer": "session",
+      "fact_ref": "F-21",
+      "description": "握手已完成但确认码未核对",
+      "expected": "payload gate 仍关闭（UKEY2 的 out-of-band 验证是必须步骤）"
+    }
+  ],
+  "device_corpus": {
+    "status": "blocked",
+    "blocked_by": "P-F02-1 / P-F02-3 / F-12 / F-15 真机裁决",
+    "note": "抓包与真机 log 由用户执行后，脱敏摘录才进入 evidence/quickshare/device/（pcap 本体不入库）"
+  }
+}
