@@ -166,6 +166,81 @@ class CastGate(unittest.TestCase):
         self.assertFalse(entries["R45"]["allowed_in_crate"], "R45（restricted）不得进入实现")
         self.assertEqual(data["device_evidence"]["status"], "none")
 
+    # ---- T45：receiver 可行性 gate ----
+
+    def test_t45_receiver_facts_are_sourced_and_verdict_is_honest(self):
+        rows = {c[0]: c for c in table_rows(section(self.spec, FACTS_HEADING)) if len(c) >= 5}
+        for fid in ("F-26", "F-27", "F-28", "F-29", "F-30", "F-31", "F-32", "F-33", "F-34", "F-35"):
+            self.assertIn(fid, rows, f"T45 字段行缺失：{fid}")
+            row = " ".join(rows[fid])
+            self.assertIn("R42", row, f"{fid} 必须引用 R42 的行级位置")
+        f34 = " ".join(rows["F-34"])
+        for needle in ("blocked", "stock"):
+            self.assertIn(needle, f34, f"F-34 结论缺内容：{needle}")
+        # 结论行给出边界，演示路径在 F-35（两者必须分开：结论 blocked ≠ 实现准入）
+        self.assertIn("test-root", " ".join(rows["F-35"]))
+        # 门禁行不得被标成 yes（不能放行认证材料）：涉及证书/认证的三行必须写明只做拒绝，
+        # test-root 行必须写明不得冒充厂商信任
+        for fid in ("F-26", "F-27", "F-28"):
+            self.assertIn("拒绝", " ".join(rows[fid]), f"{fid} 必须写明只做拒绝")
+        self.assertIn("不得冒充", " ".join(rows["F-29"]), "F-29 必须写明 test-root 不得冒充厂商信任")
+        # 结论行（F-34）必须是 blocked 且不准入实现；演示路径单独一行（F-35）
+        self.assertIn("blocked", " ".join(rows["F-34"]).lower())
+        self.assertEqual(rows["F-34"][-1].strip(), "**no**", f"F-34 结论行不得准入实现：{rows['F-34'][-1]}")
+        self.assertIn("test-root", " ".join(rows["F-35"]))
+
+    def test_t45_receiver_gate_doc_exists_and_states_the_block(self):
+        gate = LAB / "research/cast/receiver-gate.md"
+        self.assertTrue(gate.is_file(), "T45 必须产出 research/cast/receiver-gate.md")
+        text = gate.read_text(encoding="utf-8")
+        for needle in ("T45-01", "T45-02", "T45-03", "blocked", "test-root", "不获取", "不伪造"):
+            self.assertIn(needle, text, f"receiver gate 缺内容：{needle}")
+        # 不得把 stock 说成可用
+        lowered = text.lower()
+        for bad in ("stock 可用", "支持 stock", "可以直接投屏到本机"):
+            self.assertNotIn(bad, lowered, f"不得声称 stock 可用：{bad}")
+
+    def test_t45_capability_rows_keep_stock_blocked(self):
+        caps = " ".join(" ".join(c) for c in table_rows(section(self.spec, CAPS_HEADING)))
+        self.assertIn("stock sender", caps, "能力表必须有一行说明 stock sender 连通性")
+        row = next(
+            (c for c in table_rows(section(self.spec, CAPS_HEADING)) if "stock sender" in " ".join(c)),
+            None,
+        )
+        self.assertIsNotNone(row)
+        self.assertIn("blocked", " ".join(row), f"stock sender 行必须标 blocked：{row}")
+        receiver_row = next(
+            (c for c in table_rows(section(self.spec, CAPS_HEADING)) if c and c[0].startswith("**receiver 侧控制面")),
+            None,
+        )
+        self.assertIsNotNone(receiver_row, "能力表必须有 receiver 侧控制面行")
+        self.assertIn("test-root", " ".join(receiver_row), "必须写明只在 test-root 门禁后可用")
+        caf = next((c for c in table_rows(section(self.spec, CAPS_HEADING)) if c and "CAF" in c[0]), None)
+        self.assertIsNotNone(caf, "能力表必须有 CAF/托管 app 行（来源未固化 → blocked）")
+        self.assertIn("blocked", " ".join(caf))
+
+    def test_t45_corpus_covers_receiver_cases(self):
+        ids = {f["id"] for f in self.corpus["fixtures"]}
+        must = {"cast-018", "cast-019", "cast-020", "cast-021", "cast-022", "cast-023"}
+        self.assertTrue(must <= ids, f"缺少 T45 语料：{must - ids}")
+
+    def test_t45_impl_has_no_app_ids_and_no_screen_claim(self):
+        """T45 实现纪律：不内置 app id、无镜像能力、无证书材料、门禁默认拒绝。"""
+        src = IMPL_SRC / "receiver.rs"
+        if not src.is_file():
+            self.skipTest("T45 实现尚未落地")
+        text = src.read_text(encoding="utf-8")
+        code = "\n".join(
+            line for line in text.splitlines() if not line.strip().startswith("//")
+        ).lower()
+        # 已知的 Cast app id 字面量一个都不许出现
+        for app_id in ("cc1ad845", "e8c28d3c", "0f5096e8"):
+            self.assertNotIn(app_id, code, f"实现里不得内置 app id：{app_id}")
+        for pattern in ("certificate", "private key", "begin ", "client_auth"):
+            self.assertIsNone(re.search(pattern, code), f"receiver 实现里出现凭据类痕迹：/{pattern}/")
+        self.assertIn("vendorgated", code, "必须存在恒拒绝的生产门禁")
+        self.assertIn("test-root", code, "演示门禁必须在代码里显式标为 test-root")
+
     # ---- 实现纪律 ----
 
     def test_no_auth_or_registration_material_in_implementation(self):
