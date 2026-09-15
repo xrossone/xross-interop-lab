@@ -8,6 +8,8 @@ publish.workspace = true
 [dependencies]
 interop-contract = { path = "../interop-contract" }
 interop-policy = { path = "../interop-policy" }
+interop-platform = { path = "../interop-platform" }
 
 [dev-dependencies]
 standalone-host = { path = "../../adapters/standalone-host" }
+interop-testkit = { path = "../interop-testkit" }

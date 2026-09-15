@@ -82,6 +82,13 @@ dependencies = [
 ]
 
 [[package]]
+name = "interop-platform"
+version = "0.1.0"
+dependencies = [
+ "interop-contract",
+]
+
+[[package]]
 name = "interop-policy"
 version = "0.1.0"
 dependencies = [
@@ -93,7 +100,9 @@ name = "interop-runtime"
 version = "0.1.0"
 dependencies = [
  "interop-contract",
+ "interop-platform",
  "interop-policy",
+ "interop-testkit",
  "standalone-host",
 ]
 

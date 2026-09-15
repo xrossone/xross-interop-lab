@@ -12,6 +12,14 @@
    "notes": "ADR-003 执行与信任边界（用户 2026-09-15 采纳，accepted）+ decisions 台账同步 + ADR 纪律测试恢复（ADR-01..04）"
   },
   {
+   "id": "run-2026-09-15-t11-endpoint-registry",
+   "kind": "run-manifest",
+   "level": "build-verified",
+   "date": "2026-09-15",
+   "path": "evidence/2026-09-15-t11-endpoint-registry/run-manifest.json",
+   "notes": "T11 多发现源与 endpoint registry（T11-01..04 + 展示聚合不合并 + 观察形状校验 + 平台状态）；interop-platform 新 crate"
+  },
+  {
    "id": "run-2026-09-15-t01-workspace",
    "kind": "run-manifest",
    "level": "build-verified",

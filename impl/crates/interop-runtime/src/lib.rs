@@ -6,6 +6,8 @@
 //! - [`events`]：instance_id+sequence 事件流，4096 条/16MiB 双上限，
 //!   淘汰 cursor 返回 gap+快照建议（CORE-07）。
 //! - [`limits`]：资源上限常量与校验。
+//! - [`endpoints`]：endpoint registry——观察去重/过期，**永不合并 identity**（T11）。
+//! - [`routing`]：purpose/能力/安全/平台状态四项检查与稳定选路（T11）。
 //!
 //! 不持有 Xross 账号，不创建 Iroh 实例——INT-02。
 
@@ -13,7 +15,9 @@
 #![forbid(unsafe_code)]
 #![allow(clippy::result_large_err)]
 
+pub mod endpoints;
 pub mod events;
 pub mod host;
 pub mod limits;
+pub mod routing;
 pub mod session;

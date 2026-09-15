@@ -1,0 +1,90 @@
+{
+ "schema_version": 1,
+ "run_id": "2026-09-15-t11-endpoint-registry",
+ "task": "T11 · 实现多发现源与 endpoint registry",
+ "kind": "manual",
+ "evidence_level": "build-verified",
+ "is_test_evidence": true,
+ "synthetic": false,
+ "base_commit": "aecc2af（T0 提交）",
+ "case_ids": [
+  "T11-01",
+  "T11-02",
+  "T11-03",
+  "T11-04"
+ ],
+ "result": "pass",
+ "commands": [
+  {
+   "seq": 1,
+   "purpose": "red：endpoints/routing/interop-platform 未实现",
+   "command": "cargo test --manifest-path impl/Cargo.toml -p interop-runtime --test discovery",
+   "exit_code": 101,
+   "result": "fail（E0432/E0433：unresolved module interop_runtime::routing / interop_platform::discovery，预期 red）"
+  },
+  {
+   "seq": 2,
+   "purpose": "red→编译通过后首轮（测试借用错误，实现未改动）",
+   "command": "cargo test --manifest-path impl/Cargo.toml -p interop-runtime --test discovery",
+   "exit_code": 101,
+   "result": "fail（E0502 测试内借用冲突；修测试后通过——实现代码未变）"
+  },
+  {
+   "seq": 3,
+   "purpose": "green：T11 验收套件",
+   "command": "cargo test --manifest-path impl/Cargo.toml -p interop-runtime --test discovery",
+   "exit_code": 0,
+   "result": "pass：7 tests（T11-01..04 + 展示聚合 + 观察形状 + 平台状态）"
+  },
+  {
+   "seq": 4,
+   "purpose": "全 workspace 回归 + 静态检查",
+   "command": "cargo test --manifest-path impl/Cargo.toml --workspace; cargo clippy --manifest-path impl/Cargo.toml --workspace --all-targets",
+   "exit_code": 0,
+   "result": "pass：53 tests 全绿（46 → 53，新增 7）；clippy 0 warnings"
+  }
+ ],
+ "acceptance_mapping": {
+  "T11-01": "两个协议同名同 IP 但 identity 不同 → 3 行独立记录（含同来源同地址不同 claim 的第三行）、授权主体不同；重复观察只刷新不新增；拒绝其一不影响另一（同地址字符串也不降级/借用授权）",
+  "T11-02": "interface_down(en0) 使该接口候选立即失效（sendable_addresses 空、路由 destination-unavailable）；TTL 到期路径独立验证（now > observed+ttl 同样不可发送）",
+  "T11-03": "allow_plaintext_fallback=false + 仅明文候选 → auth-denied（信息指明明文策略）；策略放行且请求不要求安全 → 可路由且 secure=false 如实标注；请求要求安全 → auth-denied；有安全候选时选安全候选（禁止 fallback ≠ 一律拒绝）",
+  "T11-04": "只声明 media-resource 的 TV：screen 请求 → unsupported-feature（信息含 native-presentation），同一设备 URL cast 成功，未声明 Receive 的文件方向同样 unsupported-feature"
+ },
+ "extra_coverage": {
+  "presentation_group": "用户 alias 只生成派生分组（未知 id 丢弃、去 alias 即回退）；authority 视图行数与主体不变；组内成员仍独立授权（全库不合并 identity 的规格）",
+  "observation_validation": "port 0 / 空 host / NUL 显示名 / 空 profile 全部 invalid-frame，非法观察不产生记录",
+  "platform_state": "platform_blocked_profiles 命中 → platform-unavailable（CORE-09：不假造 stub 成功）"
+ },
+ "artifacts": [
+  {
+   "path": "impl/crates/interop-platform/Cargo.toml"
+  },
+  {
+   "path": "impl/crates/interop-platform/src/lib.rs"
+  },
+  {
+   "path": "impl/crates/interop-platform/src/discovery.rs"
+  },
+  {
+   "path": "impl/crates/interop-runtime/src/endpoints.rs"
+  },
+  {
+   "path": "impl/crates/interop-runtime/src/routing.rs"
+  },
+  {
+   "path": "impl/crates/interop-runtime/tests/discovery.rs"
+  },
+  {
+   "path": "impl/Cargo.toml"
+  },
+  {
+   "path": "impl/crates/interop-runtime/Cargo.toml"
+  },
+  {
+   "path": "impl/README.md"
+  }
+ ],
+ "credentials_redacted": true,
+ "license_route_approved": false,
+ "notes": "发现源为 fake（无网络行为）；真 mDNS/SSDP/LocalSend multicast 接入属阶段 3 provider 工作（plans/01 T11 实现决策）。新 crate interop-platform 按 orchestrator 层登记（不含网络依赖；分层规则由 t01_workspace_hygiene 强制）。registry 去重键 = (profile_id, source, identity_claim, 地址集合)——展示名与 IP 不参与，T11-01 的三个负向断言据此成立。"
+}

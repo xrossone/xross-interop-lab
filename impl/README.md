@@ -18,12 +18,18 @@
 | `crates/interop-runtime` | HostPorts + 内存 fake host；会话注册表（单 authority 终态）、events（4096/16MiB + gap）、limits | T07/T10 |
 | `crates/interop-file` | 受限流式存储：路径形状拒绝、独占临时文件、预算、no-follow 原子发布、SHA-256 完整性 | T08 |
 | `crates/interop-ipc` | 本地控制面：u32BE 长度帧（256KiB 上限）、JSON-RPC 单对象、hello 认证、版本协商 | T09 |
+| `crates/interop-platform` | 平台侧输入：发现源观察（shape 校验、明文候选如实标注、fake 源）；只读平台 probe/radio（T12） | T11 |
 | `crates/interop-testkit` | fake clock、确定性分片/重排、fixture hash 登记、run manifest 分级、脱敏检查 | T14 |
 | `adapters/standalone-host` | standalone 显式 policy（profile 默认关闭、60s TTL、只签发 Entry scope） | T07 |
 | `apps/interopd` | headless daemon 骨架：UDS 0600 + 帧循环（Windows pipe 载体后续） | T09 |
 
+`interop-runtime` 另含 **endpoint registry + 路由**（T11）：去重键含来源与 identity claim，
+同名/同 IP/同地址都不合并；地址候选带 TTL 与接口，接口断开即失效；用户 alias 只影响
+`presentation_groups` 派生视图，不参与授权；路由检查 purpose/方向、能力与媒体形态、安全策略、
+平台状态（拒绝而非降级）。
+
 后续按任务需要创建（docs/04 §2：不一次创建所有空 crate）：
-`interop-platform`（T12）、`apps/interop-cli`（T11+）、`tests/contract/` 工作区级集成测试（T11+）。
+`apps/interop-cli`（T12 的 `doctor --json` 载体）、`impl/workers/` 与 `impl/policies/worker-profiles.json`（T13）。
 
 ## 依赖分层（T01-01）
 
