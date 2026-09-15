@@ -128,16 +128,16 @@ tools/                          # 仓库检查脚本与测试（python3 -m unitt
   `crates/proto-quickshare` 实现 TCP 4 字节大端 framing、UKEY2 三消息状态机（真实 P-256 ECDH /
   SHA-512 commitment / HKDF-SHA256）、Alert 码表、重放拒绝、payload gate（未核对 4 位确认码不放行）。
   **发现/QR/传输加密/payload 层未实现**（P-F02-1/3 未关闭），gate 测试机器保证实现里没有发现代码。
-- **headless demo**：`apps/interop-demo`（`xinterop-demo [run|discovery|session|sink|media|qshare|mirror|dlna|wfd] [--json]`）
+- **headless demo**：`apps/interop-demo`（`xinterop-demo [run|discovery|session|sink|media|qshare|mirror|dlna|wfd|cast] [--json]`）
   把上述各层跑成真实状态输出：注册表不合并 identity、SETUP 503/401 与 131072 B 分配时机、sink 统计与
   显式 resample、XMD1 往返与负向、UKEY2 握手与分片等价；输出恒带 `evidence_level=simulated` + blocked +
   待用户手动清单（见 [evidence/2026-09-15-t5-demo-cli](evidence/2026-09-15-t5-demo-cli/demo-report.txt)）。
 - **验证**（阶段 3 收尾时）：`cargo test --manifest-path impl/Cargo.toml --workspace` **113 tests 全绿**；
   clippy 0 warnings；`python3 -m unittest discover -s tools` **39 tests OK**（阶段 4 首批后为
-  **181 tests / lab 55 tests**，见下）。每 task 的 run manifest 见
+  **194 tests / lab 64 tests**，见下）。每 task 的 run manifest 见
   [evidence/index.json](evidence/index.json)。
 
-**阶段 4 首批（2026-09-15 稍后追加，四项已完成）**
+**阶段 4 首批（2026-09-15 稍后追加，五项已完成）**
 
 - **T21 Quick Share 传输闭环（headless 部分）**：`crates/proto-quickshare` 新增
   `secure_message`（D2D 密钥链 + SecureMessage AES-256-CBC/HMAC-SHA256 + 严格 +1 序号，跳号/重放即
@@ -177,10 +177,22 @@ tools/                          # 仓库检查脚本与测试（python3 -m unitt
   demo 新增 `wfd` 段（`xinterop-demo wfd`，见 D-11）。测试逼出四处实现缺陷（M3 查询正文是**裸参数名**、
   M13 正文是裸 `wfd_idr_request`、keep-alive 基准、M13/M16 应用控制 URI），详见 run manifest 的 red→green 记录。
 
+- **T43 Google Cast 媒体 URL sender（headless 切片）**：gate 重写 `specs-reviewed/m08` 为 F-01..F-25 字段表
+  （CASTV2 信封字段号与 required 声明、4 字节长度前缀与 64 KiB 上限、namespace 集合、四个命名空间的
+  载荷键、requestId/超时、DeviceAuth 消息与发送端强制认证点、mDNS 服务类型与 TXT 键），
+  blocked = P-M08-1（真机认证强制点）/P-M08-2（组件边界）/P-M08-3（TXT 矩阵）+ F-25（媒体字节服务）；
+  **两条硬边界**：认证握手不实现（凭据材料不可得 → 生产闸门恒拒绝）、app ID 不申请不伪造。
+  实现 `crates/proto-cast`：信封层、载荷层（未知命名空间/类型拒绝、取值白名单）、
+  sender 控制会话（连接→拉起→媒体会话→收尾；三条 URL 释放路径）、TXT 只解析不组播。
+  证据：[evidence/2026-09-15-t43-cast-sender](evidence/2026-09-15-t43-cast-sender/run-manifest.json)；
+  demo 新增 `cast` 段（`xinterop-demo cast`，见 D-12）。T43-01 抓出一处真实缺陷：闸门检查原先在
+  状态变更之后，认证失败会留下停在 `connecting` 的半个会话。
+
 **未开始 / 待批准**：T30（UxPlay provider 闭环，需 scope S1/S2）、T33/T34（AirPlay 音视频接收真机）、
 T22（Quick Share 发送闭环，需 QR/可发现路径）、keep-alive 与 paired-key 帧、Quick Share 发现源
 （待 P-F02-1/2/3 关闭与 S3 抓包批准）、T42（DLNA renderer 侧真实媒体拉取，需真电视矩阵 P-M07-1）、
-T38/T39（WFD 真机序列与 IE 播发、平台入口 probe，需 P-M05-1/2/3）、xross-dev 侧 bridge 窗口（S4）、
+T38/T39（WFD 真机序列与 IE 播发、平台入口 probe，需 P-M05-1/2/3）、T44（Cast 实时 streaming，在 T43 之后）、
+T45（Cast receiver 可行性 gate）、xross-dev 侧 bridge 窗口（S4）、
 provider 放行（S5）；native 窗口 sink 与 Tauri demo 壳留桌面会话。
 阶段 3 的 goal prompt 见 [docs/goal-phase-3.md](docs/goal-phase-3.md)，执行结果见
 [evidence/2026-09-15-phase-3-final-report.md](evidence/2026-09-15-phase-3-final-report.md)；阶段 2 见

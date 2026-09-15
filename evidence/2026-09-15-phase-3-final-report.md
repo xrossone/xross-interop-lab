@@ -208,3 +208,31 @@ Quick Share ↔ Android）、抓包、可见性矩阵、native 窗口、Tauri GU
   无 HDCP 握手（只解析取值并拒绝）、无 TS 解复用与解码 → `SessionStats.player_available` 恒 false，
   生产路径的能力广告是 `none`（协商必然以 `unsupported-feature` 结束，不假装能显示）。
 - **测试面**：impl 163 → **181**（proto-wfd 17 + demo D-11）；clippy 0；lab 46 → **55**（wfd gate 9 例）。
+
+
+---
+
+## 补充 5（2026-09-15）：T43 Google Cast 媒体 URL sender（headless 切片）已落地
+
+**commit** `3e76cb9`（gate）、`5365c7c`（实现 + 证据）、`f696b26`（demo `cast` 段 + D-12）。
+
+- **先关门禁**：重写 `specs-reviewed/m08-cast-media-control.md` 为 F-01..F-25 字段级事实表（每行带来源
+  commit + 文件 + 行）：CASTV2 信封字段号 1..9 与 required 声明、四个协议版本、4 字节长度前缀与
+  **64 KiB 正文上限**、分块字段在参考实现里的实现缺席、namespace 字面量集合、connection/heartbeat/
+  receiver/media 四组载荷键、requestId 与 10 s 超时、DeviceAuth 消息与**发送端强制认证点**、
+  mDNS 服务类型与 TXT 键。blocked = P-M08-1/2/3 与 F-25（媒体字节服务）。
+  新增 `provenance/m08-inputs.json`（R42 openscreen / R43 CastReceiver / R44 pychromecast facts-only；
+  R45 restricted 不进实现）与 `evidence/cast/corpus-plan.json`（cast-001..017，规则禁止证书/密钥/真实 app ID）。
+- **两条硬边界写进字段表、能力表与纪律测试**：① 设备认证握手不实现（缺凭据材料 → `ChannelGate`
+  生产实现恒 `vendor-gated`，一条命令都发不出去）；② app ID 不申请不伪造（只允许拉起调用方显式配置的 ID）。
+- **实现** `crates/proto-cast`：`castv2`（信封编解码 + required + 上限 + 分块拒绝 + 自带最小 protobuf 子集）、
+  `namespaces`（四组载荷的类型字面量与 JSON 键；LOAD 不写 duration、SEEK 只认 `PLAYBACK_START`、
+  `playerState`/`streamType` 白名单；未知命名空间/类型 → `unsupported-feature`）、
+  `controller`（连接→拉起 app→媒体会话→收尾；requestId 单调关联与超时、心跳 10 s/10 s 与 20 s 失效、
+  LAUNCH_ERROR 与 MEDIA_STATUS 分流、三条 URL 释放路径）、`discovery`（TXT 只解析不组播）。
+- **验收**：T43-01..04 共 12 例。**T43-01 抓出一处真实缺陷**：`connect()` 原先先把状态改成 `connecting`
+  再由命令出口检查闸门 —— 认证失败会留下一个既没发出命令、又不在 idle 的**半个会话**；现在闸门检查
+  前移到任何状态变更之前（`load` 的闸门检查也提到状态检查之前，因为缺通道是更根本的前提）。
+- **诚实边界**：无 TLS 传输层、无真实设备、无媒体字节服务、无分块、**不提供屏幕镜像**
+  （`screen_capability()` 恒 false —— Cast 在这里只是"换一个 URL 给接收端拉"）。
+- **测试面**：impl 181 → **194**（proto-cast 12 + demo D-12）；clippy 0；lab 55 → **64**（cast gate 9 例）。
