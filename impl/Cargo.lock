@@ -261,6 +261,7 @@ dependencies = [
  "interop-platform",
  "interop-runtime",
  "proto-airplay",
+ "proto-cast",
  "proto-quickshare",
  "proto-upnp",
  "proto-wfd",

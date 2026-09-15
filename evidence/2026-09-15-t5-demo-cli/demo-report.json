@@ -3,7 +3,7 @@
   "interface_version": "interop.api/0.1",
   "evidence_level": "simulated",
   "wire": "self-authored-fixture",
-  "generated_unix_ms": 1789448247212,
+  "generated_unix_ms": 1789448991602,
   "ok": true,
   "discovery": {
     "evidence_level": "simulated",
@@ -375,7 +375,7 @@
       "format_changes": 1,
       "codec": "h264",
       "dimensions": "1920x1080",
-      "path": "/var/folders/n6/tx2574_56h33v09wbc2hk_nm0000gn/T/xinterop-demo-33240.bin",
+      "path": "/var/folders/n6/tx2574_56h33v09wbc2hk_nm0000gn/T/xinterop-demo-57444.bin",
       "file_size_bytes": 2055
     },
     "audio": {
@@ -464,7 +464,7 @@
       "key_schedule": "HKDF-SHA256",
       "next_secret_bytes": 32,
       "next_secrets_match": true,
-      "pin": "7964",
+      "pin": "7009",
       "pin_matches": true,
       "server_init_bytes": 116,
       "transcript_bytes": 252
@@ -927,6 +927,181 @@
       "UIBC 输入回传与厂商扩展参数（wfd_hwe_*/microsoft_*，F-31）"
     ]
   },
+  "cast": {
+    "evidence_level": "simulated",
+    "wire": "self-authored-fixture",
+    "envelope": {
+      "bad_version": "InvalidFrame",
+      "binary_on_control_plane": "UnsupportedFeature",
+      "binary_roundtrip": true,
+      "body_bytes": 87,
+      "chunked": "UnsupportedFeature",
+      "frame_bytes": 91,
+      "max_body_bytes": 65536,
+      "oversize": "ResourceLimit",
+      "roundtrip": true,
+      "version_whitelist": "[0, 1, 2, 3]"
+    },
+    "namespaces": {
+      "connection": {
+        "connect_payload": "{\"connType\":0,\"origin\":{},\"requestId\":1,\"senderInfo\":{\"browserVersion\":\"1\",\"connectionType\":0,\"platform\":0,\"sdkType\":2,\"version\":\"0.1\"},\"type\":\"CONNECT\",\"userAgent\":\"xross-interop/0.1\"}",
+        "namespace": "urn:x-cast:com.google.cast.tp.connection",
+        "types": [
+          "CONNECT",
+          "CLOSE",
+          "CONNECTED"
+        ]
+      },
+      "heartbeat": {
+        "namespace": "urn:x-cast:com.google.cast.tp.heartbeat",
+        "types": [
+          "PING",
+          "PONG"
+        ]
+      },
+      "media": {
+        "load_payload": "{\"autoplay\":true,\"customData\":{},\"media\":{\"contentId\":\"http://192.0.2.30:8000/media/clip.mp4\",\"contentType\":\"video/mp4\",\"metadata\":{\"metadataType\":0,\"title\":\"demo clip\"},\"streamType\":\"BUFFERED\"},\"requestId\":2,\"type\":\"LOAD\"}",
+        "load_writes_duration": false,
+        "namespace": "urn:x-cast:com.google.cast.media",
+        "seek_payload": "{\"currentTime\":12.5,\"requestId\":3,\"resumeState\":\"PLAYBACK_START\",\"type\":\"SEEK\"}",
+        "types": [
+          "LOAD",
+          "PLAY",
+          "PAUSE",
+          "STOP",
+          "SEEK",
+          "GET_STATUS",
+          "MEDIA_STATUS",
+          "LOAD_FAILED"
+        ]
+      },
+      "receiver": {
+        "namespace": "urn:x-cast:com.google.cast.receiver",
+        "types": [
+          "LAUNCH",
+          "GET_STATUS",
+          "STOP",
+          "SET_VOLUME",
+          "RECEIVER_STATUS",
+          "LAUNCH_ERROR"
+        ]
+      }
+    },
+    "session": {
+      "gate_closed_code": "VendorGated",
+      "gate_closed_sent": 0,
+      "heartbeat_ping_due": 1,
+      "heartbeat_pong": 1,
+      "media_url_held_after_stop": false,
+      "received": 3,
+      "receiver_terminated_released": true,
+      "request_timeout": true,
+      "screen_capability": false,
+      "sent": 7,
+      "state": "media-session",
+      "steps": [
+        "CONNECT 出站 → receiver-0（requestId Some(1)）",
+        "CONNECTED 入站 → connected",
+        "LAUNCH → RECEIVER_STATUS → app=DEMOAPP1 transport=Some(\"transport-demo\") session=Some(\"session-demo\")",
+        "LOAD 出站 → transport-demo（媒体命令发往 transportId）",
+        "MEDIA_STATUS 入站 → playerState=PLAYING mediaSessionId=Some(7)",
+        "PLAY/SEEK/PAUSE 各 1 条（media 会话内）",
+        "STOP → MediaUrlReleased(why=stop)，mediaSessionId 清空"
+      ]
+    },
+    "discovery": {
+      "multicast": false,
+      "parsed": "客厅那块屏 / Chromecast Ultra / st=Some(Idle) / ca=Some(5) / port=8009",
+      "port": 8009,
+      "service_type": "_googlecast._tcp",
+      "txt_keys": [
+        "id",
+        "fn",
+        "md",
+        "ve",
+        "st",
+        "ca"
+      ]
+    },
+    "rejects": [
+      {
+        "case": "LAUNCH 未配置 app ID（controller）",
+        "outcome": "InvalidFrame"
+      },
+      {
+        "case": "控制面 BINARY 载荷",
+        "outcome": "UnsupportedFeature"
+      },
+      {
+        "case": "分块（continued）",
+        "outcome": "UnsupportedFeature"
+      },
+      {
+        "case": "长度前缀超 64 KiB",
+        "outcome": "ResourceLimit"
+      },
+      {
+        "case": "未知协议版本",
+        "outcome": "InvalidFrame"
+      },
+      {
+        "case": "未知命名空间",
+        "outcome": "UnsupportedFeature"
+      },
+      {
+        "case": "已登记命名空间的未登记类型",
+        "outcome": "UnsupportedFeature"
+      },
+      {
+        "case": "未知 playerState",
+        "outcome": "InvalidFrame"
+      },
+      {
+        "case": "SEEK resumeState 非 PLAYBACK_START",
+        "outcome": "InvalidFrame"
+      },
+      {
+        "case": "LOAD 缺 media",
+        "outcome": "InvalidFrame"
+      },
+      {
+        "case": "LOAD 的 contentId 为空",
+        "outcome": "InvalidFrame"
+      },
+      {
+        "case": "载荷缺 type 键",
+        "outcome": "InvalidFrame"
+      },
+      {
+        "case": "媒体 URL 形状非法",
+        "outcome": "InvalidFrame"
+      },
+      {
+        "case": "TXT 缺 id",
+        "outcome": "InvalidFrame"
+      },
+      {
+        "case": "非本服务类型",
+        "outcome": "InvalidFrame"
+      },
+      {
+        "case": "生产闸门下的 CONNECT",
+        "outcome": "VendorGated"
+      },
+      {
+        "case": "生产闸门下的 LOAD",
+        "outcome": "VendorGated"
+      }
+    ],
+    "blocked": [
+      "设备认证握手（F-18：设备侧凭据材料不可得）——生产闸门恒拒绝，因此没有任何真机通道",
+      "app 注册与 app ID 签发（F-17/F-23：注册体系在 Google 侧；本仓只用调用方配置的 ID）",
+      "TLS 传输层与真实 Chromecast/Google TV 的接受条件（P-M08-1）",
+      "媒体字节服务与实时 streaming（F-25 / T44）",
+      "CASTV2 分块（F-05：参考实现也没有实现路径，收到即拒绝）",
+      "TXT 字段矩阵与各代设备差异（P-M08-3）"
+    ]
+  },
   "blocked": [
     "FairPlay/设备认证材料永久 vendor-gated：没有 keying 的 SETUP 一律 503，不建流不分配缓冲",
     "S1：外部引擎（UxPlay 等）与解码链路未获批 → 音视频接收实现缺席，能力广告为空",
@@ -947,6 +1122,8 @@
     "AirPlay 真机镜像（iPhone/iPad → 本机）与 30 分钟墙钟长跑（drift/丢帧/RSS 趋势）——需 S1/S2",
     "DLNA 真机矩阵：库存 TV 的 protocolInfo 与实际 SetAVTransportURI→Play 时序（P-M07-1）",
     "WFD 真机序列与 IE：隔离 Linux 机跑 sink 抓 M0–M16 与 IE 播发（P-M05-2）；Windows MiracastReceiver headless 边界（P-M05-1）",
-    "WFD 真机 codec 矩阵：Android/Windows 发送端 → 本节点（P-M05-3）"
+    "WFD 真机 codec 矩阵：Android/Windows 发送端 → 本节点（P-M05-3）",
+    "Cast 真机认证强制点：库存 Chromecast/Google TV 对第三方 sender 的接受条件（P-M08-1）",
+    "Cast 发现 TXT 字段矩阵（P-M08-3）与真实 mDNS 记录对照"
   ]
 }

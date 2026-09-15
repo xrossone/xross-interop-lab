@@ -26,8 +26,23 @@ pub struct DemoReport {
     pub mirror: MirrorReport,
     pub dlna: DlnaReport,
     pub wfd: WfdReport,
+    pub cast: CastReport,
     pub blocked: Vec<String>,
     pub manual_tests: Vec<String>,
+}
+
+// ---------- Google Cast（T43）----------
+
+#[derive(Debug, Clone, Serialize)]
+pub struct CastReport {
+    pub evidence_level: &'static str,
+    pub wire: &'static str,
+    pub envelope: serde_json::Value,
+    pub namespaces: serde_json::Value,
+    pub session: serde_json::Value,
+    pub discovery: serde_json::Value,
+    pub rejects: Vec<serde_json::Value>,
+    pub blocked: Vec<String>,
 }
 
 // ---------- WFD/Miracast（T37）----------

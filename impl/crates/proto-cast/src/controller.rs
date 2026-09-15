@@ -353,6 +353,8 @@ impl Controller {
         title: Option<&str>,
         now_ms: u64,
     ) -> Result<Outcome, Error> {
+        // 闸门先于状态检查：缺通道是更根本的前提，错误信息也更准确。
+        self.gate.ensure_open()?;
         if self.state != ControllerState::Launched {
             return Err(invalid(format!(
                 "LOAD 需要已拉起的 app（T43-02：launch 失败不得被当成 media loading，当前状态 {}）",

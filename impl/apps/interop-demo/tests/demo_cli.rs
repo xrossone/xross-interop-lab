@@ -361,6 +361,80 @@ fn d11_wfd_control_path() {
     assert!(!w["blocked"].as_array().expect("blocked").is_empty());
 }
 
+/// D-12：Google Cast 段——信封/载荷键、sender 会话与 T43-01..04 四条约束。
+#[test]
+fn d12_cast_sender_path() {
+    let (code, v) = run_json(&["cast", "--json"]);
+    assert_eq!(code, 0);
+    let c = &v["cast"];
+    assert_eq!(c["evidence_level"], "simulated");
+
+    // 信封：往返 + 上限 + 分块/版本拒绝。
+    assert_eq!(c["envelope"]["roundtrip"], true);
+    assert_eq!(c["envelope"]["binary_roundtrip"], true);
+    assert_eq!(c["envelope"]["max_body_bytes"], 65536, "F-04 的 64 KiB 上限");
+    assert_eq!(c["envelope"]["chunked"], "UnsupportedFeature", "F-05：分块不实现");
+    assert_eq!(c["envelope"]["oversize"], "ResourceLimit");
+    assert_eq!(c["envelope"]["version_whitelist"], "[0, 1, 2, 3]");
+
+    // 载荷键：LOAD 不写 duration；SEEK 只认 PLAYBACK_START。
+    assert_eq!(c["namespaces"]["media"]["load_writes_duration"], false);
+    let load_payload = c["namespaces"]["media"]["load_payload"].as_str().unwrap_or("");
+    assert!(load_payload.contains(r#""contentId""#), "{load_payload}");
+    assert!(load_payload.contains(r#""streamType":"BUFFERED""#));
+    assert!(!load_payload.contains("duration"));
+    assert!(c["namespaces"]["media"]["seek_payload"]
+        .as_str()
+        .unwrap_or("")
+        .contains("PLAYBACK_START"));
+    assert_eq!(
+        c["namespaces"]["media"]["namespace"],
+        "urn:x-cast:com.google.cast.media"
+    );
+
+    // 会话：走到 media-session；T43-01..04 四条约束各自成立。
+    assert_eq!(c["session"]["state"], "media-session");
+    assert_eq!(c["session"]["gate_closed_code"], "VendorGated", "T43-01");
+    assert_eq!(c["session"]["gate_closed_sent"], 0, "T43-01：认证失败不启动播放");
+    assert_eq!(c["session"]["receiver_terminated_released"], true, "T43-03");
+    assert_eq!(c["session"]["media_url_held_after_stop"], false, "T43-03");
+    assert_eq!(c["session"]["screen_capability"], false, "T43-04：只推媒体 URL");
+    assert_eq!(c["session"]["heartbeat_ping_due"], 1);
+    assert_eq!(c["session"]["heartbeat_pong"], 1);
+    assert_eq!(c["session"]["request_timeout"], true);
+
+    // 发现只解析、不组播。
+    assert_eq!(c["discovery"]["service_type"], "_googlecast._tcp");
+    assert_eq!(c["discovery"]["port"], 8009);
+    assert_eq!(c["discovery"]["multicast"], false);
+
+    // 负向：无一被接受。
+    let rejects = c["rejects"].as_array().expect("rejects");
+    assert!(rejects.len() >= 15, "负向覆盖不足：{}", rejects.len());
+    for case in rejects {
+        let outcome = case["outcome"].as_str().unwrap_or("");
+        assert_ne!(outcome, "accepted(unexpected)", "负向被接受：{}", case["case"]);
+        assert!(
+            matches!(
+                outcome,
+                "InvalidFrame" | "UnsupportedFeature" | "UnsupportedMethod" | "ResourceLimit"
+                    | "VendorGated"
+            ),
+            "未知错误码 {outcome}"
+        );
+    }
+    assert!(!c["blocked"].as_array().expect("blocked").is_empty());
+
+    // 人类输出同样给出这四条结论。
+    let out = Command::new(bin()).arg("cast").output().expect("可执行");
+    assert_eq!(out.status.code(), Some(0));
+    let text = String::from_utf8_lossy(&out.stdout);
+    assert!(text.contains("Google Cast（T43"), "{text}");
+    assert!(text.contains("screen_capability=false"), "{text}");
+    assert!(text.contains("VendorGated"), "{text}");
+    assert!(text.contains("T43-01") && text.contains("T43-03") && text.contains("T43-04"), "{text}");
+}
+
 /// D-07：blocked 与待用户手动清单必须随输出给出（本阶段不允许"看起来全绿"）。
 #[test]
 fn d07_blocked_and_manual_lists_are_reported() {

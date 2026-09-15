@@ -11,6 +11,7 @@
 #![forbid(unsafe_code)]
 #![allow(clippy::result_large_err)]
 
+pub mod cast;
 pub mod dlna;
 pub mod wfd;
 pub mod mirror;
@@ -44,6 +45,8 @@ pub const MANUAL_TESTS: &[&str] = &[
     "DLNA 真机矩阵：库存 TV 的 protocolInfo 与实际 SetAVTransportURI→Play 时序（P-M07-1）",
     "WFD 真机序列与 IE：隔离 Linux 机跑 sink 抓 M0–M16 与 IE 播发（P-M05-2）；Windows MiracastReceiver headless 边界（P-M05-1）",
     "WFD 真机 codec 矩阵：Android/Windows 发送端 → 本节点（P-M05-3）",
+    "Cast 真机认证强制点：库存 Chromecast/Google TV 对第三方 sender 的接受条件（P-M08-1）",
+    "Cast 发现 TXT 字段矩阵（P-M08-3）与真实 mDNS 记录对照",
 ];
 
 /// 跑全部场景并汇总（JSON 与人类输出共用同一份数据）。
@@ -56,6 +59,7 @@ pub fn compute_report() -> DemoReport {
     let (mirror, r_ok) = mirror::mirror_scenario();
     let (dlna, l_ok) = dlna::dlna_scenario();
     let (wfd, w_ok) = wfd::wfd_scenario();
+    let (cast, c_ok) = cast::cast_scenario();
     let generated_unix_ms = std::time::SystemTime::now()
         .duration_since(std::time::UNIX_EPOCH)
         .map(|d| d.as_millis())
@@ -66,7 +70,7 @@ pub fn compute_report() -> DemoReport {
         evidence_level: EVIDENCE_LEVEL,
         wire: WIRE,
         generated_unix_ms,
-        ok: d_ok && s_ok && k_ok && m_ok && q_ok && r_ok && l_ok && w_ok,
+        ok: d_ok && s_ok && k_ok && m_ok && q_ok && r_ok && l_ok && w_ok && c_ok,
         discovery,
         session,
         sink,
@@ -75,6 +79,7 @@ pub fn compute_report() -> DemoReport {
         mirror,
         dlna,
         wfd,
+        cast,
         blocked: BLOCKED.iter().map(|s| s.to_string()).collect(),
         manual_tests: MANUAL_TESTS.iter().map(|s| s.to_string()).collect(),
     }
@@ -288,6 +293,83 @@ pub fn render_human(r: &DemoReport, section: Option<&str>) -> String {
                 case.outcome,
                 case.error_code.clone().unwrap_or_default()
             ));
+        }
+    }
+
+    if want("cast") {
+        let c = &r.cast;
+        out.push_str("\n## Google Cast（T43，媒体 URL 而非镜像）\n");
+        out.push_str(&format!(
+            "信封              : body={} 帧={} 往返={} 二进制往返={} 版本白名单={}\n",
+            c.envelope["body_bytes"],
+            c.envelope["frame_bytes"],
+            c.envelope["roundtrip"],
+            c.envelope["binary_roundtrip"],
+            c.envelope["version_whitelist"].as_str().unwrap_or("")
+        ));
+        out.push_str(&format!(
+            "命名空间          : {} / {} / {} / {}（未知命名空间或类型一律拒绝）\n",
+            c.namespaces["connection"]["namespace"].as_str().unwrap_or(""),
+            c.namespaces["heartbeat"]["namespace"].as_str().unwrap_or(""),
+            c.namespaces["receiver"]["namespace"].as_str().unwrap_or(""),
+            c.namespaces["media"]["namespace"].as_str().unwrap_or("")
+        ));
+        out.push_str(&format!(
+            "  LOAD 写 duration={}（F-12：不写；时长只从状态读）\n",
+            c.namespaces["media"]["load_writes_duration"]
+        ));
+        out.push_str("  CONNECT 载荷      : ");
+        out.push_str(c.namespaces["connection"]["connect_payload"].as_str().unwrap_or(""));
+        out.push_str("\n  LOAD 载荷         : ");
+        out.push_str(c.namespaces["media"]["load_payload"].as_str().unwrap_or(""));
+        out.push_str("\n  SEEK 载荷         : ");
+        out.push_str(c.namespaces["media"]["seek_payload"].as_str().unwrap_or(""));
+        out.push('\n');
+        out.push_str(&format!(
+            "会话              : 状态={} 出站={} 入站={}\n",
+            c.session["state"].as_str().unwrap_or(""),
+            c.session["sent"],
+            c.session["received"]
+        ));
+        for step in c.session["steps"].as_array().into_iter().flatten() {
+            out.push_str(&format!("  - {}\n", step.as_str().unwrap_or("")));
+        }
+        out.push_str(&format!(
+            "  T43-01 生产闸门  : 认证不可得 → CONNECT 返回 {} 且已发命令={}\n",
+            c.session["gate_closed_code"].as_str().unwrap_or(""),
+            c.session["gate_closed_sent"]
+        ));
+        out.push_str(&format!(
+            "  T43-03 清理      : 接收端停应用后 URL 已释放={}；本地 stop 后仍持有 URL={}\n",
+            c.session["receiver_terminated_released"],
+            c.session["media_url_held_after_stop"]
+        ));
+        out.push_str(&format!(
+            "  T43-04 能力      : screen_capability={}（本 profile 只推媒体 URL）\n",
+            c.session["screen_capability"]
+        ));
+        out.push_str(&format!(
+            "  心跳/超时        : 到点发 PING={} 收到 PING 回 PONG={} 请求超时={}\n",
+            c.session["heartbeat_ping_due"], c.session["heartbeat_pong"], c.session["request_timeout"]
+        ));
+        out.push_str(&format!(
+            "发现（只解析）    : {} 端口={} 组播={}；TXT={}\n",
+            c.discovery["service_type"].as_str().unwrap_or(""),
+            c.discovery["port"],
+            c.discovery["multicast"],
+            c.discovery["parsed"].as_str().unwrap_or("")
+        ));
+        out.push_str("负向              :\n");
+        for case in &c.rejects {
+            out.push_str(&format!(
+                "  - {:<30} {}\n",
+                case["case"].as_str().unwrap_or(""),
+                case["outcome"].as_str().unwrap_or("")
+            ));
+        }
+        out.push_str("blocked           :\n");
+        for item in &c.blocked {
+            out.push_str(&format!("  - {item}\n"));
         }
     }
 
@@ -581,6 +663,7 @@ pub fn parse_args(args: &[String]) -> Result<(Option<&'static str>, bool), Strin
             "mirror" => section = Some("mirror"),
             "dlna" => section = Some("dlna"),
             "wfd" | "miracast" => section = Some("wfd"),
+            "cast" => section = Some("cast"),
             "--help" | "-h" => return Err("help".to_string()),
             other => return Err(format!("未知子命令 {other:?}")),
         }

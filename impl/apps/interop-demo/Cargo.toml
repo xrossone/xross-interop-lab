@@ -24,6 +24,7 @@ interop-platform = { path = "../../crates/interop-platform" }
 interop-runtime = { path = "../../crates/interop-runtime" }
 proto-airplay = { path = "../../crates/proto-airplay" }
 proto-quickshare = { path = "../../crates/proto-quickshare" }
+proto-cast = { path = "../../crates/proto-cast" }
 proto-upnp = { path = "../../crates/proto-upnp" }
 proto-wfd = { path = "../../crates/proto-wfd" }
 serde = { version = "1", features = ["derive"] }

@@ -56,7 +56,7 @@ TEARDOWN 后       : stream=false reserved_ports=0
 喂入帧数          : 6
 null  sink        : frames=6 bytes=2071 pts=[Some(0)..Some(166665)] codec=h264 dims=1920x1080 changes=1
 file  sink        : frames=6 bytes=2055 pts=[Some(0)..Some(166665)] codec=h264 dims=1920x1080 changes=1
-      落盘 /var/folders/n6/tx2574_56h33v09wbc2hk_nm0000gn/T/xinterop-demo-33283.bin（2055 字节）
+      落盘 /var/folders/n6/tx2574_56h33v09wbc2hk_nm0000gn/T/xinterop-demo-57482.bin（2055 字节）
 音频              : resample 44100Hz→48000Hz ratio=147/160 frames 441→480（10ms→10ms, speed_ratio=1.000）
 native 窗口       : unavailable（platform-unavailable）
 20000x12000       : resource-limit（area=240000000 > max_pixels=67108864）
@@ -69,6 +69,52 @@ native 窗口       : unavailable（platform-unavailable）
   - 未知 kind=9                        rejected invalid-frame
   - 未知 critical flag 0x80000000      rejected invalid-frame
   - 声明 payload 17MiB（无实际数据）          rejected resource-limit
+
+## Google Cast（T43，媒体 URL 而非镜像）
+信封              : body=87 帧=91 往返=true 二进制往返=true 版本白名单=[0, 1, 2, 3]
+命名空间          : urn:x-cast:com.google.cast.tp.connection / urn:x-cast:com.google.cast.tp.heartbeat / urn:x-cast:com.google.cast.receiver / urn:x-cast:com.google.cast.media（未知命名空间或类型一律拒绝）
+  LOAD 写 duration=false（F-12：不写；时长只从状态读）
+  CONNECT 载荷      : {"connType":0,"origin":{},"requestId":1,"senderInfo":{"browserVersion":"1","connectionType":0,"platform":0,"sdkType":2,"version":"0.1"},"type":"CONNECT","userAgent":"xross-interop/0.1"}
+  LOAD 载荷         : {"autoplay":true,"customData":{},"media":{"contentId":"http://192.0.2.30:8000/media/clip.mp4","contentType":"video/mp4","metadata":{"metadataType":0,"title":"demo clip"},"streamType":"BUFFERED"},"requestId":2,"type":"LOAD"}
+  SEEK 载荷         : {"currentTime":12.5,"requestId":3,"resumeState":"PLAYBACK_START","type":"SEEK"}
+会话              : 状态=media-session 出站=7 入站=3
+  - CONNECT 出站 → receiver-0（requestId Some(1)）
+  - CONNECTED 入站 → connected
+  - LAUNCH → RECEIVER_STATUS → app=DEMOAPP1 transport=Some("transport-demo") session=Some("session-demo")
+  - LOAD 出站 → transport-demo（媒体命令发往 transportId）
+  - MEDIA_STATUS 入站 → playerState=PLAYING mediaSessionId=Some(7)
+  - PLAY/SEEK/PAUSE 各 1 条（media 会话内）
+  - STOP → MediaUrlReleased(why=stop)，mediaSessionId 清空
+  T43-01 生产闸门  : 认证不可得 → CONNECT 返回 VendorGated 且已发命令=0
+  T43-03 清理      : 接收端停应用后 URL 已释放=true；本地 stop 后仍持有 URL=false
+  T43-04 能力      : screen_capability=false（本 profile 只推媒体 URL）
+  心跳/超时        : 到点发 PING=1 收到 PING 回 PONG=1 请求超时=true
+发现（只解析）    : _googlecast._tcp 端口=8009 组播=false；TXT=客厅那块屏 / Chromecast Ultra / st=Some(Idle) / ca=Some(5) / port=8009
+负向              :
+  - LAUNCH 未配置 app ID（controller）  InvalidFrame
+  - 控制面 BINARY 载荷                  UnsupportedFeature
+  - 分块（continued）                  UnsupportedFeature
+  - 长度前缀超 64 KiB                   ResourceLimit
+  - 未知协议版本                         InvalidFrame
+  - 未知命名空间                         UnsupportedFeature
+  - 已登记命名空间的未登记类型                  UnsupportedFeature
+  - 未知 playerState                 InvalidFrame
+  - SEEK resumeState 非 PLAYBACK_START InvalidFrame
+  - LOAD 缺 media                   InvalidFrame
+  - LOAD 的 contentId 为空            InvalidFrame
+  - 载荷缺 type 键                     InvalidFrame
+  - 媒体 URL 形状非法                    InvalidFrame
+  - TXT 缺 id                       InvalidFrame
+  - 非本服务类型                         InvalidFrame
+  - 生产闸门下的 CONNECT                 VendorGated
+  - 生产闸门下的 LOAD                    VendorGated
+blocked           :
+  - 设备认证握手（F-18：设备侧凭据材料不可得）——生产闸门恒拒绝，因此没有任何真机通道
+  - app 注册与 app ID 签发（F-17/F-23：注册体系在 Google 侧；本仓只用调用方配置的 ID）
+  - TLS 传输层与真实 Chromecast/Google TV 的接受条件（P-M08-1）
+  - 媒体字节服务与实时 streaming（F-25 / T44）
+  - CASTV2 分块（F-05：参考实现也没有实现路径，收到即拒绝）
+  - TXT 字段矩阵与各代设备差异（P-M08-3）
 
 ## WFD/Miracast 接收侧（T37）
 消息层            : 登记 10 条；M1/M2 同形（按发送方区分）=true
@@ -160,7 +206,7 @@ XML 加固          : XXE 拒绝=true 深度拒绝=true
 ## Quick Share / UKEY2（T19/T20）
 framing           : 4 字节大端长度前缀，本仓上限 5242880 B（非协议常量，F-05）
 握手              : cipher="P256_SHA512(100)" key_schedule="HKDF-SHA256" established=true
-双方一致          : auth=true next_secret=true pin=true（pin="7231"）
+双方一致          : auth=true next_secret=true pin=true（pin="9922"）
 分片等价          : true（[1048576,1,7] 种切分）
   - commitment 不符（ClientFinish 被改）     BadMessageData
   - random 31 字节                       BadRandom
@@ -203,5 +249,7 @@ F-15 冲突         : 采用 "HKDF-SHA256"；"与 stock Android 的成功握手 
   - DLNA 真机矩阵：库存 TV 的 protocolInfo 与实际 SetAVTransportURI→Play 时序（P-M07-1）
   - WFD 真机序列与 IE：隔离 Linux 机跑 sink 抓 M0–M16 与 IE 播发（P-M05-2）；Windows MiracastReceiver headless 边界（P-M05-1）
   - WFD 真机 codec 矩阵：Android/Windows 发送端 → 本节点（P-M05-3）
+  - Cast 真机认证强制点：库存 Chromecast/Google TV 对第三方 sender 的接受条件（P-M08-1）
+  - Cast 发现 TXT 字段矩阵（P-M08-3）与真实 mDNS 记录对照
 
 汇总：全部场景断言通过（evidence_level=simulated，非真机）
