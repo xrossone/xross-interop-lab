@@ -3,7 +3,7 @@
   "interface_version": "interop.api/0.1",
   "evidence_level": "simulated",
   "wire": "self-authored-fixture",
-  "generated_unix_ms": 1789445264886,
+  "generated_unix_ms": 1789445887142,
   "ok": true,
   "discovery": {
     "evidence_level": "simulated",
@@ -375,7 +375,7 @@
       "format_changes": 1,
       "codec": "h264",
       "dimensions": "1920x1080",
-      "path": "/var/folders/n6/tx2574_56h33v09wbc2hk_nm0000gn/T/xinterop-demo-79436.bin",
+      "path": "/var/folders/n6/tx2574_56h33v09wbc2hk_nm0000gn/T/xinterop-demo-63257.bin",
       "file_size_bytes": 2055
     },
     "audio": {
@@ -464,7 +464,7 @@
       "key_schedule": "HKDF-SHA256",
       "next_secret_bytes": 32,
       "next_secrets_match": true,
-      "pin": "2858",
+      "pin": "2210",
       "pin_matches": true,
       "server_init_bytes": 116,
       "transcript_bytes": 252
@@ -520,6 +520,29 @@
         "outcome": "InvalidFrame"
       }
     ],
+    "transport": {
+      "payload": {
+        "chunk_bytes": 16384,
+        "chunks": 3,
+        "foreign_payload_id_rejected": true
+      },
+      "published": {
+        "accepted": true,
+        "bytes": 49152,
+        "expected_sha256": "664d1e34fe80e8713fefa2b9c30df7d7877bbffd850411ffda14f54bd1ce847c",
+        "hash_matches_content": true,
+        "published_count": 1,
+        "relative_path": "demo-transfer.bin",
+        "sha256": "664d1e34fe80e8713fefa2b9c30df7d7877bbffd850411ffda14f54bd1ce847c",
+        "status": "accept"
+      },
+      "secure_message": {
+        "rejected_frame_divergence": "被拒的完整性失败会使双方序号发散：上线实现必须断开连接（不静默重同步）",
+        "roundtrip": true,
+        "sequence": "严格 +1（重放/跳号拒绝）",
+        "tamper_rejected": true
+      }
+    },
     "payload_gate": {
       "after_confirmation": "open",
       "before_confirmation": "confirmation-required",
@@ -536,7 +559,7 @@
     "blocked": [
       "LAN 发现（mDNS `_FC9F5ED42C8A._tcp.`/BLE 触发）：P-F02-1 需用户抓包 → 不实现",
       "QR/可见性隐藏实例（AES-GCM 名称加密、TLV）：P-F02-1/3 未关闭 → 不实现",
-      "传输加密 SecureMessage(AES-256-CBC + HMAC-SHA256) 与 payload/introduction：plans T21",
+      "keep-alive（每 10s 心跳）与 paired-key 帧未实现：真机联调时才需要（F-23/F-22）",
       "4 位确认码与 stock Android 的一致性：需真机比对（当前是 R15 实现的兼容启发式）",
       "F-12 cipher 选择规则冲突（规范概览 vs 实现）：以实现侧为准，待真机裁决"
     ]

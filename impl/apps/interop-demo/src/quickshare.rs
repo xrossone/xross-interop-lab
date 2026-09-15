@@ -10,6 +10,9 @@ use proto_quickshare::handshake::{
     ClientConfig, DiscoveryProvenance, HandshakeConfig, Ukey2Client, Ukey2Server,
     KEY_SCHEDULE_HKDF_SHA256,
 };
+use proto_quickshare::payload::PayloadTransferFrame;
+use proto_quickshare::receive::{FileOffer, ReceiveDecision, ReceiveSession};
+use proto_quickshare::secure_message::{ChannelRole, D2DKeySchedule, SecureMessageChannel};
 use proto_quickshare::session::{Event, GateRefusal, QuickShareSession};
 use proto_quickshare::wire::{self, Ukey2MessageType};
 
@@ -265,6 +268,9 @@ pub fn quickshare_scenario() -> (QuickShareReport, bool) {
         }
     };
 
+    // ---- 传输链路（T21）：SecureMessage 加解密 + payload 流式落盘 ----
+    let transport = run_transport_chain(&mut ok);
+
     let report = QuickShareReport {
         evidence_level: "simulated",
         wire: "self-authored-fixture",
@@ -295,6 +301,7 @@ pub fn quickshare_scenario() -> (QuickShareReport, bool) {
             "consistent": fragmentation_consistent,
         }),
         negatives,
+        transport,
         payload_gate: serde_json::json!({
             "before_confirmation": gate_before,
             "wrong_code": wrong_code,
@@ -311,7 +318,7 @@ pub fn quickshare_scenario() -> (QuickShareReport, bool) {
         blocked: vec![
             "LAN 发现（mDNS `_FC9F5ED42C8A._tcp.`/BLE 触发）：P-F02-1 需用户抓包 → 不实现".to_string(),
             "QR/可见性隐藏实例（AES-GCM 名称加密、TLV）：P-F02-1/3 未关闭 → 不实现".to_string(),
-            "传输加密 SecureMessage(AES-256-CBC + HMAC-SHA256) 与 payload/introduction：plans T21".to_string(),
+            "keep-alive（每 10s 心跳）与 paired-key 帧未实现：真机联调时才需要（F-23/F-22）".to_string(),
             "4 位确认码与 stock Android 的一致性：需真机比对（当前是 R15 实现的兼容启发式）".to_string(),
             "F-12 cipher 选择规则冲突（规范概览 vs 实现）：以实现侧为准，待真机裁决".to_string(),
         ],
@@ -346,8 +353,198 @@ fn failed_report() -> QuickShareReport {
         handshake: serde_json::Value::Null,
         fragmentation: serde_json::Value::Null,
         negatives: vec![],
+        transport: serde_json::Value::Null,
         payload_gate: serde_json::Value::Null,
         conflict: serde_json::Value::Null,
         blocked: vec!["Quick Share 场景提前失败（熵源或状态机异常）".to_string()],
     }
+}
+
+/// 跑一遍"握手 → D2D 密钥 → SecureMessage → payload 分块 → 接收会话落盘"的完整链路。
+///
+/// 全在本进程内：客户端用真实 SecureMessage 把自己造的 48 KiB 文件分 3 块发出，
+/// 服务端解密后交给 `ReceiveSession` 流式落盘并原子发布；同时报告篡改拒绝与绑定的负向结果。
+fn run_transport_chain(ok: &mut bool) -> serde_json::Value {
+    // 1) 真实握手（固定材料，便于复现；生产路径用系统熵）
+    let mut cli = match Ukey2Client::with_fixed_entropy(
+        ClientConfig::nearby_default(NEXT_PROTOCOL),
+        [0x21u8; 32],
+        &[0x51u8; 32],
+    ) {
+        Ok(c) => c,
+        Err(_) => return serde_json::Value::Null,
+    };
+    let mut srv = match Ukey2Server::with_fixed_entropy(
+        HandshakeConfig::nearby_default(),
+        [0x22u8; 32],
+        &[0x52u8; 32],
+    ) {
+        Ok(s) => s,
+        Err(_) => return serde_json::Value::Null,
+    };
+    let Ok(init) = cli.start() else {
+        return serde_json::Value::Null;
+    };
+    let Ok(sinit) = srv.handle_client_init(&init, 0) else {
+        return serde_json::Value::Null;
+    };
+    let Ok((finish, cli_keys)) = cli.handle_server_init(&sinit) else {
+        return serde_json::Value::Null;
+    };
+    if srv.handle_client_finish(&finish, 1).is_err() {
+        *ok = false;
+    }
+    let Some(srv_keys) = srv.session_keys() else {
+        return serde_json::Value::Null;
+    };
+
+    let (Ok(cli_sched), Ok(srv_sched)) = (
+        D2DKeySchedule::derive(cli_keys.next_protocol_secret()),
+        D2DKeySchedule::derive(srv_keys.next_protocol_secret()),
+    ) else {
+        *ok = false;
+        return serde_json::Value::Null;
+    };
+    // 篡改用例用**独立的通道对**：被拒帧不会推进接收方序号，若与主通道混用，
+    // 之后的所有帧都会因序号不符被拒（真实协议里这意味着连接必须断开，而不是跳过）。
+    let mut tamper_sender = SecureMessageChannel::new(cli_sched.clone(), ChannelRole::Client);
+    let mut tamper_receiver = SecureMessageChannel::new(srv_sched.clone(), ChannelRole::Server);
+    let mut sender = SecureMessageChannel::new(cli_sched, ChannelRole::Client);
+    let mut receiver = SecureMessageChannel::new(srv_sched, ChannelRole::Server);
+
+    // 2) SecureMessage 往返 + 篡改拒绝
+    let sealed_ok = match sender.seal(b"introduction") {
+        Ok(f) => receiver.open(&f).is_ok(),
+        Err(_) => false,
+    };
+    let tamper_rejected = match tamper_sender.seal(b"tamper-me") {
+        Ok(f) => {
+            let mut bad = f.clone();
+            let last = bad.len() - 1;
+            bad[last] ^= 0x01;
+            tamper_receiver.open(&bad).is_err()
+        }
+        Err(_) => false,
+    };
+    let divergence_note = "被拒的完整性失败会使双方序号发散：上线实现必须断开连接（不静默重同步）";
+    if !(sealed_ok && tamper_rejected) {
+        *ok = false;
+    }
+
+    // 3) payload 分块 → 接收会话落盘
+    let root = std::env::temp_dir().join(format!("xinterop-demo-qs-{}", std::process::id()));
+    let _ = std::fs::remove_dir_all(&root);
+    let content: Vec<u8> = (0..48 * 1024).map(|i| (i % 251) as u8).collect();
+    let chunk = 16 * 1024usize;
+    let published;
+    let binding_rejected;
+    match ReceiveSession::open(&root, 1 << 20) {
+        Ok(mut session) => {
+            let offer = FileOffer::new("demo-transfer.bin", content.len() as u64, None)
+                .with_payload_id(7)
+                .with_mime_hint(Some("application/octet-stream".to_string()));
+            let status = session
+                .on_introduction(&[offer], ReceiveDecision::Accept)
+                .map(|s| s.as_wire().to_string())
+                .unwrap_or_else(|_| "error".to_string());
+            let accepted = status == "accept";
+            let entry_id = session
+                .entries()
+                .first()
+                .map(|e| e.entry_id.clone())
+                .unwrap_or_default();
+
+            // 每个 chunk 都经真实 SecureMessage 发送/接收，再交给 payload 组装器
+            for (i, part) in content.chunks(chunk).enumerate() {
+                let offset = (i * chunk) as u64;
+                let last = offset + part.len() as u64 == content.len() as u64;
+                let frame = PayloadTransferFrame::data(7, content.len() as u64, offset, last, part.to_vec());
+                let bytes = match proto_quickshare::payload::encode_payload_transfer_frame(&frame) {
+                    Ok(b) => b,
+                    Err(_) => {
+                        *ok = false;
+                        break;
+                    }
+                };
+                let sealed = match sender.seal(&bytes) {
+                    Ok(s) => s,
+                    Err(_) => {
+                        *ok = false;
+                        break;
+                    }
+                };
+                let plain = match receiver.open(&sealed) {
+                    Ok(p) => p,
+                    Err(_) => {
+                        *ok = false;
+                        break;
+                    }
+                };
+                match proto_quickshare::payload::decode_payload_transfer_frame(&plain)
+                    .and_then(|f| session.on_payload_frame(&f))
+                {
+                    Ok(()) => {}
+                    Err(_) => {
+                        *ok = false;
+                        break;
+                    }
+                }
+            }
+
+            // 混入另一个 payload id：必须被拒（T21-01）
+            let foreign = PayloadTransferFrame::data(99, 4, 0, true, vec![0u8; 4]);
+            binding_rejected = session.on_payload_frame(&foreign).is_err();
+
+            published = match session.finish_entry(&entry_id) {
+                Ok(view) => serde_json::json!({
+                    "status": status,
+                    "accepted": accepted,
+                    "relative_path": view.relative_path,
+                    "bytes": view.bytes,
+                    "sha256": view.sha256_hex,
+                    "expected_sha256": hex_sha256(&content),
+                    "hash_matches_content": view.sha256_hex == hex_sha256(&content),
+                    "published_count": session.published_count(),
+                }),
+                Err(e) => {
+                    *ok = false;
+                    serde_json::json!({
+                        "status": status,
+                        "accepted": accepted,
+                        "error_code": format!("{:?}", e.code),
+                        "error": e.message,
+                        "published_count": session.published_count(),
+                    })
+                }
+            };
+            if !binding_rejected || !accepted {
+                *ok = false;
+            }
+        }
+        Err(_) => {
+            *ok = false;
+            return serde_json::Value::Null;
+        }
+    }
+    let _ = std::fs::remove_dir_all(&root);
+
+    serde_json::json!({
+        "secure_message": {
+            "roundtrip": sealed_ok,
+            "tamper_rejected": tamper_rejected,
+            "sequence": "严格 +1（重放/跳号拒绝）",
+            "rejected_frame_divergence": divergence_note,
+        },
+        "payload": {
+            "chunks": content.len().div_ceil(chunk),
+            "chunk_bytes": chunk,
+            "foreign_payload_id_rejected": binding_rejected,
+        },
+        "published": published,
+    })
+}
+
+/// 与 `interop-file` 相同的 SHA-256 十六进制（只用于展示对照）。
+fn hex_sha256(bytes: &[u8]) -> String {
+    interop_file::integrity::sha256_hex(bytes)
 }

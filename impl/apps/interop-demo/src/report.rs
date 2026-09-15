@@ -38,6 +38,7 @@ pub struct QuickShareReport {
     pub fragmentation: serde_json::Value,
     #[serde(serialize_with = "serialize_pairs")]
     pub negatives: Vec<(String, String)>,
+    pub transport: serde_json::Value,
     pub payload_gate: serde_json::Value,
     pub conflict: serde_json::Value,
     pub blocked: Vec<String>,

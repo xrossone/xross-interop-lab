@@ -255,6 +255,7 @@ name = "interop-demo"
 version = "0.1.0"
 dependencies = [
  "interop-contract",
+ "interop-file",
  "interop-ipc",
  "interop-media",
  "interop-platform",

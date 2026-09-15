@@ -301,6 +301,26 @@ pub fn render_human(r: &DemoReport, section: Option<&str>) -> String {
         for case in &q.negatives {
             out.push_str(&format!("  - {:<34} {}\n", case.0, case.1));
         }
+        if !q.transport.is_null() {
+            out.push_str(&format!(
+                "传输链路（T21）   : SecureMessage 往返={} 篡改拒绝={}（序号严格 +1）\n",
+                q.transport["secure_message"]["roundtrip"],
+                q.transport["secure_message"]["tamper_rejected"]
+            ));
+            let pubv = &q.transport["published"];
+            out.push_str(&format!(
+                "payload 落盘      : {} 块 × {} B → published={} 字节={} hash一致={}\n",
+                q.transport["payload"]["chunks"],
+                q.transport["payload"]["chunk_bytes"],
+                pubv["relative_path"],
+                pubv["bytes"],
+                pubv["hash_matches_content"]
+            ));
+            out.push_str(&format!(
+                "payloadID 绑定    : 混入外来 id 被拒={}\n",
+                q.transport["payload"]["foreign_payload_id_rejected"]
+            ));
+        }
         out.push_str(&format!(
             "payload gate      : 未确认={} 错误码={} 确认后={}\n",
             q.payload_gate["before_confirmation"],

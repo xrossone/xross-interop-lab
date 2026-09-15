@@ -17,6 +17,7 @@ path = "src/main.rs"
 
 [dependencies]
 interop-contract = { path = "../../crates/interop-contract" }
+interop-file = { path = "../../crates/interop-file" }
 interop-ipc = { path = "../../crates/interop-ipc" }
 interop-media = { path = "../../crates/interop-media" }
 interop-platform = { path = "../../crates/interop-platform" }

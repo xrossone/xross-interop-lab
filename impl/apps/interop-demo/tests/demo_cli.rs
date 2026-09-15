@@ -220,6 +220,13 @@ fn d08_quickshare_handshake_and_gate() {
     assert_eq!(by_case("next_protocol").as_deref(), Some("BadNextProtocol"));
     assert_eq!(by_case("帧长度 0").as_deref(), Some("InvalidFrame"));
     assert_eq!(by_case("帧长度超过").as_deref(), Some("ResourceLimit"));
+    let t = &q["transport"];
+    assert_eq!(t["secure_message"]["roundtrip"], true);
+    assert_eq!(t["secure_message"]["tamper_rejected"], true);
+    assert_eq!(t["payload"]["foreign_payload_id_rejected"], true, "T21-01 绑定检查");
+    assert_eq!(t["published"]["status"], "accept");
+    assert_eq!(t["published"]["hash_matches_content"], true, "落盘 hash 必须等于源内容 hash");
+    assert_eq!(t["published"]["published_count"], 1);
     assert_eq!(q["conflict"]["adopted"], "HKDF-SHA256");
     assert!(!q["blocked"].as_array().expect("blocked").is_empty());
 }

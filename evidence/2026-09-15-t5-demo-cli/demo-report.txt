@@ -56,7 +56,7 @@ TEARDOWN 后       : stream=false reserved_ports=0
 喂入帧数          : 6
 null  sink        : frames=6 bytes=2071 pts=[Some(0)..Some(166665)] codec=h264 dims=1920x1080 changes=1
 file  sink        : frames=6 bytes=2055 pts=[Some(0)..Some(166665)] codec=h264 dims=1920x1080 changes=1
-      落盘 /var/folders/n6/tx2574_56h33v09wbc2hk_nm0000gn/T/xinterop-demo-79438.bin（2055 字节）
+      落盘 /var/folders/n6/tx2574_56h33v09wbc2hk_nm0000gn/T/xinterop-demo-63259.bin（2055 字节）
 音频              : resample 44100Hz→48000Hz ratio=147/160 frames 441→480（10ms→10ms, speed_ratio=1.000）
 native 窗口       : unavailable（platform-unavailable）
 20000x12000       : resource-limit（area=240000000 > max_pixels=67108864）
@@ -73,7 +73,7 @@ native 窗口       : unavailable（platform-unavailable）
 ## Quick Share / UKEY2（T19/T20）
 framing           : 4 字节大端长度前缀，本仓上限 5242880 B（非协议常量，F-05）
 握手              : cipher="P256_SHA512(100)" key_schedule="HKDF-SHA256" established=true
-双方一致          : auth=true next_secret=true pin=true（pin="7994"）
+双方一致          : auth=true next_secret=true pin=true（pin="3589"）
 分片等价          : true（[1048576,1,7] 种切分）
   - commitment 不符（ClientFinish 被改）     BadMessageData
   - random 31 字节                       BadRandom
@@ -84,11 +84,14 @@ framing           : 4 字节大端长度前缀，本仓上限 5242880 B（非协
   - 外层类型不符                             BadMessageType
   - 帧长度超过本仓上限                          ResourceLimit
   - 帧长度 0                              InvalidFrame
+传输链路（T21）   : SecureMessage 往返=true 篡改拒绝=true（序号严格 +1）
+payload 落盘      : 3 块 × 16384 B → published="demo-transfer.bin" 字节=49152 hash一致=true
+payloadID 绑定    : 混入外来 id 被拒=true
 payload gate      : 未确认="confirmation-required" 错误码="PairingFailed" 确认后="open"
 F-15 冲突         : 采用 "HKDF-SHA256"；"与 stock Android 的成功握手 + PIN 比对（P-F02-2 关闭条件）" 待真机裁决
   · blocked: LAN 发现（mDNS `_FC9F5ED42C8A._tcp.`/BLE 触发）：P-F02-1 需用户抓包 → 不实现
   · blocked: QR/可见性隐藏实例（AES-GCM 名称加密、TLV）：P-F02-1/3 未关闭 → 不实现
-  · blocked: 传输加密 SecureMessage(AES-256-CBC + HMAC-SHA256) 与 payload/introduction：plans T21
+  · blocked: keep-alive（每 10s 心跳）与 paired-key 帧未实现：真机联调时才需要（F-23/F-22）
   · blocked: 4 位确认码与 stock Android 的一致性：需真机比对（当前是 R15 实现的兼容启发式）
   · blocked: F-12 cipher 选择规则冲突（规范概览 vs 实现）：以实现侧为准，待真机裁决
 
