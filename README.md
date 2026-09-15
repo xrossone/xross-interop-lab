@@ -128,15 +128,16 @@ tools/                          # 仓库检查脚本与测试（python3 -m unitt
   `crates/proto-quickshare` 实现 TCP 4 字节大端 framing、UKEY2 三消息状态机（真实 P-256 ECDH /
   SHA-512 commitment / HKDF-SHA256）、Alert 码表、重放拒绝、payload gate（未核对 4 位确认码不放行）。
   **发现/QR/传输加密/payload 层未实现**（P-F02-1/3 未关闭），gate 测试机器保证实现里没有发现代码。
-- **headless demo**：`apps/interop-demo`（`xinterop-demo [run|discovery|session|sink|media|qshare] [--json]`）
+- **headless demo**：`apps/interop-demo`（`xinterop-demo [run|discovery|session|sink|media|qshare|mirror|dlna] [--json]`）
   把上述各层跑成真实状态输出：注册表不合并 identity、SETUP 503/401 与 131072 B 分配时机、sink 统计与
   显式 resample、XMD1 往返与负向、UKEY2 握手与分片等价；输出恒带 `evidence_level=simulated` + blocked +
   待用户手动清单（见 [evidence/2026-09-15-t5-demo-cli](evidence/2026-09-15-t5-demo-cli/demo-report.txt)）。
-- **验证**：`cargo test --manifest-path impl/Cargo.toml --workspace` **113 tests 全绿**；clippy 0 warnings；
-  `python3 -m unittest discover -s tools` **39 tests OK**。每 task 的 run manifest 见
+- **验证**（阶段 3 收尾时）：`cargo test --manifest-path impl/Cargo.toml --workspace` **113 tests 全绿**；
+  clippy 0 warnings；`python3 -m unittest discover -s tools` **39 tests OK**（阶段 4 首批后为
+  **163 tests / lab 46 tests**，见下）。每 task 的 run manifest 见
   [evidence/index.json](evidence/index.json)。
 
-**阶段 4 首批（2026-09-15 稍后追加，两项已完成）**
+**阶段 4 首批（2026-09-15 稍后追加，三项已完成）**
 
 - **T21 Quick Share 传输闭环（headless 部分）**：`crates/proto-quickshare` 新增
   `secure_message`（D2D 密钥链 + SecureMessage AES-256-CBC/HMAC-SHA256 + 严格 +1 序号，跳号/重放即
@@ -153,10 +154,21 @@ tools/                          # 仓库检查脚本与测试（python3 -m unitt
   变化的接口缺口。证据：[evidence/2026-09-15-t33-airplay-mirror](evidence/2026-09-15-t33-airplay-mirror/run-manifest.json)；
   demo 新增 `mirror` 段（`xinterop-demo mirror`）。
 
+- **T41 DLNA/UPnP AV（headless 切片）**：`crates/proto-upnp` 新增 `xml`（加固子集：无 DTD/ENTITY/CDATA
+  → 无 XXE；深度/体积/元素/属性预算是**本仓策略值**而非协议常量）、`ssdp`（严格校验 MAN/MX/ST/NTS，
+  USN 去重 + max-age）、`soap`（动作与参数白名单，`SOAPACTION` 绑定，只认 InstanceID=0）、
+  `dmc`（描述抓取策略：仅 http、拒 loopback/链路本地/云元数据/带 userinfo → `permission-required`；
+  注册表按对方声明的 `protocolInfo` 判 push 能力；URL lease 在 Stop/取消/超时时可撤销）、
+  `dms`（受限根 + 显式注册子项才算授权；701/402 语义；分页上限）。
+  **不做真电视矩阵、不做 GENA 事件投递、不做媒体字节传输，也不提供屏幕镜像替代**（P-M07-1 未关闭）。
+  证据：[evidence/2026-09-15-t41-dlna-control](evidence/2026-09-15-t41-dlna-control/run-manifest.json)；
+  demo 新增 `dlna` 段（`xinterop-demo dlna`，见 D-10）。
+
 **未开始 / 待批准**：T30（UxPlay provider 闭环，需 scope S1/S2）、T33/T34（AirPlay 音视频接收真机）、
 T22（Quick Share 发送闭环，需 QR/可发现路径）、keep-alive 与 paired-key 帧、Quick Share 发现源
-（待 P-F02-1/2/3 关闭与 S3 抓包批准）、xross-dev 侧 bridge 窗口（S4）、provider 放行（S5）；
-native 窗口 sink 与 Tauri demo 壳留桌面会话。
+（待 P-F02-1/2/3 关闭与 S3 抓包批准）、T42（DLNA renderer 侧真实媒体拉取，需真电视矩阵 P-M07-1）、
+T37（Wi-Fi Display/Miracast 纯状态机与媒体协商，未开始）、xross-dev 侧 bridge 窗口（S4）、
+provider 放行（S5）；native 窗口 sink 与 Tauri demo 壳留桌面会话。
 阶段 3 的 goal prompt 见 [docs/goal-phase-3.md](docs/goal-phase-3.md)，执行结果见
 [evidence/2026-09-15-phase-3-final-report.md](evidence/2026-09-15-phase-3-final-report.md)；阶段 2 见
 [evidence/2026-09-15-phase-2-final-report.md](evidence/2026-09-15-phase-2-final-report.md)。

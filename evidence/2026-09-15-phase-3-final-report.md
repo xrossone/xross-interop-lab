@@ -152,3 +152,30 @@ Quick Share ↔ Android）、抓包、可见性矩阵、native 窗口、Tauri GU
 - **边界**：本 task **不含 decoder**，encoded AU/PCM 只被路由到 null sink 统计 —— 不声称"能看到画面"。
   T33-02 是**合成时间轴**（非 30 分钟墙钟），内存结论以缓冲高水位为代理；真机镜像、RSS 趋势与画面呈现
   仍在 §5 的待用户手动清单。
+
+
+---
+
+## 补充 3（2026-09-15）：T41 DLNA/UPnP AV headless 切片已落地
+
+**commit** `6cbcc12`（gate + `proto-upnp` 实现 + 证据）与 `c09a57f`（demo `dlna` 段 + D-10 + 证据刷新）。
+
+- **先关门禁**：重写 `specs-reviewed/m07-dlna-upnp-av.md` 为 F-01..F-14 字段级事实表（每行带来源），
+  新增 `provenance/m07-inputs.json`（R46 pupnp BSD-3、R49 rygel LGPL-2.1 均按 facts-only 登记；
+  R47/R48 排除）与 `evidence/dlna/corpus-plan.json`（dl-001..dl-012），纪律测试
+  `tools/test_dlna_gate.py`（7 例：逐行来源、blocked 行不得进实现、实现里不得出现品牌名或
+  屏幕镜像宣称；对"不提供镜像替代"这类**如实否认**不误报）。F-13/F-14（真实电视矩阵）标 blocked（P-M07-1）。
+- **实现**：`crates/proto-upnp` 五个模块——`xml`（加固子集：拒绝 DTD/ENTITY/CDATA，深度/体积/元素/
+  属性预算**明写为本仓策略值**，不冒充协议常量）、`ssdp`（M-SEARCH/NOTIFY 校验、USN 去重、max-age）、
+  `soap`（动作与参数白名单、`SOAPACTION` 绑定、InstanceID 只认 0、metadata 预算、Fault 解析）、
+  `dmc`（抓取策略：仅 http，拒 loopback/链路本地/云元数据/userinfo/fragment → `permission-required`；
+  注册表按对方**声明的** `protocolInfo` 判 push 能力，未声明 codec/协议一律拒绝；URL lease 可撤销 + 过期清扫）、
+  `dms`（受限根 + 显式注册子项授权、701/720/402、分页上限 256）。
+- **明确不做**：真实电视矩阵与 GENA 事件投递、媒体字节传输、任何屏幕镜像能力或替代——capability
+  分声明里"屏幕镜像"恒为 not-implemented，demo 的 `blocked` 清单也逐条列出。
+- **验收**：T41-01（抓取策略 + 注册表拒绝）、T41-02（codec/protocolInfo 能力判定，不因对方是投屏设备
+  就假装能收屏）、T41-03（DMS 授权与 701/402）、T41-04（lease 撤销/清扫/取消）全部有可运行测试，
+  demo D-10 端到端复述同一批结论。
+- **测试面**：impl 141 → **163**（proto-upnp 22 + demo 10）；clippy 0；lab 39 → **46**（dlna gate 7）。
+- **边界**：无网络 I/O（SSDP/HTTP 报文只在内存里编解码）、无真机、无凭据；真电视与 renderer 侧
+  媒体拉取（T42）仍需 P-M07-1 关闭。
