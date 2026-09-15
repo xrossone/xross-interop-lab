@@ -177,6 +177,16 @@ tools/                          # 仓库检查脚本与测试（python3 -m unitt
   demo 新增 `wfd` 段（`xinterop-demo wfd`，见 D-11）。测试逼出四处实现缺陷（M3 查询正文是**裸参数名**、
   M13 正文是裸 `wfd_idr_request`、keep-alive 基准、M13/M16 应用控制 URI），详见 run manifest 的 red→green 记录。
 
+- **T36 AirPlay 音频路径控制请求（headless 切片）**：`specs-reviewed/m01` 增 T36 增量（实测来源）——
+  `/audioMode`（`POST`，binary plist 体含 `mode`，实测取值 `default`）与 `/feedback`（实测每 2 秒一次，
+  体含 `elapsed_ms` 且单调增）。实现 `crates/proto-airplay/src/audio_control.rs`：**只做形状校验与观测记账**——
+  方法/路径/Content-Type/键名逐项校验，`/feedback` 记录到达间隔、单调性与对实测 2 s 的偏离；
+  `mode` **只声称实测到的 `default`**。**不实现心跳语义、不据 `elapsed_ms` 推任何时钟**：实测记录原文写的是
+  「疑为请求处理耗时字段被复用的痕迹，**待考**」，语义钉死之前本仓只回答"观测到了什么"
+  （lab gate 机器检查实现里不出现 `clock`/`playback_position` 之类推断）；plist 体按**不透明**处理
+  （允许的来源清单里没有 bplist 规格）。demo `airplay` 段新增子块（D-18）。
+  证据：[evidence/2026-09-15-t36-airplay-audio-control](evidence/2026-09-15-t36-airplay-audio-control/run-manifest.json)。
+
 - **T42+ DLNA GENA 通知构造与调度（headless 切片）**：`specs-reviewed/m07` 增 F-23..F-29（R46 pupnp 设备侧 +
   R49 rygel 服务侧行级来源）——NOTIFY 字节（`NT: upnp:event`/`NTS: upnp:propchange`/`SID`/`SEQ`，
   且 **`Content-Length` 是正文字节 + 2**，因为正文以 `\n\n` 结尾）、propertyset 正文（`<e:property>` 每变量一条，

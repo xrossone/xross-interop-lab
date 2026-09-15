@@ -8,6 +8,8 @@
 //! - [`mirror`]/[`audio`]/[`timing`]（T33）：把协商出的格式与 encoded/PCM 帧路由到
 //!   `interop-media` 的 sink，含关键帧恢复、显式重采样与按连接的 clock generation。
 //!   **不含 decoder**：能力广告因此仍为空（能路由 ≠ 能显示）。
+//! - [`audio_control`]（T36）：`/audioMode` 与 `/feedback` 的**形状校验与观测记账**——
+//!   `elapsed_ms` 语义待考，故**不实现**心跳语义、不据此推时钟。
 //! - [`audio_profile`]（T34）：AP1 的 `ct`/`spf`/采样率与 AP2 的**两套编号**（打包 `audioFormat`
 //!   与 RTP SSRC 魔数）解析；未知值一律拒绝。
 //! - [`pairstore`]（T34）：配对**登记层**（登记/查询/遗忘 + 身份种子保管 + 端点策略）。
@@ -20,6 +22,7 @@
 #![allow(clippy::result_large_err)]
 
 pub mod audio;
+pub mod audio_control;
 pub mod audio_profile;
 pub mod capability;
 pub mod discovery;

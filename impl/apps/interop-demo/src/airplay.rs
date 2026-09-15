@@ -10,6 +10,10 @@ use proto_airplay::audio_profile::{
     SsrcTracker, StreamResponse, StreamRouting, StreamType, AAC_ELD_NO_DATA_MARKER,
     AP1_AUDIO_SAMPLE_RATE_HZ,
 };
+use proto_airplay::audio_control::{
+    AudioControlRequest, FeedbackObservation, BINARY_PLIST_CONTENT_TYPE,
+    OBSERVED_FEEDBACK_INTERVAL_MS,
+};
 use proto_airplay::pairstore::{
     EndpointPolicy, PairStore, PairingEndpoint, PairingVerdict, MAX_PAIRED_DEVICES,
 };
@@ -253,6 +257,58 @@ pub fn airplay_scenario() -> (AirplayReport, bool) {
         ok = false;
     }
 
+    // ---- 音频路径控制请求（T36）：形状校验 + 观测记账（不实现心跳语义） ----
+    let audio_mode = AudioControlRequest::AudioMode.check_shape(
+        "POST",
+        "/audioMode",
+        Some(BINARY_PLIST_CONTENT_TYPE),
+        &["mode"],
+    );
+    let audio_mode_ok = audio_mode
+        .as_ref()
+        .map(|shape| shape.mode_is_observed("default") && !shape.mode_is_observed("lowLatency"))
+        .unwrap_or(false);
+    let mut feedback = FeedbackObservation::new();
+    // 按实测节奏喂三次到达（值单调增），再喂一次值回退与明显偏离的间隔。
+    for (i, (value, arrival)) in [(1_000u64, 10_000u64), (1_500, 12_000), (2_100, 14_100)]
+        .into_iter()
+        .enumerate()
+    {
+        feedback.observe(value, arrival);
+        let _ = i;
+    }
+    let feedback_intervals_before = feedback.intervals_ms().to_vec();
+    feedback.observe(2_050, 17_100);
+    let audio_shape_rejects: Vec<serde_json::Value> = [
+        ("GET /audioMode", "GET", "/audioMode", Some(BINARY_PLIST_CONTENT_TYPE), vec!["mode"]),
+        ("错误 Content-Type", "POST", "/audioMode", Some("application/json"), vec!["mode"]),
+        ("缺 mode 键", "POST", "/audioMode", Some(BINARY_PLIST_CONTENT_TYPE), vec![]),
+        ("未登记的键", "POST", "/feedback", Some(BINARY_PLIST_CONTENT_TYPE), vec!["elapsed_ms", "x"]),
+    ]
+    .into_iter()
+    .map(|(label, method, path, ct, keys)| {
+        let request = AudioControlRequest::from_path(path).unwrap_or(AudioControlRequest::Feedback);
+        let outcome = request
+            .check_shape(method, path, ct, &keys)
+            .map(|_| "accepted(unexpected)".to_string())
+            .unwrap_or_else(|e| format!("{:?}", e.code));
+        json!({"case": label, "outcome": outcome})
+    })
+    .collect();
+    for case in &audio_shape_rejects {
+        if case["outcome"] == "accepted(unexpected)" {
+            ok = false;
+        }
+    }
+    if !(audio_mode_ok
+        && !feedback.monotonic()
+        && feedback.samples() == 4
+        && feedback.deviations_from_observed() == 1
+        && feedback.semantics_note().contains("待考"))
+    {
+        ok = false;
+    }
+
     let report = AirplayReport {
         evidence_level: "simulated",
         wire: "self-authored-fixture",
@@ -271,6 +327,19 @@ pub fn airplay_scenario() -> (AirplayReport, bool) {
             "ssrc_from_rtp_header": from_header.map(|s| s.as_u32()),
             "change_detection": first_change,
             "aac_eld_no_data": no_data,
+        }),
+        audio_control: json!({
+            "audio_mode_shape_ok": audio_mode_ok,
+            "observed_mode": AudioControlRequest::OBSERVED_MODE_DEFAULT,
+            "other_modes_claimed": false,
+            "feedback_samples": feedback.samples(),
+            "feedback_intervals_ms": feedback_intervals_before,
+            "feedback_observed_interval_ms": OBSERVED_FEEDBACK_INTERVAL_MS,
+            "feedback_monotonic": feedback.monotonic(),
+            "feedback_deviations": feedback.deviations_from_observed(),
+            "semantics_note": feedback.semantics_note(),
+            "implements_heartbeat_semantics": false,
+            "rejects": audio_shape_rejects,
         }),
         pair_store: json!({
             "registered": registered_before_removal,

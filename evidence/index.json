@@ -438,6 +438,14 @@
       "date": "2026-09-15",
       "path": "evidence/2026-09-15-t42p-dlna-gena-notify/run-manifest.json",
       "notes": "T42+ DLNA GENA 通知构造与调度（headless）：NOTIFY 字节（头集合、Content-Length=正文+2 的来源怪癖、**不发 XML 声明**）、propertyset 形状、LastChange 内嵌文档必须先整体转义（来源把转义责任交给值的一方）、SEQ 初始 0 后严格 +1、150 ms 合并窗口（来源取值、可配）；**回调连接仍不在本仓**（F-22 范围声明，字节交给调用方 transport；lab gate 机器检查模块内无网络客户端）（T42p-01..03）"
+    },
+    {
+      "id": "run-2026-09-15-t36-airplay-audio-control",
+      "kind": "run-manifest",
+      "level": "build-verified",
+      "date": "2026-09-15",
+      "path": "evidence/2026-09-15-t36-airplay-audio-control/run-manifest.json",
+      "notes": "T36 AirPlay 音频路径控制请求（headless）：/audioMode 与 /feedback 的**形状校验**（方法/路径/Content-Type 为 binary plist/键名）与**观测记账**（到达间隔、elapsed_ms 单调性、与实测 2 s 的偏离）；mode 只声称实测观测到的 default；**不实现心跳语义、不据 elapsed_ms 推时钟**（实测记录明确『待考』，lab gate 机器检查）；plist 体按不透明处理（bplist 规格未固化）（T36-01..03）"
     }
   ]
 }

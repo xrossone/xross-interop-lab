@@ -413,3 +413,25 @@ Quick Share ↔ Android）、抓包、可见性矩阵、native 窗口、Tauri GU
   P-M07-1 的真机矩阵。R46/R49 只做行级事实引用。
 - **测试面**：impl 241 → **256**（proto-upnp +14：模块 7 + 语料映射 7；demo D-17）；clippy 0；lab 89。
   自审时删掉了一条自己写下的**恒真断言**（`assert!(x == false || true)`）——这类断言等于噪声。
+
+
+---
+
+## 补充 12（2026-09-15）：T36 AirPlay 音频路径控制请求（headless 切片）已落地
+
+**commit** `0e0a502`（gate：T36 增量字段表 + 语料 + 纪律测试）。
+
+- **做的正是"实测观测到但一直没实现"的两条请求**：`POST /audioMode`（binary plist 体含 `mode`）与
+  `POST /feedback`（实测每 2 秒一次，体含 `elapsed_ms`）。本切片刻意**只做形状校验与观测记账**：
+  方法/路径/Content-Type/键名逐项校验；`/feedback` 记录到达间隔、单调性与对实测 2 s 的偏离（容差属本仓策略）。
+- **语义未固化是本切片的重点**：实测记录原文写的是「`elapsed_ms` 单调增——疑为请求处理耗时字段被复用的痕迹，
+  **待考**」。因此实现里**不把 `/feedback` 当心跳、不据 `elapsed_ms` 推任何时钟**，`semantics_note()` 固定
+  返回带「待考」的标注，lab gate 机器检查实现里不出现 `clock`/`playback_position`；demo 报告里
+  `implements_heartbeat_semantics=false`，能力表那一行也必须带「待考」。**这是"来源没说的东西不实现"的
+  又一例**：能跑通不等于知道它是什么。
+- `mode` 的取值**只声称实测观测到的 `default`**（`mode_is_observed("lowLatency")` 为 false）——没有来源说
+  其它取值被支持；plist 体按**不透明**处理（允许的来源清单里没有 bplist 字节级规格，T36 行已标「待固化」），
+  键名由调用方提取后传入，与 T34 的配对路径同一处置——不写一个"够用就好"的解析器。
+- **测试面**：impl 256 → **261**（proto-airplay +4、demo D-18）；clippy 0；lab 92。
+  自审记录：单测首次失败是**我测试数据写错**（断言 2.4 s 超出 ±500 ms 容差，实际没有），与 T34 那次
+  PCM 可解码性同类——错在数据、不在实现。

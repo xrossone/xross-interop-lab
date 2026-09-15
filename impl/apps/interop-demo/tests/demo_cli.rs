@@ -803,3 +803,45 @@ fn d17_dlna_gena_notify_construction() {
     assert!(text.contains("GENA 通知（T42+）"), "{text}");
     assert!(text.contains("不建立连接"), "{text}");
 }
+
+/// D-18：AirPlay 音频控制请求（T36）——只做形状与观测，**不实现** elapsed_ms 的心跳语义。
+#[test]
+fn d18_airplay_audio_control_shape_only() {
+    let (code, v) = run_json(&["airplay", "--json"]);
+    assert_eq!(code, 0);
+    let ac = &v["airplay"]["audio_control"];
+
+    // 形状：/audioMode 通过，且只声称实测到的取值 default。
+    assert_eq!(ac["audio_mode_shape_ok"], true);
+    assert_eq!(ac["observed_mode"], "default");
+    assert_eq!(ac["other_modes_claimed"], false, "没有来源支持其它 mode 取值");
+
+    // 观测：4 次到达、记录间隔、单调性（喂了一次回退所以为 false）、偏离次数。
+    assert_eq!(ac["feedback_samples"], 4);
+    assert_eq!(ac["feedback_observed_interval_ms"], 2000, "实测节奏（来源取值）");
+    let intervals = ac["feedback_intervals_ms"].as_array().expect("intervals");
+    assert_eq!(intervals.len(), 2, "首次到达没有间隔");
+    assert_eq!(ac["feedback_monotonic"], false, "值回退时单调性为假（只记录）");
+    assert_eq!(ac["feedback_deviations"], 1, "3.0 s 明显偏离实测的 2 s");
+
+    // 诚实性：语义未固化——实现不得声称心跳语义，标注必须带「待考」。
+    assert_eq!(
+        ac["implements_heartbeat_semantics"], false,
+        "elapsed_ms 语义待考：不得实现为心跳（T36）"
+    );
+    assert!(ac["semantics_note"].as_str().unwrap_or("").contains("待考"), "{ac:?}");
+
+    // 负向：四条形状错误全部被拒。
+    let rejects = ac["rejects"].as_array().expect("rejects");
+    assert_eq!(rejects.len(), 4);
+    for case in rejects {
+        assert_eq!(case["outcome"], "InvalidFrame", "负向未拒绝：{case}");
+    }
+
+    // 人类输出复述。
+    let out = Command::new(bin()).arg("airplay").output().expect("可执行");
+    assert_eq!(out.status.code(), Some(0));
+    let text = String::from_utf8_lossy(&out.stdout);
+    assert!(text.contains("音频控制（T36）"), "{text}");
+    assert!(text.contains("实现心跳语义=false"), "{text}");
+}

@@ -105,6 +105,8 @@ pub struct AirplayReport {
     pub ap1_profiles: serde_json::Value,
     pub ap2_profiles: serde_json::Value,
     pub pair_store: serde_json::Value,
+    /// `/audioMode` 与 `/feedback` 的形状与观测（T36）。
+    pub audio_control: serde_json::Value,
     pub endpoints: serde_json::Value,
     pub rejects: Vec<serde_json::Value>,
     pub blocked: Vec<String>,

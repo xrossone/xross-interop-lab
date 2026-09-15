@@ -1,0 +1,67 @@
+{
+  "schema_version": 1,
+  "run_id": "2026-09-15-t36-airplay-audio-control",
+  "task": "T36 · AirPlay 音频路径控制请求（/audioMode、/feedback）的形状校验与观测记账（headless）",
+  "kind": "manual",
+  "evidence_level": "build-verified",
+  "is_test_evidence": true,
+  "synthetic": false,
+  "base_commit": "0e0a502（T36 gate：T36 增量字段表 + 语料 + 纪律测试）",
+  "case_ids": [
+    "T36-01",
+    "T36-02",
+    "T36-03"
+  ],
+  "result": "pass",
+  "commands": [
+    {
+      "seq": 1,
+      "purpose": "gate：把两条实测观测登记为可复查字段行",
+      "command": "python3 -m unittest discover -s tools -t tools",
+      "exit_code": 0,
+      "result": "pass：lab 89 → 92（T36 新增 3 例）。gate 抓出我自己的两处来源标注不合格——策略行必须给出「待固化」这类可复查标记（m01 的检查只认 实测/UxPlay@/shairplay-rust@/待固化/decisions//计划 六种）"
+    },
+    {
+      "seq": 2,
+      "purpose": "green：audio_control 模块（形状 + 观测）与单测",
+      "command": "cargo test --manifest-path impl/Cargo.toml -p proto-airplay",
+      "exit_code": 0,
+      "result": "pass：proto-airplay 36 tests（新增 4 例）。首次运行有 1 例失败——**是我测试数据写错**：断言「2.4 s 间隔超出容差」，但容差 ±500 ms 下 2.4 s 仍在容差内；改成 3.0 s 后通过（与 T34 那次 PCM 可解码性同类：错在测试数据，不在实现）"
+    },
+    {
+      "seq": 3,
+      "purpose": "demo 接入：airplay 段新增 audio_control 子块 + D-18",
+      "command": "cargo test --manifest-path impl/Cargo.toml -p interop-demo --test demo_cli",
+      "exit_code": 0,
+      "result": "pass：18 tests。JSON 与人类输出给出：/audioMode 形状通过且只声称实测取值 default；/feedback 观测 4 次、记录间隔 [2000, 2100]、单调性在值回退后为假、偏离实测 2 s 共 1 次；`implements_heartbeat_semantics=false` 且带「待考」标注；四条形状负向全 InvalidFrame"
+    },
+    {
+      "seq": 4,
+      "purpose": "全量回归 + 静态检查 + lab 纪律",
+      "command": "cargo test --manifest-path impl/Cargo.toml --workspace; cargo clippy --manifest-path impl/Cargo.toml --workspace --all-targets; python3 -m unittest discover -s tools",
+      "exit_code": 0,
+      "result": "pass：impl 256 → **261** tests 全绿；clippy 0 warnings（修掉一处 bool 比较）；lab 92 tests OK"
+    }
+  ],
+  "acceptance_mapping": {
+    "T36-01": "`/audioMode` 形状（T36 行）：必须是 `POST /audioMode`，`Content-Type: application/x-apple-binary-plist`（与配对路径同类），请求体键恰好为 `mode` 且必须出现；`mode` 的取值**只声称实测观测到的 `default`**——`mode_is_observed(\"lowLatency\")` 返回 false，因为**没有来源**说其它取值被支持。负向：方法不是 POST、路径不匹配、Content-Type 不符或缺席、缺 `mode`、出现未登记键，五类一律 `invalid-frame`",
+    "T36-02": "`/feedback` 的**观测记账**（不解释语义）：记录样本数、到达间隔序列、`elapsed_ms` 单调性（值回退时置假但**不报错**）、与实测 2 s 之间的偏离次数（容差 ±500 ms 属**本仓策略**，只用于报告）；负值 `elapsed_ms` → `unsupported-feature`（字段表只观察到非负单调值）",
+    "T36-03": "**语义未固化的诚实处置**：`semantics_note()` 固定返回带「待考」的标注，实现里**不出现** `clock`/`playback_position` 之类的推断（lab gate 机器检查），demo 报告里 `implements_heartbeat_semantics=false`。依据是实测记录原文：elapsed_ms 单调增「疑为请求处理耗时字段被复用的痕迹，**待考**」——在真机对跑把语义钉死之前，本仓只回答『观测到了什么』"
+  },
+  "extra_coverage": {
+    "plist_boundary": "plist 请求体**按不透明处理**：允许的来源清单里没有 bplist 的字节级规格（T36 行已标「待固化」），键名由调用方提取后传入——与 T34 的配对路径同一处置，不写一个『够用就好』的解析器",
+    "capability_row": "能力表新增一行且只能声称「形状 + 观测」，并必须带「待考」——把『未固化的语义』挡在能力声明之外"
+  },
+  "artifacts": [
+    {"path": "impl/crates/proto-airplay/src/audio_control.rs", "note": "形状校验 + 观测记账（T36 主体）"},
+    {"path": "impl/crates/proto-airplay/src/lib.rs", "note": "注册模块与文档"},
+    {"path": "specs-reviewed/m01-airplay-legacy-mirror.md", "note": "T36 增量字段行 + 能力表行 + 音频小节措辞"},
+    {"path": "evidence/airplay-corpus/corpus-plan.json", "note": "fx-airplay-audiomode-shape / feedback-shape / feedback-observation"},
+    {"path": "tools/test_airplay_gate.py", "note": "92 例（T36 新增 3 例）"},
+    {"path": "impl/apps/interop-demo/src/airplay.rs", "note": "audio_control 子块"},
+    {"path": "impl/apps/interop-demo/tests/demo_cli.rs", "note": "D-18"}
+  ],
+  "credentials_redacted": true,
+  "license_route_approved": false,
+  "notes": "evidence_level=build-verified：全部本机自动化。**未与任何 Apple 设备交互**——本切片处理的正是实测观测到的两条请求形状，真机复核对跑（P-M01-2 无声问题）之后才可能把 elapsed_ms 的语义升级为已固化。没有引入 plist 编解码，也没有据该字段推断任何时钟"
+}

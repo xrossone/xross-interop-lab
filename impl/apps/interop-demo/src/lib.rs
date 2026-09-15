@@ -711,6 +711,24 @@ pub fn render_human(r: &DemoReport, section: Option<&str>) -> String {
         for row in a.endpoints["rows"].as_array().into_iter().flatten() {
             out.push_str(&format!("  {:<16} {}\n", text(&row["path"]), text(&row["policy"])));
         }
+        if !a.audio_control.is_null() {
+            let ac = &a.audio_control;
+            out.push_str(&format!(
+                "音频控制（T36）  : /audioMode 形状={} 实测取值={}（不声称其它取值）；/feedback 观测 {} 次、间隔={} ms（实测 {} ms）单调={} 偏离={}\n",
+                ac["audio_mode_shape_ok"],
+                text(&ac["observed_mode"]),
+                ac["feedback_samples"],
+                ac["feedback_intervals_ms"],
+                ac["feedback_observed_interval_ms"],
+                ac["feedback_monotonic"],
+                ac["feedback_deviations"]
+            ));
+            out.push_str(&format!(
+                "  语义            : 实现心跳语义={}；{}\n",
+                ac["implements_heartbeat_semantics"],
+                text(&ac["semantics_note"])
+            ));
+        }
         for case in &a.rejects {
             out.push_str(&format!(
                 "  - 负向 {:<28} {}\n",
