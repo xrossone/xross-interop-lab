@@ -8,6 +8,10 @@
 //! - [`mirror`]/[`audio`]/[`timing`]（T33）：把协商出的格式与 encoded/PCM 帧路由到
 //!   `interop-media` 的 sink，含关键帧恢复、显式重采样与按连接的 clock generation。
 //!   **不含 decoder**：能力广告因此仍为空（能路由 ≠ 能显示）。
+//! - [`audio_profile`]（T34）：AP1 的 `ct`/`spf`/采样率与 AP2 的**两套编号**（打包 `audioFormat`
+//!   与 RTP SSRC 魔数）解析；未知值一律拒绝。
+//! - [`pairstore`]（T34）：配对**登记层**（登记/查询/遗忘 + 身份种子保管 + 端点策略）。
+//!   **登记 ≠ 认证**：不实现 SRP/X25519/Ed25519，`/fp-setup` 永久 vendor-gated。
 //!
 //! 所有 message payload 只出自自制 fixture（字段见 `specs-reviewed/m01` 的字段级事实表）；
 //! 本 crate **不实现** FairPlay/设备认证材料的任何部分，也不含第三方代码。
@@ -16,10 +20,12 @@
 #![allow(clippy::result_large_err)]
 
 pub mod audio;
+pub mod audio_profile;
 pub mod capability;
 pub mod discovery;
 pub mod keying;
 pub mod mirror;
+pub mod pairstore;
 pub mod rtsp;
 pub mod session;
 pub mod timing;

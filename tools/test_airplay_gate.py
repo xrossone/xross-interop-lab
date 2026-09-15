@@ -218,29 +218,46 @@ class AirPlayGate(unittest.TestCase):
                 self.assertEqual(e["authored"], "self", f"{e['id']} 必须自制")
                 self.assertFalse(e["device_required"], f"{e['id']} 不是真机条目")
 
+    @staticmethod
+    def _code_only(text: str) -> str:
+        """去掉字符串字面量与注释，只留下代码——用于判断"是否真的用了某个原语"。
+
+        理由：本仓要在**文案**里写明"不实现 SRP/X25519/Ed25519、不走 ChaCha"（那是诚实边界），
+        但不允许在**代码**里引入这些原语的实现或依赖。"""
+        text = re.sub(r'//[^\n]*', '', text)           # 行注释
+        text = re.sub(r'/\*.*?\*/', '', text, flags=re.S)  # 块注释
+        text = re.sub(r'"(?:[^"\\]|\\.)*"', '""', text)   # 字符串字面量
+        return text.lower()
+
     def test_t34_impl_has_no_crypto_and_no_fairplay(self):
-        """T34 的实现面：音频 profile 与配对存储都不得含加密原语或 FairPlay 路径。"""
+        """T34 的实现面：音频 profile 与配对存储都不得含加密原语的实现或依赖。"""
         src = LAB / "impl/crates/proto-airplay/src"
         if not src.is_dir():
             self.skipTest("proto-airplay 尚未落地")
         primitives = ("srp", "x25519", "curve25519", "ed25519", "sha1", "sha2", "hmac", "aes",
-                      "chacha", "poly1305", "playfair")
+                      "chacha", "poly1305", "playfair", "fairplay")
         files = sorted(src.glob("*.rs"))
         self.assertTrue(files, "crate 必须有源文件")
         for path in files:
-            text = path.read_text(encoding="utf-8").lower()
+            code = self._code_only(path.read_text(encoding="utf-8"))
             for token in primitives:
                 self.assertNotIn(
-                    token, text, f"{path.name} 出现加密原语符号：{token}（T34 只做帧与存储层）"
+                    token, code, f"{path.name} 的代码里出现加密/厂商材料符号：{token}"
                 )
-        # FairPlay 只允许作为"不实现"的 seam 文档出现在 keying.rs（T32 既有）
+        # T34 的两个模块必须存在，且分别只做解析与登记
+        for name, must in (("audio_profile.rs", "parse_packed_audio_format"),
+                           ("pairstore.rs", "PairingVerdict")):
+            path = src / name
+            self.assertTrue(path.is_file(), f"T34 模块缺失：{name}")
+            self.assertIn(must, path.read_text(encoding="utf-8"))
+        # 登记层的结论枚举不得出现"已认证"这类变体（注释里说明"没有它"当然可以）
+        store_src = (src / "pairstore.rs").read_text(encoding="utf-8")
+        self.assertIn("KnownButUnverified", store_src)
+        self.assertNotIn("Authenticated", self._code_only(store_src))
+        # 不得出现面向 /fp-setup 的实现路径
         for path in files:
-            if path.name == "keying.rs":
-                continue
-            self.assertNotIn(
-                "fairplay material", path.read_text(encoding="utf-8").lower(),
-                f"{path.name} 不得持有 FairPlay 材料",
-            )
+            code = self._code_only(path.read_text(encoding="utf-8"))
+            self.assertNotIn("fp_setup_handle", code)
 
     def test_spec_field_tables_all_have_resolvable_sources(self):
         facts = section(self.spec, FACTS_HEADING)

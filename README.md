@@ -128,7 +128,7 @@ tools/                          # 仓库检查脚本与测试（python3 -m unitt
   `crates/proto-quickshare` 实现 TCP 4 字节大端 framing、UKEY2 三消息状态机（真实 P-256 ECDH /
   SHA-512 commitment / HKDF-SHA256）、Alert 码表、重放拒绝、payload gate（未核对 4 位确认码不放行）。
   **发现/QR/传输加密/payload 层未实现**（P-F02-1/3 未关闭），gate 测试机器保证实现里没有发现代码。
-- **headless demo**：`apps/interop-demo`（`xinterop-demo [run|discovery|session|sink|media|qshare|mirror|dlna|wfd|cast] [--json]`）
+- **headless demo**：`apps/interop-demo`（`xinterop-demo [run|discovery|session|sink|media|qshare|mirror|airplay|dlna|wfd|cast] [--json]`）
   把上述各层跑成真实状态输出：注册表不合并 identity、SETUP 503/401 与 131072 B 分配时机、sink 统计与
   显式 resample、XMD1 往返与负向、UKEY2 握手与分片等价；输出恒带 `evidence_level=simulated` + blocked +
   待用户手动清单（见 [evidence/2026-09-15-t5-demo-cli](evidence/2026-09-15-t5-demo-cli/demo-report.txt)）。
@@ -177,6 +177,19 @@ tools/                          # 仓库检查脚本与测试（python3 -m unitt
   demo 新增 `wfd` 段（`xinterop-demo wfd`，见 D-11）。测试逼出四处实现缺陷（M3 查询正文是**裸参数名**、
   M13 正文是裸 `wfd_idr_request`、keep-alive 基准、M13/M16 应用控制 URI），详见 run manifest 的 red→green 记录。
 
+- **T34 AirPlay 音频 profile 与配对登记（headless 切片）**：`specs-reviewed/m01` 增 T34 字段表
+  （行级来源：UxPlay@d9791de / shairplay-rust@2fb72b3）——AP1 实时音频的请求键与响应形状、
+  `ct` 四值表（1=PCM、2=ALAC spf=352、4=AAC-LC spf=1024、8=AAC-ELD spf=480）、采样率 44100
+  为**来源取值**；AP2 的**两套编号**（打包 `audioFormat` 与 RTP SSRC 魔数，参考实现注释明说
+  "not RTP SSRC values"）、流类型 96/103/110/120/130、配对端点集与**不是 TLV8**（UxPlay 全仓
+  grep 零命中；`/pair-setup` 收发裸 32 字节）、`OneTimePairingRequired` = statusFlags bit 9。
+  实现 `crates/proto-airplay/src/{audio_profile,pairstore}.rs`：profile 解析（未知值一律拒绝、PCM
+  的 spf 不编造、两套编号互不回退、SSRC 从 `packet[8:12]` 取且只有非 0 变化才切换）与配对
+  **登记层**——结论枚举只有 `Unknown`/`KnownButUnverified`（**`Authenticated` 被 lab gate 机器禁止**），
+  `/fp-setup` 恒 vendor-gated，配对握手明确不实现（无 SRP/X25519/Ed25519）。
+  证据：[evidence/2026-09-15-t34-airplay-audio-store](evidence/2026-09-15-t34-airplay-audio-store/run-manifest.json)；
+  demo 新增 `airplay` 段（`xinterop-demo airplay`，见 D-14）。
+
 - **T21+ Quick Share 控制帧（keep-alive 与 paired-key，headless 切片）**：`specs-reviewed/f02` 补
   F-30..F-33 —— F-30 裁决**两层编号冲突**（外层 Nearby Connections 与内层 Nearby Share 用各自的
   `V1Frame.FrameType` 编号，同号不同义；内层帧包在 BYTES payload 里，依据 R15
@@ -213,7 +226,7 @@ tools/                          # 仓库检查脚本与测试（python3 -m unitt
   [evidence/2026-09-15-t42-dlna-renderer](evidence/2026-09-15-t42-dlna-renderer/run-manifest.json)；
   demo 的 `dlna` 段新增 renderer 子块（D-10 扩展）。
 
-**未开始 / 待批准**：T30（UxPlay provider 闭环，需 scope S1/S2）、T33/T34（AirPlay 音视频接收真机）、
+**未开始 / 待批准**：T30（UxPlay provider 闭环，需 scope S1/S2）、T33（AirPlay 音视频接收真机）、
 T22（Quick Share 发送闭环，需 QR/可发现路径）、Quick Share 发现源
 （待 P-F02-1/2/3 关闭与 S3 抓包批准）、T42 的媒体字节服务与 native player 接入（T24/host gateway）、
 T38/T39（WFD 真机序列与 IE 播发、平台入口 probe，需 P-M05-1/2/3）、T44（Cast 实时 streaming，在 T43 之后）、

@@ -24,6 +24,7 @@ pub struct DemoReport {
     pub media_plane: MediaPlaneReport,
     pub quickshare: QuickShareReport,
     pub mirror: MirrorReport,
+    pub airplay: AirplayReport,
     pub dlna: DlnaReport,
     pub wfd: WfdReport,
     pub cast: CastReport,
@@ -88,6 +89,20 @@ pub struct MirrorReport {
     pub audio: serde_json::Value,
     pub drift: serde_json::Value,
     pub capability: serde_json::Value,
+    pub blocked: Vec<String>,
+}
+
+// ---------- AirPlay 音频 profile 与配对登记（T34）----------
+
+#[derive(Debug, Clone, Serialize)]
+pub struct AirplayReport {
+    pub evidence_level: &'static str,
+    pub wire: &'static str,
+    pub ap1_profiles: serde_json::Value,
+    pub ap2_profiles: serde_json::Value,
+    pub pair_store: serde_json::Value,
+    pub endpoints: serde_json::Value,
+    pub rejects: Vec<serde_json::Value>,
     pub blocked: Vec<String>,
 }
 

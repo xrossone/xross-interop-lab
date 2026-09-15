@@ -12,3 +12,7 @@ publish.workspace = true
 interop-contract = { path = "../../crates/interop-contract" }
 interop-ipc = { path = "../../crates/interop-ipc" }
 interop-media = { path = "../../crates/interop-media" }
+# serde/serde_json 只用于**配对登记表**的状态序列化（T34），不承载任何协议语义；
+# 字段含义全部按 specs-reviewed/m01 的字段表逐条校验。
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"

@@ -296,3 +296,36 @@ Quick Share ↔ Android）、抓包、可见性矩阵、native 窗口、Tauri GU
   P-F02-2 的真机对跑（用户手动）。
 - **测试面**：impl 199 → **209**（proto-quickshare 37，其中控制帧 9 例 + demo D-13）；clippy 0；
   lab 68 → **72**。
+
+
+---
+
+## 补充 8（2026-09-15）：T34 AirPlay AP1/AP2 音频 profile 与配对登记（headless 切片）已落地
+
+**commit** `617a7d9`（gate：字段行 + 语料 + 纪律测试）。
+
+- **gate 扩展**：M01 增 T34 字段表，全部行级来源（A=`UxPlay@d9791de`、B=`shairplay-rust@2fb72b3`）。
+  要点：① AP1 实时音频（type 96）的请求键 `controlPort`/`ct`/`spf`/`audioFormat`（+可选
+  `isMedia`/`usingScreen`）与响应形状 `dataPort`/`controlPort`/`type`，而 **110 的响应没有
+  `controlPort`**；② `ct` 四值表 1=PCM、2=ALAC(spf=352)、4=AAC-LC(spf=1024)、8=AAC-ELD(spf=480)，
+  采样率 44100 为来源取值；**PCM 行没有 spf**（caps 未给）→ 不得替它编；③ 同仓冲突：
+  `lib/raop_rtp.c:113` 注释把 ct=4 写作 "AAC-MAIN"，而 caps 与解码器按 AAC-LC → 以实现侧为准；
+  ④ AP2 的**两套编号**：打包 `audioFormat`（0x00040000/0x00080000/0x00100000/0x00200000）与 RTP
+  SSRC 魔数（0x0000FACE/0x15000000/0x16000000/0x17000000/0x27000000/0x28000000、0=None），
+  参考实现注释明说前者 "not RTP SSRC values"；⑤ 流类型 96/103/110/120/130（103 是 AP2 buffered：
+  ChaCha20-Poly1305+AAC，响应含 `audioBufferSize`；120 参考实现未实现）；⑥ 配对**不是 TLV8**
+  （UxPlay 全仓 grep 零命中：`/pair-setup-pin` 走 binary plist，`/pair-setup` 收发裸 32 字节）；
+  ⑦ 已配对注册表 `~/.uxplay.register` 每行 `pk,device_id,name`、只追加无删除；B 的
+  `PairingStore`/`MemoryPairingStore`；`OneTimePairingRequired` = statusFlags **bit 9**。
+  语料 +8 条（全自制）；lab gate 72 → **77**，新增**代码级**原语扫描（剥离注释与字符串后禁止
+  SRP/X25519/Ed25519/AES/ChaCha/FairPlay 出现在实现里——文案里写明"不实现它们"是允许的）。
+- **实现** `crates/proto-airplay/src/{audio_profile,pairstore}.rs`：profile 解析（未知值一律拒绝、
+  两套编号互不回退、SSRC 从解密后 `packet[8:12]` 取且只有非 0 变化才切换、AAC-ELD no-data 标记）；
+  配对**登记层**——登记/查询/遗忘/容量（满了 `resource-limit` 不静默淘汰）/JSON 往返/身份种子由宿主
+  提供；结论枚举**只有** `Unknown` 与 `KnownButUnverified`（`Authenticated` 被 gate 禁止）；
+  五端点策略（四个 shape-check-only + `/fp-setup` 恒 vendor-gated）。
+- **有意差异（本仓策略）**：来源的注册表只追加、无删除路径；本仓提供显式遗忘与容量上限。
+- **诚实边界**：无 decoder（ALAC/AAC 只解析不解码）、不实现配对握手（无 SRP/X25519/Ed25519）、
+  不取两仓的 FairPlay 表/RSA 私钥/默认 PIN 常量；**未与任何 Apple 设备互操作**，
+  `ct`/`spf`/真机 `audioFormat` 取值仍待 P-M01-2 的抓包固化。
+- **测试面**：impl 209 → **222**（proto-airplay 32 + demo D-14）；clippy 0；lab 77。

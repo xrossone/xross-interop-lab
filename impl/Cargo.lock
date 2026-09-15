@@ -418,6 +418,8 @@ dependencies = [
  "interop-contract",
  "interop-ipc",
  "interop-media",
+ "serde",
+ "serde_json",
 ]
 
 [[package]]

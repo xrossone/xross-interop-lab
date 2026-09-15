@@ -14,6 +14,7 @@
 pub mod cast;
 pub mod dlna;
 pub mod wfd;
+pub mod airplay;
 pub mod mirror;
 pub mod quickshare;
 pub mod report;
@@ -47,6 +48,8 @@ pub const MANUAL_TESTS: &[&str] = &[
     "WFD 真机 codec 矩阵：Android/Windows 发送端 → 本节点（P-M05-3）",
     "Cast 真机认证强制点：库存 Chromecast/Google TV 对第三方 sender 的接受条件（P-M08-1）",
     "Cast 发现 TXT 字段矩阵（P-M08-3）与真实 mDNS 记录对照",
+    "AirPlay 真机 audioFormat/ct 取值与 spf（P-M01-2 无声问题）：iPhone/iPad 实际发来的 profile 需抓包固化",
+    "AirPlay 配对真机流程（PIN 三步与 pair-verify 的 statusFlags bit 9 时机）——需 S1/S2 与真机",
 ];
 
 /// 跑全部场景并汇总（JSON 与人类输出共用同一份数据）。
@@ -57,6 +60,7 @@ pub fn compute_report() -> DemoReport {
     let (media_plane, m_ok) = scenarios::media_scenario();
     let (qshare, q_ok) = quickshare::quickshare_scenario();
     let (mirror, r_ok) = mirror::mirror_scenario();
+    let (airplay, a_ok) = airplay::airplay_scenario();
     let (dlna, l_ok) = dlna::dlna_scenario();
     let (wfd, w_ok) = wfd::wfd_scenario();
     let (cast, c_ok) = cast::cast_scenario();
@@ -70,13 +74,14 @@ pub fn compute_report() -> DemoReport {
         evidence_level: EVIDENCE_LEVEL,
         wire: WIRE,
         generated_unix_ms,
-        ok: d_ok && s_ok && k_ok && m_ok && q_ok && r_ok && l_ok && w_ok && c_ok,
+        ok: d_ok && s_ok && k_ok && m_ok && q_ok && r_ok && l_ok && w_ok && c_ok && a_ok,
         discovery,
         session,
         sink,
         media_plane,
         quickshare: qshare,
         mirror,
+        airplay,
         dlna,
         wfd,
         cast,
@@ -608,6 +613,71 @@ pub fn render_human(r: &DemoReport, section: Option<&str>) -> String {
         }
     }
 
+    if want("airplay") {
+        let a = &r.airplay;
+        let ap1 = &a.ap1_profiles;
+        out.push_str("\n## AirPlay 音频 profile 与配对登记（T34）\n");
+        out.push_str(&format!(
+            "AP1 采样率        : {} Hz（{}）\n",
+            ap1["sample_rate_hz"],
+            text(&ap1["sample_rate_source"])
+        ));
+        for row in ap1["rows"].as_array().into_iter().flatten() {
+            let spf = match row["spf_source"].as_u64() {
+                Some(v) => format!("spf={v:<5} 与来源一致={}", row["spf_matches_source"]),
+                None => "spf 无（来源未给，不编造）".to_string(),
+            };
+            out.push_str(&format!(
+                "  ct={:<2} {:<7} {:<34} 本仓可解码={}\n",
+                row["ct"],
+                text(&row["codec"]),
+                spf,
+                row["decodable_here"]
+            ));
+        }
+        let ap2 = &a.ap2_profiles;
+        let packed: Vec<String> = ap2["packed"]
+            .as_array()
+            .into_iter()
+            .flatten()
+            .map(|p| format!("{}→{}/{}/{}", text(&p["packed"]), p["rate"], p["bits"], p["channels"]))
+            .collect();
+        out.push_str(&format!("AP2 打包格式      : {}\n", packed.join("  ")));
+        out.push_str(&format!(
+            "AP2 SSRC 魔数     : {} 个（两套编号互不回退={}；0 不触发格式变化）\n",
+            ap2["ssrc"].as_array().map(|v| v.len()).unwrap_or(0),
+            ap2["two_number_spaces"]
+        ));
+        let store = &a.pair_store;
+        out.push_str(&format!(
+            "配对登记          : 已登记={} 结论(已知)={} 结论(未知)={} 声称已认证={}\n",
+            store["registered"],
+            text(&store["verdict_known"]),
+            text(&store["verdict_unknown"]),
+            store["claims_authentication"]
+        ));
+        out.push_str(&format!(
+            "一次性配对位      : 无配对时 statusFlags=bit {}（{}）→ 有配对后 {}；JSON 往返={}\n",
+            store["one_time_pairing_required_bit"],
+            store["status_flags_before_any_pairing"],
+            store["status_flags_after_pairing"],
+            store["json_roundtrip"]
+        ));
+        for row in a.endpoints["rows"].as_array().into_iter().flatten() {
+            out.push_str(&format!("  {:<16} {}\n", text(&row["path"]), text(&row["policy"])));
+        }
+        for case in &a.rejects {
+            out.push_str(&format!(
+                "  - 负向 {:<28} {}\n",
+                text(&case["case"]),
+                text(&case["outcome"])
+            ));
+        }
+        for b in &a.blocked {
+            out.push_str(&format!("  · blocked: {b}\n"));
+        }
+    }
+
     if want("qshare") {
         let q = &r.quickshare;
         out.push_str("\n## Quick Share / UKEY2（T19/T20/T21+）\n");
@@ -736,6 +806,7 @@ pub fn parse_args(args: &[String]) -> Result<(Option<&'static str>, bool), Strin
             "media" => section = Some("media"),
             "qshare" | "quickshare" => section = Some("qshare"),
             "mirror" => section = Some("mirror"),
+            "airplay" => section = Some("airplay"),
             "dlna" => section = Some("dlna"),
             "wfd" | "miracast" => section = Some("wfd"),
             "cast" => section = Some("cast"),

@@ -20,7 +20,8 @@
     "D-10",
     "D-11",
     "D-12",
-    "D-13"
+    "D-13",
+    "D-14"
   ],
   "result": "pass",
   "commands": [
@@ -121,6 +122,20 @@
       "command": "cargo test --manifest-path impl/Cargo.toml --workspace; cargo clippy --manifest-path impl/Cargo.toml --workspace --all-targets; python3 -m unittest discover -s tools",
       "exit_code": 0,
       "result": "pass：impl 209 tests 全绿；clippy 0 warnings；lab 72 tests OK"
+    },
+    {
+      "seq": 15,
+      "purpose": "green：T34 AirPlay 音频 profile/配对登记段后重跑 demo 套件",
+      "command": "cargo test --manifest-path impl/Cargo.toml -p interop-demo --test demo_cli",
+      "exit_code": 0,
+      "result": "pass：14 tests（13 → 14，新增 D-14：ct 四值表与 spf 来源值、PCM 无 spf、两套编号互不回退、SSRC 取自 packet[8:12]、变化检测、bit 9 时机、JSON 往返、五端点策略、10 条负向）"
+    },
+    {
+      "seq": 16,
+      "purpose": "全 workspace 回归 + 静态检查 + lab 检查（T34 后）",
+      "command": "cargo test --manifest-path impl/Cargo.toml --workspace; cargo clippy --manifest-path impl/Cargo.toml --workspace --all-targets; python3 -m unittest discover -s tools",
+      "exit_code": 0,
+      "result": "pass：impl 222 tests 全绿；clippy 0 warnings；lab 77 tests OK"
     }
   ],
   "acceptance_mapping": {
@@ -138,7 +153,8 @@
     "D-11": "WFD/Miracast 段（T37）：消息层登记 10 条且 M1/M2 同形而按发送方区分；会话从 M1 应答→M2→M3（应答体来自本端实现清单）→M4 协商→M5 触发→SETUP（带 Transport）→Session→PLAY 一路走到 playing，keep-alive 到点才发、30 s（来源取值）无入站即超时结束，player_available 恒 false（能协商 ≠ 能显示）；协商段展示 native 拆表/索引、profile/level 位图、切片字段、音频 mode 位，并把两处来源分歧摆成可观察值（port1=0 抑制 keep-alive / R34 严格读法会拒绝 port1≠0）；IE 段子元素 9 字节往返，**完整 IE 的构造与解析都返回 UnsupportedFeature**（F-24）；RTP 段连续包不请求、缺口请求一次 M13、乱序不请求、非 33 的 PT 只记账；15 条负向覆盖顺序/方向/走私/HDCP/URL/端口/描述符/RTP，没有任何一条被接受",
     "D-12": "Google Cast 段（T43）：CastMessage 信封往返（含 BINARY）与三处拒绝（分块 unsupported-feature、长度前缀超 64 KiB resource-limit、未知协议版本 invalid-frame）；四个命名空间与载荷键（CONNECT 的 origin/connType/userAgent/senderInfo、LOAD 的 media 键且**不写 duration**、SEEK 的 resumeState 只认 PLAYBACK_START）；sender 会话走到 media-session（CONNECT→CONNECTED→LAUNCH→RECEIVER_STATUS→LOAD→MEDIA_STATUS→PLAY/SEEK/PAUSE→STOP）；**T43-01** 生产闸门（认证不可得）下 CONNECT/LOAD 都返回 vendor-gated 且已发命令数=0（不启动播放）；**T43-02** 未配置的 app ID 在 launch 阶段即被拒；**T43-03** 本地 stop 与接收端停应用两条路径都释放 URL 并清空 mediaSessionId；**T43-04** screen_capability 恒 false；心跳到点发 PING、收到 PING 回 PONG、未应答请求超时；发现段只解析 TXT（不组播）；17 条负向覆盖载荷/URL/TXT/闸门，无一被接受",
     "D-10（T42 扩展）": "DLNA 段的 renderer 部分：`file://` 与内网/元数据/带 userinfo 的 URI 全部拒绝（402）且拒绝后状态保持 NO_MEDIA_PRESENT（T42-01 不留播放入口）；合法 URI 先要求用户同意，同意前 Play 返回 701、同意后进入 PLAYING；直播流 Seek → 710 且位置不变，点播设定时长后 REL_TIME 定位生效（0:01:30 → 90s）；重复 Stop 幂等；音量越界 → 402；越界回调地址 → 402 且订阅不建立（T42-04），合法订阅可建立与退订；blocked 清单明确 GENA 投递不实现、无 native player 接入",
-    "D-13": "Quick Share 控制帧段（T21+）：外层帧经真实字节往返（`encode_offline` → `decode_keepalive_offline`）并在同进程第二实例上解出；65 s 时间轴上 7 帧心跳 ↔ 7 条 ack 且帧间隔全等 10000 ms；对端静默时在 31000 ms 判死（阈值 30000 ms 为本仓策略，其间已发 4 帧心跳、received=0，demonstrating 自己发心跳不能把判死推后）；paired-key 内层帧走 BYTES payload（层号 3、材料往返、payload id 沿用）；对端 encryption → 我们的 result=UNABLE；**默认策略下对端 SUCCESS 仍 RequireConfirmation**、只有 `allowing_skip_confirmation()` 才 SkipConfirmation；两条负向（外层帧用内层编号、FILE 载荷冒充协商帧）均 InvalidFrame"
+    "D-13": "Quick Share 控制帧段（T21+）：外层帧经真实字节往返（`encode_offline` → `decode_keepalive_offline`）并在同进程第二实例上解出；65 s 时间轴上 7 帧心跳 ↔ 7 条 ack 且帧间隔全等 10000 ms；对端静默时在 31000 ms 判死（阈值 30000 ms 为本仓策略，其间已发 4 帧心跳、received=0，demonstrating 自己发心跳不能把判死推后）；paired-key 内层帧走 BYTES payload（层号 3、材料往返、payload id 沿用）；对端 encryption → 我们的 result=UNABLE；**默认策略下对端 SUCCESS 仍 RequireConfirmation**、只有 `allowing_skip_confirmation()` 才 SkipConfirmation；两条负向（外层帧用内层编号、FILE 载荷冒充协商帧）均 InvalidFrame",
+    "D-14": "AirPlay 音频 profile 与配对登记段（T34）：AP1 `ct` 四值表（1=PCM / 2=ALAC spf=352 / 4=AAC-LC spf=1024 / 8=AAC-ELD spf=480）、请求四键必需、未知 ct 拒绝；**PCM 无 spf 且不编造**；只有 PCM 能在本仓直接路由。AP2：打包 `audioFormat` 四个值与 6 个 RTP SSRC 魔数分别解析，交叉喂入一律拒绝/None（两套编号互不回退），SSRC 从解密后 `packet[8:12]` 取且只有非 0 变化才触发。配对：登记/查询/遗忘/容量/JSON 往返，`statusFlags` bit 9 只在从未配对时置位，结论只有 KnownButUnverified/Unknown 且 `claims_authentication=false`。端点：四个 shape-check-only（未登记键 invalid-frame、登记键 unsupported-feature）+ `/fp-setup` vendor-gated，握手实现标志 false。10 条负向全部给出明确错误码"
   },
   "artifacts": [
     {

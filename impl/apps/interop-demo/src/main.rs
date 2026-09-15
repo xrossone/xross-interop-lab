@@ -2,7 +2,7 @@
 //!
 //! 用法：
 //! ```text
-//! xinterop-demo [run|discovery|session|sink|media|qshare|mirror|dlna|wfd|cast] [--json]
+//! xinterop-demo [run|discovery|session|sink|media|qshare|mirror|airplay|dlna|wfd|cast] [--json]
 //! ```
 //! 退出码：0 = 全部场景断言通过；1 = 场景断言未通过；2 = 用法错误。
 
@@ -41,7 +41,7 @@ fn main() {
 }
 
 fn usage() {
-    eprintln!("用法：xinterop-demo [run|discovery|session|sink|media|qshare|mirror|dlna|wfd|cast] [--json]");
+    eprintln!("用法：xinterop-demo [run|discovery|session|sink|media|qshare|mirror|airplay|dlna|wfd|cast] [--json]");
     eprintln!("  run（默认）：全部场景 + blocked + 待用户手动清单");
     eprintln!("  --json     ：输出结构化报告（同一份数据）");
 }

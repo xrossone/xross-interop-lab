@@ -529,3 +529,94 @@ fn d13_quickshare_control_frames() {
     assert!(text.contains("RequireConfirmation"), "{text}");
     assert!(text.contains("默认不免，F-32"), "{text}");
 }
+
+/// D-14：AirPlay 音频 profile 与配对登记（T34）——解析必须按字段表，登记不得声称认证。
+#[test]
+fn d14_airplay_audio_profiles_and_pair_store() {
+    let (code, v) = run_json(&["airplay", "--json"]);
+    assert_eq!(code, 0);
+    let a = &v["airplay"];
+    assert_eq!(a["evidence_level"], "simulated");
+
+    // AP1：ct 四值表 + spf 为来源取值 + PCM 没有 spf + 只有 PCM 能在本仓解码。
+    let ap1 = &a["ap1_profiles"];
+    assert_eq!(ap1["sample_rate_hz"], 44100);
+    let rows = ap1["rows"].as_array().expect("rows");
+    assert_eq!(rows.len(), 4, "ct 四值（1/2/4/8）");
+    let by_ct = |ct: u64| {
+        rows.iter()
+            .find(|r| r["ct"].as_u64() == Some(ct))
+            .unwrap_or_else(|| panic!("缺 ct={ct}"))
+    };
+    assert_eq!(by_ct(2)["codec"], "ALAC");
+    assert_eq!(by_ct(2)["spf_source"], 352);
+    assert_eq!(by_ct(4)["spf_source"], 1024);
+    assert_eq!(by_ct(8)["spf_source"], 480);
+    assert_eq!(by_ct(1)["spf_source"], Value::Null, "PCM 无 spf：不得编造");
+    assert_eq!(ap1["pcm_has_no_spf"], true);
+    for (ct, decodable) in [(1u64, true), (2, false), (4, false), (8, false)] {
+        assert_eq!(by_ct(ct)["decodable_here"], decodable, "ct={ct}");
+        assert_eq!(by_ct(ct)["spf_matches_source"], ct != 1, "ct={ct} 的 spf 一致性");
+    }
+
+    // AP2：两套编号（打包值 vs SSRC 魔数）互不回退；SSRC 从 RTP 头 packet[8:12] 取。
+    let ap2 = &a["ap2_profiles"];
+    assert_eq!(ap2["packed"].as_array().expect("packed").len(), 4);
+    assert_eq!(ap2["ssrc"].as_array().expect("ssrc").len(), 6);
+    assert_eq!(ap2["two_number_spaces"], true);
+    assert_eq!(ap2["cross_space_packed_from_ssrc"], "UnsupportedProfile");
+    assert_eq!(ap2["cross_space_ssrc_from_packed_is_none"], true);
+    assert_eq!(ap2["ssrc_from_rtp_header"], 0x0000_FACEu32);
+    assert_eq!(ap2["change_detection"], true, "0 不触发、同值不重复、换值才触发");
+    assert_eq!(ap2["aac_eld_no_data"], true);
+
+    // 配对登记：结论只有两种，且**不声称认证**；bit 9 只在没有配对时置位。
+    let store = &a["pair_store"];
+    assert_eq!(store["verdict_known"], "KnownButUnverified");
+    assert_eq!(store["verdict_unknown"], "Unknown");
+    assert_eq!(store["claims_authentication"], false, "登记 ≠ 认证（T34 硬边界）");
+    assert_eq!(store["one_time_pairing_required_bit"], 9);
+    assert_eq!(store["status_flags_before_any_pairing"], 512, "bit 9 = 1<<9");
+    assert_eq!(store["status_flags_after_pairing"], 0);
+    assert_eq!(store["json_roundtrip"], true);
+    assert_eq!(store["removed"], true);
+    assert_eq!(store["touched_updated_last_seen"], true);
+    assert_eq!(store["identity_seed_provided_by_host"], true, "身份种子由宿主给");
+
+    // 端点策略：四个 shape-check-only + /fp-setup vendor-gated；握手未实现。
+    let endpoints = a["endpoints"]["rows"].as_array().expect("endpoints");
+    assert_eq!(endpoints.len(), 5);
+    let fp = endpoints
+        .iter()
+        .find(|r| r["policy"] == "vendor-gated")
+        .expect("必须有 vendor-gated 端点");
+    assert_eq!(fp["path"], "/fp-setup");
+    assert_eq!(a["endpoints"]["handshake_implemented"], false);
+    assert_eq!(a["endpoints"]["fp_setup"], "VendorGated");
+
+    // 负向：逐条给错误码，无一被接受。
+    let rejects = a["rejects"].as_array().expect("rejects");
+    assert!(rejects.len() >= 10, "负向覆盖不足：{}", rejects.len());
+    for case in rejects {
+        let outcome = case["outcome"].as_str().unwrap_or("");
+        assert_ne!(outcome, "accepted(unexpected)", "负向被接受：{}", case["case"]);
+        assert!(
+            matches!(
+                outcome,
+                "InvalidFrame" | "UnsupportedProfile" | "UnsupportedFeature" | "ResourceLimit"
+                    | "VendorGated"
+            ),
+            "未知错误码 {outcome}"
+        );
+    }
+    assert!(!a["blocked"].as_array().expect("blocked").is_empty());
+
+    // 人类输出复述同一批结论。
+    let out = Command::new(bin()).arg("airplay").output().expect("可执行");
+    assert_eq!(out.status.code(), Some(0));
+    let text = String::from_utf8_lossy(&out.stdout);
+    assert!(text.contains("AirPlay 音频 profile 与配对登记（T34）"), "{text}");
+    assert!(text.contains("KnownButUnverified"), "{text}");
+    assert!(text.contains("vendor-gated"), "{text}");
+    assert!(text.contains("spf 无（来源未给，不编造）"), "{text}");
+}

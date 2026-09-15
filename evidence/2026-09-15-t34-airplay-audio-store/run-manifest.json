@@ -1,0 +1,94 @@
+{
+  "schema_version": 1,
+  "run_id": "2026-09-15-t34-airplay-audio-store",
+  "task": "T34 · AirPlay AP1/AP2 音频 profile 解析 + 配对登记层（headless，不含厂商材料）",
+  "kind": "manual",
+  "evidence_level": "build-verified",
+  "is_test_evidence": true,
+  "synthetic": false,
+  "base_commit": "617a7d9（T34 gate：字段行 + 语料 + 纪律测试）",
+  "case_ids": [
+    "T34-01",
+    "T34-02",
+    "T34-03",
+    "T34-04"
+  ],
+  "result": "pass",
+  "commands": [
+    {
+      "seq": 1,
+      "purpose": "red：验收套件首次编译（暴露测试面缺口）",
+      "command": "cargo test --manifest-path impl/Cargo.toml -p proto-airplay",
+      "exit_code": 101,
+      "result": "fail：两处编译错误——① 测试引用了不存在的常量 `MAX_PUBLIC_KEY`（模块里叫 `PUBLIC_KEY_BYTES`）；② `UnavailableKeying::name()` 是 trait 方法，必须用 `<UnavailableKeying as KeyingProvider>::name` 或 UFCS 调用。属测试面错误，不是实现缺陷"
+    },
+    {
+      "seq": 2,
+      "purpose": "red→green：修正测试面后第一次真跑",
+      "command": "cargo test --manifest-path impl/Cargo.toml -p proto-airplay",
+      "exit_code": 101,
+      "result": "fail：`ap1_compression_types_map_to_sourced_profiles` 断言 `decodable_here()` 与期望不符——**期望表把 PCM 写成了不可解码**。失败点确认实现是对的（PCM 正是本仓唯一能直接路由的编码），错的是测试数据；改正后期望表为 1=PCM(可解码)/2,4,8=需 decoder"
+    },
+    {
+      "seq": 3,
+      "purpose": "green：T34 crate 验收",
+      "command": "cargo test --manifest-path impl/Cargo.toml -p proto-airplay",
+      "exit_code": 0,
+      "result": "pass：proto-airplay 32 tests（既有 20 + T34 的新文件 12：ct 四值表、请求四键必需、响应形状 96/110、流类型与不实现原因、打包值与 SSRC 两套编号、SSRC 变化检测、AAC-ELD no-data 标记、配对登记/容量/JSON 往返、不声称认证、五端点策略）"
+    },
+    {
+      "seq": 4,
+      "purpose": "gate 先红后绿：T34 纪律测试跑在实现之前/之后",
+      "command": "python3 -m unittest discover -s tools -t tools",
+      "exit_code": 1,
+      "result": "fail（首次）：3 例失败——两例是测试面问题（要点列表被当成表格读；能力表首列带反引号导致 `startswith` 不匹配），一例是**真实文档缺口**：『T34 禁止边界』小节没有写 FairPlay/vendor-gated 边界 → 补上该条后转绿"
+    },
+    {
+      "seq": 5,
+      "purpose": "gate 精化：把『禁止加密原语』的扫描限定为代码（去掉注释与字符串字面量）",
+      "command": "python3 -m unittest discover -s tools -t tools",
+      "exit_code": 0,
+      "result": "pass：lab 72 → **77** tests（T34 新增 5 例）。精化理由：本仓要在文案里写明『不实现 SRP/X25519/Ed25519、不走 ChaCha』，原扫描把这类**诚实说明**也判失败；现在只扫代码（注释与字符串先剥离），依旧禁止把原语写进实现，并额外锁定：T34 两模块存在、`PairingVerdict` 不得出现 `Authenticated` 变体"
+    },
+    {
+      "seq": 6,
+      "purpose": "demo 接入：新增 `airplay` 段",
+      "command": "cargo test --manifest-path impl/Cargo.toml -p interop-demo --test demo_cli",
+      "exit_code": 0,
+      "result": "pass：14 tests（新增 D-14）。JSON 与人类输出给出：ct 四值表（PCM 显式标注『spf 无（来源未给，不编造）』）、两套编号互不回退、SSRC 从 packet[8:12] 取、bit 9 时机、JSON 往返、五端点策略、10 条负向全部给码"
+    },
+    {
+      "seq": 7,
+      "purpose": "全量回归 + 静态检查 + lab 纪律",
+      "command": "cargo test --manifest-path impl/Cargo.toml --workspace; cargo clippy --manifest-path impl/Cargo.toml --workspace --all-targets; python3 -m unittest discover -s tools",
+      "exit_code": 0,
+      "result": "pass：impl 209 → **222** tests 全绿；clippy 0 warnings；lab 77 tests OK"
+    }
+  ],
+  "acceptance_mapping": {
+    "T34-01": "AP1 实时音频 profile：`ct` 四值表（1=PCM、2=ALAC spf=352、4=AAC-LC spf=1024、8=AAC-ELD spf=480）逐值解析；请求四键 `controlPort`/`ct`/`spf`/`audioFormat` 缺一即 `invalid-frame`；未知 `ct`（0/3/5/16）→ `unsupported-profile`（**不得回退默认**）；**PCM 没有 spf**（来源 caps 未给）→ 不编造；采样率 44100 标注为来源取值；只有 PCM 能在本仓直接路由（ALAC/AAC 需 decoder）",
+    "T34-02": "AP2 的**两套编号**：打包 `audioFormat` 0x00040000/0x00080000/0x00100000/0x00200000 → ALAC 44100|48000 / 16|24 / 2；RTP SSRC 魔数 0x0000FACE/0x15000000/0x16000000/0x17000000/0x27000000/0x28000000 → 对应 profile，`0` 与未知值 → `None`；**交叉检查**：SSRC 魔数当打包值解析 → `unsupported-profile`，打包值当 SSRC → `None`（互不回退）；SSRC 从解密后 `packet[8:12]` 取，只有『非 None 且与上次不同』才触发格式变化；AAC-ELD 的 4 字节 no-data 标记按精确匹配识别",
+    "T34-03": "流类型与响应形状：96/103/110/120/130 全部登记（未登记值 → `unsupported-profile`）；96/110 可路由，103/120/130 明确 `not-implemented` 且**各自带原因**（103 需 ChaCha20-Poly1305+AAC；120 参考实现未实现；130 不在范围）；响应键形状按字段表——96 是 `dataPort`/`controlPort`/`type`，110 只有 `dataPort`/`type`（**不得出现 controlPort**）；为不可路由流类型构造响应 → `unsupported-feature`",
+    "T34-04": "配对**登记**层（不是认证层）：登记/查询/遗忘/容量（满了 `resource-limit`，不静默淘汰）/JSON 往返（超上限存档拒绝）/**身份种子由宿主提供**；`statusFlags` bit 9（`OneTimePairingRequired`）只在从未配对时置位；结论枚举**只有** `Unknown` 与 `KnownButUnverified`，`Authenticated` 不被允许（lab gate 机器检查）；五端点策略——四个 shape-check-only（未登记键 → `invalid-frame`，登记键 → `unsupported-feature`）、`/fp-setup` 恒 `vendor-gated`，握手实现标志必须为 false"
+  },
+  "extra_coverage": {
+    "boundaries": "不引入 SRP/X25519/Ed25519（无依赖、无实现）；不取两仓的 FairPlay 表、RSA 私钥与默认 PIN 常量；`/fp-setup` 无处理路径",
+    "intentional_deviation": "来源的 `~/.uxplay.register` 只追加、无删除路径；本仓提供显式遗忘与容量上限，并记录为**本仓策略**（字段表已标注）",
+    "serialization": "配对表状态序列化只用于宿主落盘；crate 内不做任何文件 I/O"
+  },
+  "artifacts": [
+    {"path": "impl/crates/proto-airplay/src/audio_profile.rs", "note": "AP1/AP2 profile 解析（T34 主体之一）"},
+    {"path": "impl/crates/proto-airplay/src/pairstore.rs", "note": "配对登记层 + 端点策略（T34 主体之二）"},
+    {"path": "impl/crates/proto-airplay/src/lib.rs", "note": "注册两个模块"},
+    {"path": "impl/crates/proto-airplay/Cargo.toml", "note": "serde/serde_json 仅用于配对表序列化（注释说明）"},
+    {"path": "impl/crates/proto-airplay/tests/airplay_audio_store.rs", "note": "12 例验收"},
+    {"path": "specs-reviewed/m01-airplay-legacy-mirror.md", "note": "T34 字段行与禁止边界"},
+    {"path": "evidence/airplay-corpus/corpus-plan.json", "note": "fx-airplay-* 8 条（全自制）"},
+    {"path": "tools/test_airplay_gate.py", "note": "77 例（T34 新增 5 例，含代码级原语扫描）"},
+    {"path": "impl/apps/interop-demo/src/airplay.rs", "note": "demo `airplay` 段"},
+    {"path": "impl/apps/interop-demo/tests/demo_cli.rs", "note": "D-14"}
+  ],
+  "credentials_redacted": true,
+  "license_route_approved": false,
+  "notes": "evidence_level=build-verified：全部本机自动化（解析与登记层），**未与任何 Apple 设备互操作**、无抓包、无解密。参考实现的两仓只做行级事实引用（UxPlay@d9791de、shairplay-rust@2fb72b3），未复制表达、未链接"
+}
