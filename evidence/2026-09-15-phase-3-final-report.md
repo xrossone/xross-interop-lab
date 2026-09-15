@@ -236,3 +236,27 @@ Quick Share ↔ Android）、抓包、可见性矩阵、native 窗口、Tauri GU
 - **诚实边界**：无 TLS 传输层、无真实设备、无媒体字节服务、无分块、**不提供屏幕镜像**
   （`screen_capability()` 恒 false —— Cast 在这里只是"换一个 URL 给接收端拉"）。
 - **测试面**：impl 181 → **194**（proto-cast 12 + demo D-12）；clippy 0；lab 55 → **64**（cast gate 9 例）。
+
+
+---
+
+## 补充 6（2026-09-15）：T42 DLNA renderer 接收侧（headless 切片）已落地
+
+**commit** `3d5ad7f`（gate）、`679d8c3`（实现 + 证据）、`129db5c`（demo dlna 段 renderer 子块）。
+
+- **gate 扩展**：M07 字段表补 F-15..F-22——AVTransport `TransportState`/`TransportStatus` 允许值、
+  错误码语义（701 Transition not available、710 Seek mode not supported、711 Illegal seek target、
+  712 Play mode not supported、717 Play speed not supported、718 Invalid InstanceID，全部来自
+  R49 `rygel-av-transport.vala` 的实际 `return_error` 调用）、`Seek` 单位允许值表、RenderingControl
+  动作集与 `Volume`(ui2, 0..100)、状态变量、服务类型串（AVTransport `:1`/`:2`、RenderingControl `:2`）、
+  renderer 侧 URI 与回调策略（本仓策略）、GENA 投递不实现（范围声明）。语料增补 dl-019..dl-024；
+  lab gate 7 → 11 例（新增 renderer 字段行、能力表拆分、T42 语料、**renderer 实现不得做网络 I/O**）。
+- **实现** `crates/proto-upnp/src/dmr.rs`：AVTransport 状态机（取值逐字对应字段表）、RenderingControl、
+  `T42-01` 只接受 http(s) 且策略拒绝时**不留播放入口**、用户同意后才可 `Play`、`T42-02` 幂等 `Stop`、
+  `T42-03` 直播流 `Seek` → 710（位置不变）、`T42-04` GENA 订阅校验（越界回调拒绝且不建立订阅，
+  订阅数上限明确拒绝）。`soap.rs` 增补 Pause/GetPositionInfo/RenderingControl 四动作与服务类型别名匹配，
+  `Channel` 只认 `Master`。
+- **诚实边界**：无真实控制器（库存 TV/手机 App）驱动过（P-M07-1）、无 native player 接入
+  （"播放"只体现在状态与位置记账，进度由播放器上报）、无 GENA 事件投递、无媒体字节服务（T24）。
+- **测试面**：impl 194 → **199**（proto-upnp 26，其中 T41 的 10 例在动作集扩张后仍全绿）；clippy 0；
+  lab 64 → **68**。

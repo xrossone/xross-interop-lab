@@ -134,10 +134,10 @@ tools/                          # 仓库检查脚本与测试（python3 -m unitt
   待用户手动清单（见 [evidence/2026-09-15-t5-demo-cli](evidence/2026-09-15-t5-demo-cli/demo-report.txt)）。
 - **验证**（阶段 3 收尾时）：`cargo test --manifest-path impl/Cargo.toml --workspace` **113 tests 全绿**；
   clippy 0 warnings；`python3 -m unittest discover -s tools` **39 tests OK**（阶段 4 首批后为
-  **194 tests / lab 64 tests**，见下）。每 task 的 run manifest 见
+  **199 tests / lab 68 tests**，见下）。每 task 的 run manifest 见
   [evidence/index.json](evidence/index.json)。
 
-**阶段 4 首批（2026-09-15 稍后追加，五项已完成）**
+**阶段 4 首批（2026-09-15 稍后追加，六项已完成）**
 
 - **T21 Quick Share 传输闭环（headless 部分）**：`crates/proto-quickshare` 新增
   `secure_message`（D2D 密钥链 + SecureMessage AES-256-CBC/HMAC-SHA256 + 严格 +1 序号，跳号/重放即
@@ -188,9 +188,19 @@ tools/                          # 仓库检查脚本与测试（python3 -m unitt
   demo 新增 `cast` 段（`xinterop-demo cast`，见 D-12）。T43-01 抓出一处真实缺陷：闸门检查原先在
   状态变更之后，认证失败会留下停在 `connecting` 的半个会话。
 
+- **T42 DLNA renderer 接收侧（headless 切片）**：M07 字段表补 F-15..F-22（AVTransport 状态值与
+  `TransportState` 允许值、错误码 701/710/711/712/717/718 的语义、`Seek` 单位表、RenderingControl
+  动作集与 Volume 0..100、状态变量、服务类型串 `:1`/`:2`），能力表把 GENA 拆成"订阅校验（已实现）/
+  事件投递（未实现）"。实现 `crates/proto-upnp/src/dmr.rs`：AVTransport 状态机 + RenderingControl +
+  媒体 URL 策略与用户同意（`file://`、内网/元数据目标一律拒绝且不留播放入口）、幂等 `Stop`、
+  直播流 `Seek` 明确 710、GENA 订阅校验（越界回调拒绝）——**控制路径不做任何网络 I/O**（lab gate 机器检查），
+  GENA 只做校验与拒绝、不建立回调连接。证据：
+  [evidence/2026-09-15-t42-dlna-renderer](evidence/2026-09-15-t42-dlna-renderer/run-manifest.json)；
+  demo 的 `dlna` 段新增 renderer 子块（D-10 扩展）。
+
 **未开始 / 待批准**：T30（UxPlay provider 闭环，需 scope S1/S2）、T33/T34（AirPlay 音视频接收真机）、
 T22（Quick Share 发送闭环，需 QR/可发现路径）、keep-alive 与 paired-key 帧、Quick Share 发现源
-（待 P-F02-1/2/3 关闭与 S3 抓包批准）、T42（DLNA renderer 侧真实媒体拉取，需真电视矩阵 P-M07-1）、
+（待 P-F02-1/2/3 关闭与 S3 抓包批准）、T42 的媒体字节服务与 native player 接入（T24/host gateway）、
 T38/T39（WFD 真机序列与 IE 播发、平台入口 probe，需 P-M05-1/2/3）、T44（Cast 实时 streaming，在 T43 之后）、
 T45（Cast receiver 可行性 gate）、xross-dev 侧 bridge 窗口（S4）、
 provider 放行（S5）；native 窗口 sink 与 Tauri demo 壳留桌面会话。
