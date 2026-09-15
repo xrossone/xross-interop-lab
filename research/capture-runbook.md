@@ -10,6 +10,10 @@
 **可用设备（2026-09-15 用户告知）**：Samsung Android（快速分享 Quick Share）、iPhone + iPad + Mac、
 ASUS ROG（Windows，可装 Quick Share for Windows）、Apple TV（**尚未安装，需要时装**）、Ubuntu Linux。
 
+**哪一步用哪台设备**（一句话）：§1 与 §2 用 **Samsung 安卓**（Quick Share 是安卓/Google 侧协议，
+iPhone 不参与）；§3 用 **iPhone/iPad**（Apple TV 作接收端，**不需要 S1**）；§4 用 Samsung + ROG。
+**一条线只动一台发送端**，其余设备保持安静。
+
 **优先级**：§1（定性发现介质）→ §2（传输字节）→ §3（AirPlay，Apple TV 在场时顺手做）→ §4（WFD，最难，可暂缓）。
 
 ## 0. 预检（1 分钟）
@@ -48,7 +52,12 @@ sudo tcpdump -i en0 -U -w captures/qs-01-discovery.pcap 'udp port 5353 or udp po
 dns-sd -B _services._dns-sd._udp local.
 ```
 
-**手机动作（按顺序，每步停 5–10 秒，便于按时间轴切段）**：
+**手机动作（用 Samsung 安卓；iPhone 在这条线上没有任何角色，见 §3）**
+（按顺序，每步停 5–10 秒，便于按时间轴切段）：
+
+0. **让 iPhone/iPad 保持安静**：不要打开屏幕镜像列表、不要打开分享面板。
+   否则 mDNS 上会同时出现 AirPlay 记录，**差分就被污染了**——一次只让一个协议说话。
+   顺序比时刻重要，不用秒表；真要记时刻，每步后跑一次 `date +%H:%M:%S` 记下来即可。
 
 1. 打开 Wi-Fi 设置页（刷新一次 mDNS）。
 2. 进"快速分享"设置页 → 可见性改成 **"所有人 / 附近的所有人"** → 停 10 秒。
@@ -67,7 +76,7 @@ dns-sd -B _services._dns-sd._udp local.
 BLE 侧我们**只记"有没有、哪种广告类型、服务 UUID 与长度"**，不反推、不伪造任何 UUID 常量；
 抓包里若出现形如 `_<12 位十六进制>._tcp` 的服务名，那只是**假设**，验证前不进 spec。
 
-## 2. 传输字节：Samsung → ASUS ROG（约 20 分钟）
+## 2. 传输字节：**Samsung（发）→ ASUS ROG（收）**（约 20 分钟）
 
 unicast TCP 在别人的 AP 上看不见（监听模式与中间人都不做）。干净办法：让两台设备都挂在 Mac 的热点上。
 
@@ -88,7 +97,9 @@ sudo tcpdump -i bridge100 -U -w captures/qs-02-transfer.pcap 'tcp or udp'
 > 如果 `bridge100` 上一个包都没有：这**不是失败**——它说明这次传输没走 Wi-Fi LAN
 > （很可能走了 BLE/蓝牙/Wi-Fi Direct），那本身就是 P-F02-1 要的结论，记下来。
 
-## 3. AirPlay：iPhone/iPad → 库存 Apple TV（不需要 S1，约 20 分钟）
+## 3. AirPlay：**iPhone/iPad（发）→ 库存 Apple TV（收）**（不需要 S1，约 20 分钟）
+
+> 这条线**不用三星**（安卓没有 AirPlay 发送端），也别在这条线里开快速分享。
 
 P-M01-2（`audioFormat`/`ct`/`spf`）与 features 位值一直缺的是**发送端真实取值**。用一个**真实接收端**
 （Apple TV）就能拿到，不必运行 UxPlay（那是 S1 的事）：
