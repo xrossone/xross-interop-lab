@@ -1,95 +1,135 @@
 # 抓包 runbook（S3：lab 网段抓包 + 脱敏）
 
-> 用途：把"只有真机才能看见的字节"变成可复查的 lab 证据。**抓包由用户执行**（本机 + 自有设备），
-> 本仓负责脱敏、固化字段行与记 hash。原始 pcap **永不入库**（`.gitignore` 已覆盖 `/captures/` 与 `*.pcap`），
-> 只有脱敏摘录进 `evidence/`。
->
-> 批准状态：S3 = **已批准（2026-09-15，用户主动配合）**。S1/S2 未批准前，AirPlay 侧的接收端抓包不做（见 §4）。
+> **抓包由用户执行**（自有设备、自有网段），本仓负责脱敏、固化字段行与记 hash。
+> 原始 pcap **永不入库**（`.gitignore` 已覆盖 `/captures/` 与 `*.pcap`），只有脱敏摘录进 `evidence/`。
+> 脱敏工具已就绪：`tools/capture_redact.py`（stdlib only，白名单式保留；自测 `tools/test_capture_redact.py`）。
 
-## 0. 先决条件与预检
+**批准状态**：S3 = **已批准（2026-09-15，用户主动配合真机）**。S1/S2 未批准前不运行第三方接收端
+（UxPlay 等）；但 AirPlay 的抓包**不需要** S1，因为可以走库存 Apple TV（见 §3）。
+
+**可用设备（2026-09-15 用户告知）**：Samsung Android（快速分享 Quick Share）、iPhone + iPad + Mac、
+ASUS ROG（Windows，可装 Quick Share for Windows）、Apple TV（**尚未安装，需要时装**）、Ubuntu Linux。
+
+**优先级**：§1（定性发现介质）→ §2（传输字节）→ §3（AirPlay，Apple TV 在场时顺手做）→ §4（WFD，最难，可暂缓）。
+
+## 0. 预检（1 分钟）
 
 ```bash
 cd /Volumes/Portable2TB/ExtDev/xross-interop-lab
-mkdir -p captures                       # 不入库
-networksetup -listallhardwareports | grep -A2 Wi-Fi   # 取 Wi-Fi 的 Device（通常是 en0）
+mkdir -p captures
+networksetup -listallhardwareports | grep -A2 Wi-Fi    # 取 Wi-Fi 的 Device（通常 en0）
+
+# 10 秒预检：手机打开一次分享面板，看 Mac 上有没有 mDNS
+sudo tcpdump -i en0 -n -c 20 'udp port 5353'
 ```
 
-预检（10 秒，确认"手机的组播在 Mac 上看得见"）：
+- 有包 → §1 照做。
+- **0 包** → 多半是 AP 客户端隔离（或两设备不同 SSID/频段）。换同一 SSID 重试；仍 0 包就直接看 §1 的 BLE 侧。
+
+## 1. 先定性：发现走的是 BLE 还是 LAN？（最高优先，约 10 分钟）
+
+Nearby Connections 有 BLE 广播、蓝牙、Wi-Fi LAN(mDNS)、Wi-Fi Direct 等多条介质，**用哪条由实现自选**。
+所以第一步不是"抓更多包"，而是**定性介质**——这一步没有结论，后面的抓包方向就是猜的。
+
+**Ubuntu 侧（BLE 观察）**：
 
 ```bash
-sudo tcpdump -i en0 -n -c 20 'udp port 5353'      # 同时在手机上打开一次分享面板
+# 需要蓝牙适配器；btmon 抓的是 HCI 层，包含广播数据
+sudo btmon -w captures/qs-ble-01.btsnoop
+# 或者只要"看得见哪些设备/服务"，用：
+sudo bluetoothctl --timeout 45 scan on
 ```
 
-- 有包 → 直接进 §1。
-- **0 个包** → 多半是 AP 的客户端隔离（或手机在 5G 上、Mac 在另一个 SSID）。
-  两个办法：① 手机与 Mac 连同一个 SSID/频段重试；② 走 §2 的"Mac 热点"方案（那时抓 `bridge100`）。
-
-## 1. 抓取 A：发现过程（P-F02-1 的发现半边 + P-F02-3）
+**Mac 侧（LAN 观察）**，与上面**同时**进行：
 
 ```bash
 sudo tcpdump -i en0 -U -w captures/qs-01-discovery.pcap 'udp port 5353 or udp port 1900'
+# 另开一个窗口做差分旁证：
+dns-sd -B _services._dns-sd._udp local.
 ```
 
-`-U` 是边抓边写，Ctrl-C 不会丢掉尾巴。**只留 mDNS(5353) 与 SSDP(1900)**——发现字节都在这两条里，
-同时把无关流量挡在外面（少一点隐私面）。
+**手机动作（按顺序，每步停 5–10 秒，便于按时间轴切段）**：
 
-手机动作（**按顺序，每步之间停 5–10 秒**，便于按时间轴切段）：
+1. 打开 Wi-Fi 设置页（刷新一次 mDNS）。
+2. 进"快速分享"设置页 → 可见性改成 **"所有人 / 附近的所有人"** → 停 10 秒。
+3. 改回 **"仅联系人"** → 停 10 秒。（**差分**就看这两段）
+4. 回桌面 → 选一个文件 → 分享 → 快速分享，停在"选择设备"列表 20–30 秒别动。
+5. 结束两个抓取（Ctrl-C）。
 
-1. 打开手机"Wi-Fi 设置"页（让系统刷新一次 mDNS）。
-2. 进"快速分享 / Quick Share"（三星：快速分享；小米/OPPO/vivo：互传/附近分享）**设置页**，
-   把可见性从"仅联系人"改成"所有人 / 附近的所有人"——**这一步才决定它会不会广播**。
-   再改回"仅联系人"停 10 秒（差分！见下）。
-3. 回桌面 → 选中一个文件 → 分享 → 快速分享，停在"选择设备"列表 20–30 秒不动。
-4. 关掉分享面板，Ctrl-C 结束。
+**三种结论都对 P-F02-1 有用，务必如实记下是哪一种**：
 
-**差分法（不需要事先知道服务名，最稳）**：抓包期间开着这条旁证命令，
+| 观察 | 结论 |
+|---|---|
+| 只有 BLE 有流量 | 发现走 **BLE 广播**：mDNS 只是可选通道，f02 的发现行要按 BLE 广告固化 |
+| 只有 mDNS/SSDP 有 | 发现走 **Wi-Fi LAN**：可以按 mDNS 记录固化 |
+| 两条都有 | 两条通道并存，**分别**固化，且要记录哪条在什么可见性档位下出现 |
 
-```bash
-dns-sd -B _services._dns-sd._udp local.     # 列出局域网上正在宣告的服务类型（Ctrl-C 停）
-```
+BLE 侧我们**只记"有没有、哪种广告类型、服务 UUID 与长度"**，不反推、不伪造任何 UUID 常量；
+抓包里若出现形如 `_<12 位十六进制>._tcp` 的服务名，那只是**假设**，验证前不进 spec。
 
-把"可见性=所有人"那段与"仅联系人"那段对比：**只在开启时出现的服务类型**就是 Quick Share 的发现服务。
-抓包里再留意形如 `_<12 位十六进制>._tcp` 的名字（Nearby Connections 系的常见形态）——这是**假设**，
-抓包要么验证要么否证，**未验证前不会写进 spec 或实现**。
+## 2. 传输字节：Samsung → ASUS ROG（约 20 分钟）
 
-## 2. 抓取 B：传输过程（真正的 wire 字节；可选，需要改一次系统网络设置）
+unicast TCP 在别人的 AP 上看不见（监听模式与中间人都不做）。干净办法：让两台设备都挂在 Mac 的热点上。
 
-unicast TCP 在别人的 AP 上看不见（除非监听模式或中间人，那些都不做）。干净的办法是把**两台设备都
-放进 Mac 的热点**，让它们的流量从 Mac 的网桥过：
-
-1. 系统设置 → 通用 → 共享 → **互联网共享**（来源：以太网/Wi-Fi；目标端口：Wi-Fi）→ 打开。
-   ⚠️ 这是**真实系统网络变更**，做完记得关掉。
-2. 手机与第二台设备都连上这个热点。
-3. 抓网桥：
+1. **ROG 上装 Google「Quick Share」for Windows 并登录**（与手机同一个 Google 账号；Samsung 快速分享
+   与 Google Quick Share 互通）。
+2. Mac：系统设置 → 通用 → 共享 → **互联网共享**（来源：以太网或 Wi-Fi；目标端口：Wi-Fi）→ 打开。
+   ⚠️ 这是真实系统网络变更，做完立刻关掉。
+3. 手机与 ROG 都连上这个热点。
+4. 抓网桥：
 
 ```bash
 sudo tcpdump -i bridge100 -U -w captures/qs-02-transfer.pcap 'tcp or udp'
 ```
 
-4. 手机往第二台设备传一个 **2–5 MB** 的文件；传输到一半时**停 2 秒再继续**（便于区分分块与 ack）。
-5. 结束后关闭互联网共享，恢复原网络。
+5. 手机 → 分享一个 **2–5 MB** 的文件给 ROG。**传到一半停 2 秒再继续**（便于区分分块、确认与重传）。
+6. 结束后关掉互联网共享，恢复原网络。
 
-## 3. 交回给 lab
+> 如果 `bridge100` 上一个包都没有：这**不是失败**——它说明这次传输没走 Wi-Fi LAN
+> （很可能走了 BLE/蓝牙/Wi-Fi Direct），那本身就是 P-F02-1 要的结论，记下来。
 
-- 文件放 `captures/`（或任何仓外路径，只要告诉我路径）。**不要**把 pcap 提交进 git。
-- 附一句设备清单（型号 + 系统版本 + 谁发谁收），例如写进 `captures/device-notes.md`：
-  `A: Pixel 8 / Android 15（发）；B: Windows 11 + Quick Share（收）；Mac: macOS 15 (en0)`
-- lab 侧的处理（由本仓执行，可复查）：
-  1. 脱敏：丢 MAC/IP/主机名/文件名/任何载荷，只留协议结构（服务类型、TXT 键、端口、帧形状与长度）。
-  2. 摘录进 `evidence/quickshare-discovery-capture/`（人类可读 + JSON），记**原始 pcap 的 sha256**。
-  3. 据此固化 `specs-reviewed/f02` 的发现行（每条带"抓包 2026-xx-xx + 设备"来源），并把 gate 的
-     blocked 行解除；**不**据此推断任何 crypto/凭据材料。
+## 3. AirPlay：iPhone/iPad → 库存 Apple TV（不需要 S1，约 20 分钟）
 
-## 4. 现在不做的抓包（诚实边界）
+P-M01-2（`audioFormat`/`ct`/`spf`）与 features 位值一直缺的是**发送端真实取值**。用一个**真实接收端**
+（Apple TV）就能拿到，不必运行 UxPlay（那是 S1 的事）：
 
-| 目标 | 为什么现在不做 |
-|---|---|
-| P-M01-2 AirPlay `audioFormat`/`ct`/`spf` | 要一个**真的 AirPlay 接收端**在线，iPhone 才会发 SETUP；接收端 = UxPlay（S1）+ 真机（S2） |
-| AirPlay `features` 位值（TXT） | 同上，需要接收端广播；别人的 Apple TV 广播只能补观测，补不了 sender 侧取值 |
-| 真机画质/长跑矩阵 | S2：需要你的设备与连续在场时间（见 §1.4 的 A1–A10） |
+1. Apple TV 开箱激活（**需要联网**——可以直接先连 Mac 的热点，让它顺便有网）。
+2. 把 **Apple TV 与 iPhone/iPad 都连到 Mac 的热点**（同一子网，mDNS 才看得见彼此）。
+3. 抓网桥（AirPlay 控制连接是 TCP 7000；媒体另开连接）：
 
-## 5. 安全与边界
+```bash
+sudo tcpdump -i bridge100 -U -w captures/ap-01-control.pcap 'tcp or udp'
+```
 
-- 只抓**你自己的**网段；抓完原始 pcap 留或删由你定（lab 只需要脱敏摘录 + hash）。
-- 脱敏前 lab **不**引用任何设备名/人名/文件名；`captures/` 与 `*.pcap` 已被 `.gitignore` 挡住。
-- 抓包不产生"设备认证材料"：UKEY2/TLS 之后的载荷是密文，本仓也不从中反推密钥。
+4. iPhone 上做四件事，每件之间停 5–10 秒：① 打开控制中心的**屏幕镜像**列表（看 mDNS 交换）；
+   ② 连上 Apple TV 开始镜像 20 秒；③ 调一次音量、切一次 App；④ 断开镜像。
+5. 结束抓取。
+
+抓包会告诉我们两件事：**发送端实际发的 `audioFormat`/`ct`/`spf` 取值**，以及**这条控制连接是否明文**
+（若 Apple TV 走的是我们没预期的加密形态，那同样是一条要记的结论，而不是失败）。
+
+## 4. WFD / Miracast（最难，可暂缓）
+
+Samsung「Smart View」→ ROG 的「无线显示器 / MiracastReceiver」是 P-M05-1 的现成组合，但 **Wi-Fi Direct
+不经过 LAN**，Mac 抓不到。要抓 M0–M16 与 WFD IE 得在 Ubuntu 上跑一个 sink + **支持监听模式的网卡**，
+这是另一个量级的准备（等 §1–§3 有结论后再排）。P-M05-1 的"Windows receiver 能不能脚本化"可以**只看行为**
+（不抓包）先在 ROG 上确认。
+
+## 5. 交回与脱敏
+
+```bash
+python3 tools/capture_redact.py captures/qs-01-discovery.pcap \
+    --out-dir evidence/quickshare-discovery-capture --label qs-01-discovery
+```
+
+产物：`*-redacted.json`（机器可读）、`*-redacted.txt`（人类可读）、`*-REDACTION.md`（删了什么/留了什么/
+原文 sha256）。**原始 pcap 不入库**，也只有脱敏摘录会进 `evidence/`。
+
+一并告诉我：设备清单（型号 + 系统版本 + 谁发谁收）、每步的大致时刻、以及 §1 的三种结论里是哪一种。
+
+## 6. 安全与边界
+
+- 只抓**你自己的**网段；原始 pcap 留或删由你定（lab 只需要脱敏摘录 + hash）。
+- 脱敏是白名单式：只有服务类型、TXT **键名**、协议常量形状的取值、端口、长度、时序、TCP 首批载荷形状会留下；
+  设备名/人名/文件名/IP/MAC/UUID 一律替换成稳定假名或 `<redacted len=N>`。
+- 抓包不产生"设备认证材料"：UKEY2/TLS 之后的载荷是密文，本仓也不从中反推密钥或身份。

@@ -47,6 +47,7 @@ decisions/                      # source-allowlist / xross-contract-baseline / p
 provenance/                     # approved-inputs / review-log
 evidence/                       # run manifest（run.schema.json 校验）+ intake 扫描
 tools/                          # 仓库检查脚本与测试（python3 -m unittest discover -s tools）
+                                # + capture_redact.py：pcap → 白名单式脱敏摘录（S3 用，自测同目录）
 ```
 
 参考源码放在仓库外 `/Volumes/Portable2TB/ExtDev/others/`，以 slug 名浅克隆 default branch，
@@ -296,6 +297,13 @@ tools/                          # 仓库检查脚本与测试（python3 -m unitt
   排除名单里且名单不得过期；无第三方模糊器依赖；`unsafe` 只许计数分配器那一处）。
   证据：[evidence/2026-09-15-t46-input-hardening](evidence/2026-09-15-t46-input-hardening/run-manifest.json)、
   语料计划 [evidence/input-hardening-corpus](evidence/input-hardening-corpus/corpus-plan.json)。
+
+**S3 抓包已批准（2026-09-15，用户配合真机）**：步骤见
+[research/capture-runbook.md](research/capture-runbook.md)——①先在 Ubuntu 上用 `btmon` 定**发现介质**
+（BLE vs mDNS，这一步没有结论后面就是猜）；②Samsung → ROG(Quick Share for Windows) 走 Mac 热点抓 `bridge100`
+拿传输字节；③iPhone/iPad → 库存 Apple TV 抓 `audioFormat`/`ct`/`spf`（**不需要 S1**）。
+脱敏管道已就绪：`tools/capture_redact.py`（白名单式：只留服务类型/TXT 键名/协议常量/端口/时序/TCP 首批载荷形状，
+设备名与人名一律假名化），原始 pcap 不入库。
 
 **未开始 / 待批准**：T30（UxPlay provider 闭环，需 scope S1/S2）、T33（AirPlay 音视频接收真机）、
 T22（Quick Share 发送闭环，需 QR/可发现路径）、Quick Share 发现源
