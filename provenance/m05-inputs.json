@@ -1,0 +1,79 @@
+{
+  "schema_version": 1,
+  "created_at": "2026-09-15",
+  "scope": "wfd.miracast（M05）线的输入清单（T37 gate）：每一份进入实现上下文的材料都登记用途/许可/边界",
+  "rules": [
+    "没有登记的来源不得进入 impl/ 的实现上下文（T37 gate）",
+    "只取字段名/常量/结构事实（行级引用注明 commit+文件+行）；不复制表达、不翻译、不链接",
+    "F-24（WFD IE 容器 OUI/OUI type）与 F-25（P2P 组形成）blocked：实现不得构造完整 IE、不得触碰平台 P2P API",
+    "F-22 的 HDCP 握手属设备/厂商材料：只解析取值并明确拒绝，不实现密钥交换",
+    "keep-alive 的 30 s/25 s（F-27）是实现取值而非规范常量，引用时必须标注来源",
+    "真机语料（抓包/log）由用户执行，pcap 不入库"
+  ],
+  "entries": [
+    {
+      "id": "R32",
+      "name": "albfan/miraclecast",
+      "commit_ref": "0b7f1f1f6586",
+      "license": "LGPL-2.1 为主",
+      "use": "facts-source：RTSP 方法集与 `Public`/`Require` 头取值、`wfd_*` 参数名、Session 头取分号前子串的写法、`wfd_client_rtp_ports`/`Transport` 值形状、RTSP 控制端口 7236、媒体侧 `rtpmp2tdepay ! tsdemux` 解复用事实、sink 未实现 TEARDOWN（反例）",
+      "boundary": "行级事实引用注明文件+行；不复制代码表达、不链接；其旧系统脚本一律不执行",
+      "allowed_in_crate": true,
+      "gate": "只把字段/常量/结构写进 specs-reviewed 字段表；实现按字段表写"
+    },
+    {
+      "id": "R33",
+      "name": "GNOME/gnome-network-displays",
+      "commit_ref": "521caad089ca",
+      "license": "GPL（版本待核）",
+      "use": "facts-source：M0–M5 初始化状态命名与顺序、`wfd_video_formats` 的 native/preferred-display-mode 拆分与描述符字段序、切片编码参数位布局、`wfd_audio_codecs` 三元组与延迟单位、RTCP 端口 quirk（port1 为 0 或等于 port0 → port0+1 且禁 keep-alive）、keep-alive 取值（30 s/25 s）、RTP 默认端口 16384、分辨率表索引写法、9 字节子元素字面量（控制端口/吞吐）",
+      "boundary": "GPL：只取字段语义与结构事实，不复制表达、不翻译实现、不链接；9 字节字面量只作为结构证据引用，不进入实现常量表",
+      "allowed_in_crate": true,
+      "gate": "字段表 = 唯一入口；实现里不得出现其代码片段"
+    },
+    {
+      "id": "R34",
+      "name": "ivygroup/miracast-sink",
+      "commit_ref": "214d77aec1d1",
+      "license": "Apache-2.0 衍生声明（源自 AOSP 4.2.2）",
+      "use": "facts-source：M1/M3/M4/M5/M16 的 source 侧发送与 M2/SETUP/PLAY 的 sink 侧发送（方向证据）、`wfd_video_formats` 广告字面量字段数、`wfd_client_rtp_ports` 校验规则（port0≠0、≤65535、port1==0）、`Transport` 分支（UDP 单播/TCP 交错）与缺 client_port 时的 19000 回退、音频 mode 位语义（AAC bit0、LPCM bit2）、内容保护取值形状（`none`/`HDCP2.0 `/`HDCP2.1 ` + `port=`）、RTP 固定头与 payload type 33、source/sink 状态枚举",
+      "boundary": "Apache-2.0 衍生（含 AOSP 血统）：只取事实，不复制表达；HDCP 组件调用（IHDCP/HDCP 描述符）只作为“存在该能力、本仓不实现”的证据",
+      "allowed_in_crate": true,
+      "gate": "HDCP 相关只允许出现在字段表的 blocked/not-implemented 行"
+    },
+    {
+      "id": "R35",
+      "name": "FoxLost/universal-miracast-sink",
+      "commit_ref": null,
+      "license": "未发现可据以放行的统一授权；来源高风险（固件/反编译描述）",
+      "use": "本轮未使用（只登记 provenance）",
+      "boundary": "gated：任何表达不进入实现上下文",
+      "allowed_in_crate": false,
+      "gate": "如需使用先走 T05 式组合审查"
+    },
+    {
+      "id": "R36",
+      "name": "weekdayjast/MiracastReceiver",
+      "commit_ref": null,
+      "license": "未审计（license_audited=false）",
+      "use": "本轮未使用（只登记）",
+      "boundary": "未审计：不进入实现上下文",
+      "allowed_in_crate": false,
+      "gate": "如需使用先补许可审计"
+    },
+    {
+      "id": "R37",
+      "name": "openharmony/castengine_wifi_display",
+      "commit_ref": "13ce3d3ebc82",
+      "license": "Apache-2.0（根确认）",
+      "use": "facts-source：M 编号到方法的映射（M2=OPTIONS、M6=SETUP、M7=PLAY、M8=TEARDOWN、M13=wfd_idr_request、M16=keep-alive、M4/M5=SET_PARAMETER）、source 侧 M0..M8 状态机与 sink 侧 INIT/READY/PLAYING/STOPPING、`wfd_*` 参数名全集（含 wfd2_* 与厂商扩展名）、音频类型 id（LPCM=0/AAC=1/AC3=2）与 mode 位枚举、H.264 profile/level 位图、video codec 类型 id、控制端口常量 7236、RTP/RTCP 端口池与 URL 形状、`SetCtrlPort`/`SetMaxThroughput(0x00c8)`（子元素结构证据）、内容保护只记录不强制",
+      "boundary": "只取常量/字段名/枚举事实（来源注释里标注的 WFD 规范表号一并记录，但我们没有该规范文本）；不复制 C++ 表达、不链接其系统服务依赖",
+      "allowed_in_crate": true,
+      "gate": "厂商扩展参数名（wfd_hwe_*、microsoft_*）默认不实现，只登记"
+    }
+  ],
+  "device_evidence": {
+    "status": "none",
+    "note": "真机发送端（Android/Windows）与真 TV/适配器矩阵（P-M05-3）、WFD IE 播发与完整 M0–M16 序列（P-M05-2）都需要用户在场或隔离机：本阶段不产生任何器件级证据"
+  }
+}
