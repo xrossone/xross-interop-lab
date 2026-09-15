@@ -128,16 +128,16 @@ tools/                          # 仓库检查脚本与测试（python3 -m unitt
   `crates/proto-quickshare` 实现 TCP 4 字节大端 framing、UKEY2 三消息状态机（真实 P-256 ECDH /
   SHA-512 commitment / HKDF-SHA256）、Alert 码表、重放拒绝、payload gate（未核对 4 位确认码不放行）。
   **发现/QR/传输加密/payload 层未实现**（P-F02-1/3 未关闭），gate 测试机器保证实现里没有发现代码。
-- **headless demo**：`apps/interop-demo`（`xinterop-demo [run|discovery|session|sink|media|qshare|mirror|dlna] [--json]`）
+- **headless demo**：`apps/interop-demo`（`xinterop-demo [run|discovery|session|sink|media|qshare|mirror|dlna|wfd] [--json]`）
   把上述各层跑成真实状态输出：注册表不合并 identity、SETUP 503/401 与 131072 B 分配时机、sink 统计与
   显式 resample、XMD1 往返与负向、UKEY2 握手与分片等价；输出恒带 `evidence_level=simulated` + blocked +
   待用户手动清单（见 [evidence/2026-09-15-t5-demo-cli](evidence/2026-09-15-t5-demo-cli/demo-report.txt)）。
 - **验证**（阶段 3 收尾时）：`cargo test --manifest-path impl/Cargo.toml --workspace` **113 tests 全绿**；
   clippy 0 warnings；`python3 -m unittest discover -s tools` **39 tests OK**（阶段 4 首批后为
-  **163 tests / lab 46 tests**，见下）。每 task 的 run manifest 见
+  **181 tests / lab 55 tests**，见下）。每 task 的 run manifest 见
   [evidence/index.json](evidence/index.json)。
 
-**阶段 4 首批（2026-09-15 稍后追加，三项已完成）**
+**阶段 4 首批（2026-09-15 稍后追加，四项已完成）**
 
 - **T21 Quick Share 传输闭环（headless 部分）**：`crates/proto-quickshare` 新增
   `secure_message`（D2D 密钥链 + SecureMessage AES-256-CBC/HMAC-SHA256 + 严格 +1 序号，跳号/重放即
@@ -164,10 +164,23 @@ tools/                          # 仓库检查脚本与测试（python3 -m unitt
   证据：[evidence/2026-09-15-t41-dlna-control](evidence/2026-09-15-t41-dlna-control/run-manifest.json)；
   demo 新增 `dlna` 段（`xinterop-demo dlna`，见 D-10）。
 
+- **T37 WFD/Miracast（headless 切片）**：先做 gate——`specs-reviewed/m05` 重写为 F-01..F-32 字段表
+  （M1..M8/M13/M16 的方法与**方向**、媒体协商描述符、子元素、RTP 封装，每行带来源 commit+文件+行），
+  blocked = F-24（WFD IE 容器 OUI）、F-25（P2P 组形成/平台 API）、F-30（真机矩阵）；
+  `provenance/m05-inputs.json`（R32/R33/R34/R37 facts-only，R35/R36 不进实现）+ 语料 18 条
+  （规则明确禁止任何 OUI 猜测值）+ `tools/test_wfd_gate.py`（9 例）。
+  实现 `crates/proto-wfd`：消息层（含走私/长度纪律）、协商层（`wfd_video_formats` 三段与 13 字段描述符、
+  `wfd_audio_codecs` 三元组与 mode 位、端口/传输形状与 RTCP quirk）、子元素编解码、
+  RTP 固定头记账与按**本仓策略**的关键帧请求；**完整 WFD IE 的构造与解析一律 `unsupported-feature`**
+  （OUI 不臆造），HDCP 只解析并拒绝，`player_available` 恒 false（能协商 ≠ 能显示）。
+  证据：[evidence/2026-09-15-t37-wfd-control](evidence/2026-09-15-t37-wfd-control/run-manifest.json)；
+  demo 新增 `wfd` 段（`xinterop-demo wfd`，见 D-11）。测试逼出四处实现缺陷（M3 查询正文是**裸参数名**、
+  M13 正文是裸 `wfd_idr_request`、keep-alive 基准、M13/M16 应用控制 URI），详见 run manifest 的 red→green 记录。
+
 **未开始 / 待批准**：T30（UxPlay provider 闭环，需 scope S1/S2）、T33/T34（AirPlay 音视频接收真机）、
 T22（Quick Share 发送闭环，需 QR/可发现路径）、keep-alive 与 paired-key 帧、Quick Share 发现源
 （待 P-F02-1/2/3 关闭与 S3 抓包批准）、T42（DLNA renderer 侧真实媒体拉取，需真电视矩阵 P-M07-1）、
-T37（Wi-Fi Display/Miracast 纯状态机与媒体协商，未开始）、xross-dev 侧 bridge 窗口（S4）、
+T38/T39（WFD 真机序列与 IE 播发、平台入口 probe，需 P-M05-1/2/3）、xross-dev 侧 bridge 窗口（S4）、
 provider 放行（S5）；native 窗口 sink 与 Tauri demo 壳留桌面会话。
 阶段 3 的 goal prompt 见 [docs/goal-phase-3.md](docs/goal-phase-3.md)，执行结果见
 [evidence/2026-09-15-phase-3-final-report.md](evidence/2026-09-15-phase-3-final-report.md)；阶段 2 见

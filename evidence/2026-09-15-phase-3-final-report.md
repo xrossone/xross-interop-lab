@@ -179,3 +179,32 @@ Quick Share ↔ Android）、抓包、可见性矩阵、native 窗口、Tauri GU
 - **测试面**：impl 141 → **163**（proto-upnp 22 + demo 10）；clippy 0；lab 39 → **46**（dlna gate 7）。
 - **边界**：无网络 I/O（SSDP/HTTP 报文只在内存里编解码）、无真机、无凭据；真电视与 renderer 侧
   媒体拉取（T42）仍需 P-M07-1 关闭。
+
+
+---
+
+## 补充 4（2026-09-15）：T37 WFD/Miracast 接收侧控制面与媒体协商（headless 切片）已落地
+
+**commit** `dfcb0b5`（gate）、`cf11c38`（实现 + 证据）、`1e06d70`（demo `wfd` 段 + D-11）。
+
+- **先关门禁**：重写 `specs-reviewed/m05-miracast-wfd.md` 为 F-01..F-32 字段级事实表（每行带来源
+  commit + 文件 + 行），覆盖控制面消息与**方向**（M1 与 M2 在线上同形、只有方向不同）、媒体协商描述符
+  字段序与位布局、子元素、RTP 封装；blocked 行 = F-24（WFD IE 容器 OUI/OUI type）、F-25（P2P 组形成与
+  平台 API）、F-30（真实设备矩阵），另有 F-31（厂商参数拼写分歧）与 F-32（profile/level 按位图解释的裁决）。
+  新增 `provenance/m05-inputs.json`（R32/R33/R34/R37 facts-only 放行并写明各自许可边界；R35 固件/反编译来源、
+  R36 许可未审计 → 不进实现）与 `evidence/wfd/corpus-plan.json`（wfd-001..018，**规则禁止任何 OUI 猜测值**）。
+- **实现** `crates/proto-wfd`：`messages`（方法集与 M 编号/方向、CSeq 递增、Session 取分号前子串、
+  M3 查询列参数名 vs M4 取值 `名字: 值` 的两种正文形状、重复/缺 Content-Length 与超限在分配前拒绝）、
+  `negotiate`（三段结构与 13 字段描述符、native 拆表/索引、切片参数位布局、H.264 profile/level 位图、
+  音频三元组与 mode 位、`wfd_client_rtp_ports` 校验与 F-14 的 RTCP quirk、Transport 三形状与 19000 回退、
+  内容保护解析）、`ie`（子元素 0x00 九字节；**容器构造/解析一律 `unsupported-feature`**）、
+  `rtp`（固定头解析与序号记账）、`session`（接收侧状态机：只固定顺序不固定状态名——F-26 说明四个来源
+  各有一套状态命名、没有共同事实）。
+- **验收**：T37-01..04 共 17 例。**测试逼出四处实现缺陷**，且都是来源字面量决定的：① M3 的
+  `GET_PARAMETER` 正文是裸参数名而不是 `名字: 值`；② M13 正文同样是裸 `wfd_idr_request`；
+  ③ keep-alive 基准错（首个间隔未满就发 M16）；④ M13/M16 应走控制 URI `rtsp://localhost/wfd1.0`
+  而不是 streamid URL。若无测试，这四处会以"看起来能跑"的方式与真实对端不通。
+- **诚实边界**：完整 WFD IE 不构造（OUI 未固化，拒绝理由指向 P-M05-2）、无 P2P/平台 API 调用、
+  无 HDCP 握手（只解析取值并拒绝）、无 TS 解复用与解码 → `SessionStats.player_available` 恒 false，
+  生产路径的能力广告是 `none`（协商必然以 `unsupported-feature` 结束，不假装能显示）。
+- **测试面**：impl 163 → **181**（proto-wfd 17 + demo D-11）；clippy 0；lab 46 → **55**（wfd gate 9 例）。
