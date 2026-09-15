@@ -6,12 +6,15 @@
 //! - [`handshake`]：UKEY2 三消息状态机、commitment 校验、Alert 码表、认证串与 next secret；
 //! - [`session`]：framing+握手+配额/超时+payload gate（T19-01/T19-02 不变量）。
 //!
-//! **不在这里**：发现（mDNS/BLE/QR，P-F02-1/3 未关闭）、传输加密与 payload 层（T21）、
+//! - [`control`]：keep-alive 与 paired-key 控制帧（F-30..F-33；两层编号见模块文档）。
+//!
+//! **不在这里**：发现（mDNS/BLE/QR，P-F02-1/3 未关闭）、paired-key 的材料派生（不可离线推导）、
 //! 任何文件系统或 UI 行为。未实现的能力返回 `unsupported-feature`，不假成功。
 
 #![forbid(unsafe_code)]
 #![allow(clippy::result_large_err)]
 
+pub mod control;
 pub mod crypto;
 pub mod framing;
 pub mod handshake;
