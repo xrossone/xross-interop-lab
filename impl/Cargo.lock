@@ -211,6 +211,7 @@ dependencies = [
  "interop-platform",
  "interop-runtime",
  "proto-airplay",
+ "proto-quickshare",
  "serde",
  "serde_json",
 ]

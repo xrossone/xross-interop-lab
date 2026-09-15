@@ -22,8 +22,37 @@ pub struct DemoReport {
     pub session: SessionReport,
     pub sink: SinkReport,
     pub media_plane: MediaPlaneReport,
+    pub quickshare: QuickShareReport,
     pub blocked: Vec<String>,
     pub manual_tests: Vec<String>,
+}
+
+// ---------- Quick Share / UKEY2（T19/T20）----------
+
+#[derive(Debug, Clone, Serialize)]
+pub struct QuickShareReport {
+    pub evidence_level: &'static str,
+    pub wire: &'static str,
+    pub framing: serde_json::Value,
+    pub handshake: serde_json::Value,
+    pub fragmentation: serde_json::Value,
+    #[serde(serialize_with = "serialize_pairs")]
+    pub negatives: Vec<(String, String)>,
+    pub payload_gate: serde_json::Value,
+    pub conflict: serde_json::Value,
+    pub blocked: Vec<String>,
+}
+
+fn serialize_pairs<S>(pairs: &[(String, String)], s: S) -> Result<S::Ok, S::Error>
+where
+    S: serde::Serializer,
+{
+    use serde::ser::SerializeSeq;
+    let mut seq = s.serialize_seq(Some(pairs.len()))?;
+    for (case, outcome) in pairs {
+        seq.serialize_element(&serde_json::json!({ "case": case, "outcome": outcome }))?;
+    }
+    seq.end()
 }
 
 // ---------- 发现面 ----------

@@ -184,6 +184,46 @@ fn d06_usage_errors_and_human_output() {
     }
 }
 
+/// D-08：Quick Share / UKEY2 场景——真实握手、分片等价、规范 Alert 码、payload gate 关闭语义。
+#[test]
+fn d08_quickshare_handshake_and_gate() {
+    let (code, v) = run_json(&["qshare", "--json"]);
+    assert_eq!(code, 0);
+    let q = &v["quickshare"];
+    assert_eq!(q["evidence_level"], "simulated");
+    assert_eq!(q["framing"]["length_prefix_bytes"], 4);
+    assert_eq!(q["framing"]["byte_order"], "big-endian");
+    assert_eq!(q["handshake"]["cipher"], "P256_SHA512(100)");
+    assert_eq!(q["handshake"]["key_schedule"], "HKDF-SHA256");
+    assert_eq!(q["handshake"]["established"], true);
+    assert_eq!(q["handshake"]["auth_strings_match"], true);
+    assert_eq!(q["handshake"]["next_secrets_match"], true);
+    assert_eq!(q["handshake"]["pin_matches"], true, "两实例的 4 位确认码必须一致");
+    assert_eq!(q["handshake"]["auth_string_bytes"], 32);
+    assert_eq!(q["fragmentation"]["consistent"], true, "分片不应改变结果（T20-04）");
+
+    let gate = &q["payload_gate"];
+    assert_eq!(gate["before_confirmation"], "confirmation-required", "T19-02：未确认码不放行");
+    assert_eq!(gate["wrong_code"], "PairingFailed");
+    assert_eq!(gate["after_confirmation"], "open");
+
+    let negatives = q["negatives"].as_array().expect("negatives");
+    let by_case = |needle: &str| -> Option<String> {
+        negatives
+            .iter()
+            .find(|n| n["case"].as_str().expect("case").contains(needle))
+            .map(|n| n["outcome"].as_str().expect("outcome").to_string())
+    };
+    assert_eq!(by_case("commitment").as_deref(), Some("BadMessageData"));
+    assert_eq!(by_case("random 31").as_deref(), Some("BadRandom"));
+    assert_eq!(by_case("version=2").as_deref(), Some("BadVersion"));
+    assert_eq!(by_case("next_protocol").as_deref(), Some("BadNextProtocol"));
+    assert_eq!(by_case("帧长度 0").as_deref(), Some("InvalidFrame"));
+    assert_eq!(by_case("帧长度超过").as_deref(), Some("ResourceLimit"));
+    assert_eq!(q["conflict"]["adopted"], "HKDF-SHA256");
+    assert!(!q["blocked"].as_array().expect("blocked").is_empty());
+}
+
 /// D-07：blocked 与待用户手动清单必须随输出给出（本阶段不允许"看起来全绿"）。
 #[test]
 fn d07_blocked_and_manual_lists_are_reported() {
@@ -195,5 +235,11 @@ fn d07_blocked_and_manual_lists_are_reported() {
     assert!(
         manual.iter().any(|m| m.as_str().expect("str").contains("真机")),
         "必须列出真机测试项"
+    );
+    assert!(
+        manual
+            .iter()
+            .any(|m| m.as_str().expect("str").contains("Quick Share")),
+        "必须列出 Quick Share 真机/抓包测试项"
     );
 }

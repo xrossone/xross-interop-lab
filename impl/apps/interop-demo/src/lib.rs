@@ -11,6 +11,7 @@
 #![forbid(unsafe_code)]
 #![allow(clippy::result_large_err)]
 
+pub mod quickshare;
 pub mod report;
 pub mod scenarios;
 
@@ -23,6 +24,7 @@ pub const BLOCKED: &[&str] = &[
     "真实 mDNS/SSDP 网络发现源未实现（只有 fake 源）：真机发现矩阵需 S2 设备与用户在场",
     "Quick Share 字节格式未固化（P-F02-1 抓包、P-F02-3 可见性矩阵未关闭）→ 不写 wire 字段",
     "native window sink 未实现：无 GUI 自动化，且不以屏幕录制假装 raw output",
+    "Quick Share 发现与 QR 路径未实现（P-F02-1/3 未关闭）：不写未固化的发现字节",
 ];
 
 /// 待用户手动测试清单（真机/交互/GUI/外部引擎）。
@@ -32,6 +34,7 @@ pub const MANUAL_TESTS: &[&str] = &[
     "Tauri demo 壳 GUI 交互验证（窗口/渲染/点击）——headless CLI 覆盖不到",
     "native 视频窗口 sink：只能在桌面会话内验证（不以屏幕录制假装 raw output）",
     "本机广播的 mDNS/TXT 字节与真实接收端对照（AirPlay features 位值固化需要真机抓包）",
+    "与 stock Android 完成一次 Quick Share 握手并比对 4 位确认码（裁决 F-12/F-15 两处规范/实现冲突）",
 ];
 
 /// 跑全部场景并汇总（JSON 与人类输出共用同一份数据）。
@@ -40,6 +43,7 @@ pub fn compute_report() -> DemoReport {
     let (session, s_ok) = scenarios::session_scenario();
     let (sink, k_ok) = scenarios::sink_scenario();
     let (media_plane, m_ok) = scenarios::media_scenario();
+    let (qshare, q_ok) = quickshare::quickshare_scenario();
     let generated_unix_ms = std::time::SystemTime::now()
         .duration_since(std::time::UNIX_EPOCH)
         .map(|d| d.as_millis())
@@ -50,11 +54,12 @@ pub fn compute_report() -> DemoReport {
         evidence_level: EVIDENCE_LEVEL,
         wire: WIRE,
         generated_unix_ms,
-        ok: d_ok && s_ok && k_ok && m_ok,
+        ok: d_ok && s_ok && k_ok && m_ok && q_ok,
         discovery,
         session,
         sink,
         media_plane,
+        quickshare: qshare,
         blocked: BLOCKED.iter().map(|s| s.to_string()).collect(),
         manual_tests: MANUAL_TESTS.iter().map(|s| s.to_string()).collect(),
     }
@@ -271,6 +276,46 @@ pub fn render_human(r: &DemoReport, section: Option<&str>) -> String {
         }
     }
 
+    if want("qshare") {
+        let q = &r.quickshare;
+        out.push_str("\n## Quick Share / UKEY2（T19/T20）\n");
+        out.push_str(&format!(
+            "framing           : {} 字节大端长度前缀，本仓上限 {} B（非协议常量，F-05）\n",
+            q.framing["length_prefix_bytes"], q.framing["default_max_frame_bytes"]
+        ));
+        out.push_str(&format!(
+            "握手              : cipher={} key_schedule={} established={}\n",
+            q.handshake["cipher"], q.handshake["key_schedule"], q.handshake["established"]
+        ));
+        out.push_str(&format!(
+            "双方一致          : auth={} next_secret={} pin={}（pin={}）\n",
+            q.handshake["auth_strings_match"],
+            q.handshake["next_secrets_match"],
+            q.handshake["pin_matches"],
+            q.handshake["pin"]
+        ));
+        out.push_str(&format!(
+            "分片等价          : {}（{} 种切分）\n",
+            q.fragmentation["consistent"], q.fragmentation["modes"]
+        ));
+        for case in &q.negatives {
+            out.push_str(&format!("  - {:<34} {}\n", case.0, case.1));
+        }
+        out.push_str(&format!(
+            "payload gate      : 未确认={} 错误码={} 确认后={}\n",
+            q.payload_gate["before_confirmation"],
+            q.payload_gate["wrong_code"],
+            q.payload_gate["after_confirmation"]
+        ));
+        out.push_str(&format!(
+            "F-15 冲突         : 采用 {}；{} 待真机裁决\n",
+            q.conflict["adopted"], q.conflict["awaiting"]
+        ));
+        for b in &q.blocked {
+            out.push_str(&format!("  · blocked: {b}\n"));
+        }
+    }
+
     if section.is_none() {
         out.push_str("\n## blocked（本阶段明确不做/做不到）\n");
         for b in &r.blocked {
@@ -300,6 +345,7 @@ pub fn parse_args(args: &[String]) -> Result<(Option<&'static str>, bool), Strin
             "session" => section = Some("session"),
             "sink" => section = Some("sink"),
             "media" => section = Some("media"),
+            "qshare" | "quickshare" => section = Some("qshare"),
             "--help" | "-h" => return Err("help".to_string()),
             other => return Err(format!("未知子命令 {other:?}")),
         }
