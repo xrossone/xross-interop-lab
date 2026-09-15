@@ -83,13 +83,34 @@ class QuickShareGate(unittest.TestCase):
             self.assertGreaterEqual(len(cells), 6, f"字段表列数不足：{cells}")
             fact_id, _layer, _fact, source, status, impl = cells[:6]
             self.assertRegex(fact_id, r"^F-\d+$", f"行号形状不对：{cells}")
-            self.assertRegex(
-                source,
-                r"R\d\d.*(`|§)",
-                f"{fact_id} 缺少可复查来源（来源编号 + 文件/小节）：{source!r}",
+            self.assertTrue(
+                re.search(r"R\d\d.*(`|§)", source)
+                or re.search(r"抓包 .*evidence/[A-Za-z0-9._\-/]+", source),
+                f"{fact_id} 缺少可复查来源（来源编号 + 文件/小节，或抓包 + evidence 路径）：{source!r}",
             )
             self.assertTrue(status, f"{fact_id} 缺状态")
             self.assertIn(impl, {"yes", "**no**", "no"}, f"{fact_id} impl-allowed 值非法：{impl!r}")
+
+    def test_capture_sourced_rows_cite_existing_evidence_and_never_allow_impl(self):
+        """抓包观测是**独立证据类别**：可以入表，但必须指到存在的 evidence 路径，且一律不准入实现。"""
+        seen = 0
+        for cells in table_rows(section(self.spec, FACTS_HEADING)):
+            fact_id, _layer, _fact, source, status, impl = cells[:6]
+            if "抓包" not in source:
+                continue
+            seen += 1
+            m = re.search(r"(evidence/[A-Za-z0-9._\-/]+)", source)
+            self.assertIsNotNone(m, f"{fact_id} 抓包行必须给出 evidence 路径：{source!r}")
+            self.assertTrue(
+                (LAB / m.group(1).rstrip("/")).exists(),
+                f"{fact_id} 引用的证据路径不存在：{m.group(1)}",
+            )
+            self.assertIn(impl, {"no", "**no**"}, f"{fact_id} 抓包观测不得直接准入实现")
+            self.assertTrue(
+                ("待" in status) or ("captured" in status),
+                f"{fact_id} 抓包行的状态必须写明待复核/待固化：{status!r}",
+            )
+        self.assertGreaterEqual(seen, 2, "抓包观测行至少要留下记录（F-41/F-42）")
 
     def test_unfixed_rows_are_not_allowed_into_implementation(self):
         blocked_rows = []

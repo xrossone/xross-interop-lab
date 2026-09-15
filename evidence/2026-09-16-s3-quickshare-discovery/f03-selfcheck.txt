@@ -1,0 +1,5 @@
+F-03 自证（headless、确定性，无需设备）：
+  sha256('NearbySharing') = fc9f5ed42c8a5e9e94684076ef3bf938a809c60ad354992b0435aebbdc58b97b
+  前 6 字节 = FC9F5ED42C8A（f02 F-03 声明 FC9F5ED42C8A）
+  与声明一致 = True
+  抓包观测到的服务类型 = _FC9F5ED42C8A._tcp → 与上面的 service id 一致

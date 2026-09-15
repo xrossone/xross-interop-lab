@@ -304,6 +304,11 @@ tools/                          # 仓库检查脚本与测试（python3 -m unitt
 拿传输字节；③iPhone/iPad → 库存 Apple TV 抓 `audioFormat`/`ct`/`spf`（**不需要 S1**）。
 脱敏管道已就绪：`tools/capture_redact.py`（白名单式：只留服务类型/TXT 键名/协议常量/端口/时序/TCP 首批载荷形状，
 设备名与人名一律假名化），原始 pcap 不入库。
+**首次抓包（2026-09-16）已入库**：[evidence/2026-09-16-s3-quickshare-discovery](evidence/2026-09-16-s3-quickshare-discovery/run-manifest.json)
+——服务类型 `_FC9F5ED42C8A._tcp` 与 f02 F-01/F-03 逐字一致（`SHA256("NearbySharing")` 当场自证）、实例名 14 字符
+base64url 且首字符恒为 `I`（⇔ F-01 的 10 字节 `0x23` 前缀布局）、TXT `n` 解出 17 字节 = 1 位域 + 16 字节识别材料；
+**两处待考**（F-42）：位域 `0x32` 的两种读法各自与一条观测冲突、TXT 键 `f`/`IPv4` 未登记 → 决定性实验＝三种可见性
+档位各抓一次。**发现能力仍 blocked**（观测本身不准入实现，gate 机器检查）。
 
 **未开始 / 待批准**：T30（UxPlay provider 闭环，需 scope S1/S2）、T33（AirPlay 音视频接收真机）、
 T22（Quick Share 发送闭环，需 QR/可发现路径）、Quick Share 发现源

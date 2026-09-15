@@ -160,6 +160,12 @@ class RedactionTest(unittest.TestCase):
                             33,
                             struct.pack(">HHH", 0, 0, 4321) + dns_name("nearby.local"),
                         ),
+                        (
+                            "_quickshare._tcp.local",
+                            16,
+                            # 自己的地址：脱敏后只保留"是否等于广播者地址"这个布尔
+                            txt_rdata([f"ipv4={PII_IP_B}", "f=5200"]),
+                        ),
                     ]
                 ),
             ),
@@ -253,6 +259,29 @@ class RedactionTest(unittest.TestCase):
         ips = {f["src"] for f in self.summary["flows"]}
         self.assertTrue(all(i.startswith("<ip-") for i in ips))
         self.assertLessEqual(len(ips), 2)
+
+    def test_advertiser_attribution_and_self_address_flag(self):
+        services = {s["service_type"]: s for s in self.summary["mdns"]["services"]}
+        airplay = services["_airplay._tcp.local"]
+        # 广播者必须是假名，且与"询问者"的假名体系一致
+        self.assertEqual(len(airplay["advertisers"]), 1)
+        self.assertTrue(airplay["advertisers"][0].startswith("<ip-"))
+        quick = services["_quickshare._tcp.local"]
+        self.assertRegex(quick["advertisers"][0], r"^<ip-\d+>$")
+
+    def test_txt_ip_value_is_classified_and_compared_to_advertiser(self):
+        services = {s["service_type"]: s for s in self.summary["mdns"]["services"]}
+        # fixture 里 `_quickshare` 的 TXT 带自己的地址：只留 "是否等于广播者地址" 这个布尔
+        txt = services["_quickshare._tcp.local"]["txt_redacted"]
+        self.assertIn("ipv4", txt)
+        self.assertEqual(txt["ipv4"]["class"], "ip")
+        self.assertTrue(txt["ipv4"]["matches_advertiser"])
+
+    def test_question_askers_are_recorded(self):
+        q = [q for q in self.summary["mdns"]["questions"] if q["name"] == "_airplay._tcp.local"][0]
+        self.assertEqual(q["count"], 1)
+        self.assertEqual(len(q["askers"]), 1)
+        self.assertRegex(q["askers"][0]["pseudonym"], r"^<ip-\d+>$")
 
     def test_report_records_hash_and_limits(self):
         self.assertIn(self.summary["meta"]["source_sha256"], self.report)

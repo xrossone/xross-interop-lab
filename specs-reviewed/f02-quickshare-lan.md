@@ -55,6 +55,8 @@ P-F02-1（LAN 发现载体）与 P-F02-3（可见性矩阵）**blocked**——�
 | F-38 | control | **PAYLOAD_ACK 的语义与门槛**：接收方**只在最后一个 chunk 到达**且该端点启用 ack 时发送；启用条件里明确要求载荷类型**不是 BYTES**（即协商类 BYTES 载荷**不发** ack，只有 FILE 等才发）；发送侧收到 ack 时：未知 payload → **忽略**、对**incoming** payload 的 ack → **忽略**、否则标记"该端点已确认收到" | R17 `payload_manager.cc:850-874`（`is_last_chunk` 门槛）、`:968-978`（BYTES 排除）、`:1417-1438`（三种处理分支） | source-reviewed（参考实现即规格） | yes |
 | F-39 | control | 已废弃的替代路径：`ControlMessage.EventType.PAYLOAD_RECEIVED_ACK=3` 带注释 "Use PacketType.PAYLOAD_ACK instead" → 本仓**不实现 control 路径**，收到 `packet_type=CONTROL` 一律明确拒绝（不静默忽略） | R17 `offline_wire_formats.proto:195-206` | source-reviewed（废弃标注是官方 proto 原文） | yes |
 | F-40 | control | 补充 F-31：keep-alive 的参数其实是**握手协商字段**——`ConnectionRequestFrame{keep_alive_interval_millis=8, keep_alive_timeout_millis=9}`、`ConnectionResponseFrame{keep_alive_timeout_millis=9}`（都是 `optional int32`，**proto 里没有默认值**）→ 机制有据，但具体数值仍由实现决定；本仓不实现连接握手，故继续用本仓策略值并在报告里标注 | R17 `offline_wire_formats.proto:112-113,159` | source-reviewed（**修正 F-31 的表述**：不是"来源没提数值"，而是"数值属协商字段、proto 无默认值"） | yes |
+| F-41 | discovery | **抓包观测（S3，2026-09-16，用户设备）**：服务类型 `_FC9F5ED42C8A._tcp.` 与 F-01/F-03 逐字一致；实例名 14 字符 base64url、首字符恒为 `I`（⇔ 10 字节且以 `0x23` 开头，与 F-01 布局相符）；同一设备（IPv4+IPv6 双栈）在 74 s 内用了 3 个不同实例名（endpoint id 轮换），中间有约 35 s 无广播；SRV 端口 **53601**（动态高位端口，来源未声明取值）；TXT 键 `n`/`f`/`IPv4`：`n`=23 字符 base64url → 17 字节 = 1 位域 + 16 字节识别材料、**无设备名字段**，`f=5200`（语义未知），`IPv4` 的取值等于广播者自己的地址 | 抓包 2026-09-16（`evidence/2026-09-16-s3-quickshare-discovery/`，原文 sha256 已记、原始 pcap 未入库） | captured-observed（**待差分复核**） | **no** |
+| F-42 | discovery | **与 F-02 的两处冲突/待考（决定性实验已写明）**：① 位域 `0x32` 的两种读法各自与一条观测冲突——MSB 先（version=1/visibility=1/device_type=1）与 F-02 的「名字仅在可见时」相符但说"不可见"（与用户设置冲突）；LSB 先（version=2/visibility=0=可见/device_type=1）与用户设置相符但"可见却没有名字字段"（与 F-02 冲突）；② TXT 键 `f` 与 `IPv4` 为 F-02 未登记项。**决定性实验**：三种可见性档位（所有人/仅联系人/隐藏）各抓一次，比对 `n` 首字节与名字字段是否出现（抓法见 `research/capture-runbook.md`） | 抓包 2026-09-16（`evidence/2026-09-16-s3-quickshare-discovery/`）；F-02 原文 `R15 PROTOCOL.md:38-51` | **待考**（不得据此实现） | **no** |
 
 ## B. 与本仓实现的关系（T20 范围）
 
@@ -79,7 +81,7 @@ P-F02-1（LAN 发现载体）与 P-F02-3（可见性矩阵）**blocked**——�
 
 | 能力 | 状态 | 障碍 / 重评条件 |
 |---|---|---|
-| LAN 发现（广播/监听 mDNS `_FC9F5ED42C8A._tcp.`） | `blocked` | P-F02-1：需用户批准网段抓包对照 R15/R17；重评条件＝抓包与源码对照一致 |
+| LAN 发现（广播/监听 mDNS `_FC9F5ED42C8A._tcp.`） | `blocked`（**2026-09-16 进展：抓包已取得，服务类型/实例名布局/端口/TXT 键已对照，见 F-41**） | P-F02-1/P-F02-3：2026-09-16 抓包已取得并与 F-01/F-03 一致（见 F-41），障碍从"没有观测"变为"**位域语义与可见性映射待差分**"（F-42）；重评条件＝三种可见性档位各抓一次、判定 `n` 首位字节与名字字段；**判定前发现监听与广播都不准入实现** |
 | UKEY2 握手（P-256 / HKDF-SHA256 / SHA-512 commitment） | `source-reviewed`（实现见 T20） | 互通真机验证未做；F-12/F-15 冲突需具名真机实验 |
 | 传输加密（SecureMessage AES-256-CBC + HMAC-SHA256） | `source-reviewed`（实现见 T21） | 真机互通未验（P-F02-2） |
 | payload/文件接收闭环 | `source-reviewed`（实现见 T21） | 真机互通未验；反向发送仍需 F-24 |

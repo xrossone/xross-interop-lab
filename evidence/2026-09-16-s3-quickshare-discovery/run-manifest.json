@@ -1,0 +1,51 @@
+{
+  "schema_version": 1,
+  "run_id": "2026-09-16-s3-quickshare-discovery",
+  "task": "S3 抓包（Quick Share 发现，headless 侧分析）：脱敏摘录 + 与 f02 源码登记值的对照",
+  "kind": "manual",
+  "evidence_level": "manual",
+  "is_test_evidence": false,
+  "synthetic": false,
+  "case_ids": ["S3-01", "S3-02", "S3-03", "S3-04"],
+  "result": "pass",
+  "base_commit": "9d38c82（S3 runbook：各步用哪台设备）",
+  "commands": [
+    {
+      "seq": 1,
+      "purpose": "用户执行：Mac 侧抓 LAN 发现流量（mDNS/SSDP），三星手机启用「所有人可分享」期间",
+      "command": "sudo tcpdump -i en0 -U -w captures/qs-01-discovery.pcap 'udp port 5353 or udp port 1900'",
+      "exit_code": 0,
+      "result": "287 包 / 112.333 s / 0 丢包。**原始 pcap 未入库**（.gitignore 覆盖 /captures/ 与 *.pcap），仅登记 sha256=d7002bd8ad7e4e7a74528b65c93cb74add22cee71006c584f1a2972cf71d1abf"
+    },
+    {
+      "seq": 2,
+      "purpose": "脱敏：白名单式保留协议结构，身份材料一律假名化",
+      "command": "python3 tools/capture_redact.py captures/qs-01-discovery.pcap --out-dir evidence/2026-09-16-s3-quickshare-discovery --label qs-01-discovery",
+      "exit_code": 0,
+      "result": "pass。产物：redacted.json / redacted.txt / REDACTION.md。事后核查：产物中不存在任何 IPv4 字面量（grep 无命中）；设备名/实例名/IP 只以 <name-N>/<instance-N>/<ip-N> 出现"
+    },
+    {
+      "seq": 3,
+      "purpose": "F-03 自证：service id 是否为 SHA256(\"NearbySharing\") 前 6 字节",
+      "command": "python3 -c \"import hashlib;print(hashlib.sha256(b'NearbySharing').hexdigest())\"",
+      "exit_code": 0,
+      "result": "pass：fc9f5ed42c8a5e9e… → 前 6 字节 FC9F5ED42C8A，与 f02 F-03 声明一致，且与抓包观测到的服务类型 `_FC9F5ED42C8A._tcp` 一致（记录见 f03-selfcheck.txt）"
+    },
+    {
+      "seq": 4,
+      "purpose": "F-01 对照：实例名是否为「1+4+3+2 = 10 字节 URL-safe base64」且首字节 0x23",
+      "command": "python3 tools/capture_redact.py … （结构读数列：instance_windows + txt_redacted.n.structure）",
+      "exit_code": 0,
+      "result": "pass：3 个实例名长度全为 **14 字符**（14 base64url 字符 = 10 字节，与 F-01 的 1+4+3+2 相符），首字符全为 **'I'**（10 字节以 0x23 开头时 base64url 首字符恒为 'I'，与 F-01 的 'PCP' 前缀相符）；`n` 的取值 23 字符 base64url → 解出 **17 字节 = 1 字节位域 + 16 字节识别材料**（F-02 的布局），`bitfield=0x32`，**无设备名字段**"
+    }
+  ],
+  "artifacts": [
+    "evidence/2026-09-16-s3-quickshare-discovery/qs-01-discovery-redacted.json",
+    "evidence/2026-09-16-s3-quickshare-discovery/qs-01-discovery-redacted.txt",
+    "evidence/2026-09-16-s3-quickshare-discovery/qs-01-discovery-REDACTION.md",
+    "evidence/2026-09-16-s3-quickshare-discovery/f03-selfcheck.txt"
+  ],
+  "credentials_redacted": true,
+  "license_route_approved": false,
+  "notes": "**已确认（源码登记值 ↔ 网线观测一致）**\n1. 服务类型 `_FC9F5ED42C8A._tcp`（f02 F-01）——观测值与登记值逐字一致；F-03 的 `SHA256(\"NearbySharing\")` 前 6 字节当场自证。\n2. 实例名布局（f02 F-01）：观测 3 个实例名全部 14 字符、首字符恒为 'I' ⇔ 10 字节且以 0x23 开头（1 字节 'PCP' + 4 字节 endpoint id + 3 字节 service id + 2 零字节）。\n3. TXT 键 `n` 的存在与**整体形状**（f02 F-02）：23 字符 base64url → 17 字节 = 1 位域 + 16 字节识别材料。\n4. 同一台设备（双栈：一个 IPv4 + 一个 IPv6 地址）在 74 s 内使用了 **3 个不同实例名**（endpoint id 轮换），中间还有约 35 s 完全无广播的空档 —— 与 F-01 的「instance name 里含 4 字节 endpoint id」相符。\n5. TXT 里 `IPv4` 的取值**等于广播者自己的地址**（布尔判定，地址本身不入库）。\n\n**观测到但 f02 未登记（不得据此实现）**\n- TXT 键 `f=5200`（十进制常量，语义未知）与 `IPv4`（自己的地址）——F-02 只登记了 `n`。\n- SRV 端口 **53601**（动态高位端口）：F-01/F-02 都没有声明端口取值，故「端口由实现自选」是一个待登记的事实。\n\n**两处与 F-02 声明冲突/待考（决定性实验已写明）**\n- `n` 的位域 `0x32`（0b00110010）按 F-02 的字段顺序有两种读法，**各自与一条观测冲突**：\n  · MSB 先：version=001=1、visibility=1、device_type=001=1 → \"不可见\"与用户当时开着「所有人」冲突，但\"无设备名字段\"与 F-02 的\"名字仅在可见时\"**相符**；\n  · LSB 先：version=010=2、visibility=0（=可见）、device_type=001=1 → 与用户设置**相符**，但与\"名字仅在可见时\"**冲突**（实测 visible 却没有名字字段）。\n- **决定性实验**：三种可见性档位（所有人 / 仅联系人 / 隐藏）各抓一次，看 `n` 首位字节与名字字段是否出现。抓法见 `research/capture-runbook.md` §1；本切片不据此改动任何实现准入。\n\n**旁证（不是本仓的流量）**\n- `_xross1._udp.local`（端口 9559）由 `<ip-1>` 在整段抓包里以约 1 次/秒的频率查询自己（104 次）。**本仓任何 crate 都不做网络 I/O**（多个 lab gate 机器检查），所以这条不是 lab 的：名字像用户自己的服务/产品，本切片只登记其存在，不做任何分析。\n\n**边界**：抓包只证明\"网线上出现了这些字节\"。它不证明任何实现正确、不构成设备认证材料、也不解除任何 blocked 能力行——发现能力仍为 blocked（见 f02 能力表）。"
+}

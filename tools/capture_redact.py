@@ -245,6 +245,52 @@ def value_class(value: str) -> str:
     return "text"
 
 
+def base64url_decode(value: str) -> bytes | None:
+    v = value.strip()
+    if not v or any(c not in "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-_" for c in v):
+        return None
+    pad = "=" * ((4 - len(v) % 4) % 4)
+    try:
+        import base64 as _b64
+
+        return _b64.urlsafe_b64decode(v + pad)
+    except Exception:  # noqa: BLE001 - 非法长度等一律视为"不是 base64"
+        return None
+
+
+def probe_endpoint_info(value: str) -> dict:
+    """按 **F-02 的声明**读 `n` 的结构：位域 + 16 字节识别材料 + 名字长度 + 名字。
+
+    只输出**结构与长度**（位域原始字节、各段字节数），**不输出**识别材料与设备名内容——
+    这样既能做"抓包 ↔ 源码对照"，又不把身份材料带进仓库。读数与 F-02 不符时同样如实记录。
+    """
+    raw = base64url_decode(value)
+    if raw is None:
+        return {"declared_form": "base64url（F-02）", "decoded": False}
+    info = {"declared_form": "base64url（F-02）", "decoded": True, "decoded_len": len(raw)}
+    if len(raw) >= 17:
+        info["bitfield_hex"] = raw[:1].hex()
+        info["identity_bytes"] = 16
+        rest = raw[17:]
+        if rest:
+            info["name_len_byte"] = rest[0]
+            info["name_bytes_present"] = min(rest[0], max(0, len(rest) - 1))
+            info["trailing_bytes"] = max(0, len(rest) - 1 - info["name_bytes_present"])
+        else:
+            info["name_len_byte"] = None
+            info["name_bytes_present"] = 0
+            info["trailing_bytes"] = 0
+    return info
+
+
+def is_ip_literal(value: str) -> bool:
+    v = value.strip()
+    parts = v.split(".")
+    if len(parts) == 4 and all(p.isdigit() and 0 <= int(p) <= 255 for p in parts):
+        return True
+    return bool(v) and all(c in "0123456789abcdefABCDEF:" for c in v) and v.count(":") >= 2
+
+
 def is_uuid(value: str) -> bool:
     parts = value.split("-")
     if [len(p) for p in parts] != [8, 4, 4, 4, 12]:
@@ -272,11 +318,14 @@ class Redactor:
         self.mdns_questions: "OrderedDict[tuple, int]" = OrderedDict()
         self.ssdp: list[dict] = []
         self.tcp_previews: list[dict] = []
+        self.instance_times: "OrderedDict[str, list[float]]" = OrderedDict()
+        self.instance_lens: dict[str, int] = {}
+        self.instance_prefix: dict[str, str] = {}
         self.skipped_frames = 0
         self.non_ip_frames = 0
 
     # ---- 流记账 -------------------------------------------------------
-    def flow(self, proto: str, src, sport, dst, dport, ts, length) -> dict:
+    def flow(self, proto: str, src, sport, dst, dport, ts, length, family: str) -> dict:
         key = (proto, self.ips.of(src), sport, self.ips.of(dst), dport)
         entry = self.flows.get(key)
         if entry is None:
@@ -286,6 +335,7 @@ class Redactor:
                 "sport": sport,
                 "dst": key[3],
                 "dport": dport,
+                "family": family,
                 "packets": 0,
                 "bytes": 0,
                 "first_ts": ts,
@@ -298,29 +348,37 @@ class Redactor:
         return entry
 
     # ---- mDNS ---------------------------------------------------------
-    def mdns(self, payload: bytes, ts: float) -> None:
+    def mdns(self, payload: bytes, ts: float, src: str) -> None:
         dns = parse_dns(payload)
+        asker = self.ips.of(src)
         for q in dns["questions"]:
             instance, service = strip_service_type(q["name"])
             shown = service or self.names.of(q["name"])
             key = (shown, q["type"])
-            self.mdns_questions[key] = self.mdns_questions.get(key, 0) + 1
+            entry = self.mdns_questions.setdefault(key, {"count": 0, "askers": OrderedDict()})
+            entry["count"] += 1
+            entry["askers"][asker] = entry["askers"].get(asker, 0) + 1
             if instance:
                 self.instances.of(instance)
         for rec in dns["records"]:
             instance, service = strip_service_type(rec["name"])
             if instance:
                 self.instances.of(instance)
+            if service in self.seen_services or rec["type"] in (12, 33, 16):
+                # 应答里的服务类型：广播者就是这一包的源（只记假名）
+                pass
             if rec["type"] == 12:
                 target_instance, target_service = strip_service_type(rec.get("ptr", ""))
                 if target_instance and target_service:
-                    self._service_instance(target_service, target_instance, ts)
+                    svc = self._service_instance(target_service, target_instance, ts)
+                    self.note_advertiser(svc, src)
             elif rec["type"] == 33:
                 svc = (
                     self._service_instance(service, instance, ts)
                     if instance
                     else self._service(service, ts)
                 )
+                self.note_advertiser(svc, src)
                 svc["port"] = rec["port"]
                 svc["target"] = self.names.of(rec["target"]) if rec.get("target") else None
             elif rec["type"] == 16:
@@ -329,6 +387,7 @@ class Redactor:
                     if instance
                     else self._service(service, ts)
                 )
+                self.note_advertiser(svc, src)
                 for item in rec.get("txt", []):
                     if "=" in item:
                         k, _, v = item.partition("=")
@@ -337,7 +396,16 @@ class Redactor:
                         if is_protocol_constant(v):
                             svc["txt_constants"][k] = v
                         else:
-                            svc["txt_redacted"][k] = {"class": value_class(v), "len": len(v)}
+                            # 地址字面量单独归类：形状留下，"是否等于广播者自己的地址"留下
+                            cls = "ip" if is_ip_literal(v) else value_class(v)
+                            info = {"class": cls, "len": len(v)}
+                            if cls == "ip":
+                                # 原文只在内存里用于比较（双栈设备不能用"本包源地址"判）
+                                svc.setdefault("txt_ip_values", {})[k] = v
+                            elif k == "n":
+                                # F-02 声明 `n` 是 base64(endpoint info)：只读结构，不读内容
+                                info["structure"] = probe_endpoint_info(v)
+                            svc["txt_redacted"][k] = info
                     else:
                         svc["txt_keys"][item] = True
             elif rec["type"] in (1, 28):
@@ -350,6 +418,11 @@ class Redactor:
         pseudonym = self.instances.of(instance)
         if pseudonym not in svc["instances"]:
             svc["instances"].append(pseudonym)
+        self.note_instance_time(pseudonym, ts)
+        self.instance_lens.setdefault(pseudonym, len(instance))
+        # 只留首字符：用来核对来源声明的**固定前缀**（F-01：0x23 → base64url 首字符恒为 'I'），
+        # 其余字符（含随机 endpoint id）不出现
+        self.instance_prefix.setdefault(pseudonym, instance[:1])
         return svc
 
     def _service(self, service: str, ts: float) -> dict:
@@ -360,15 +433,32 @@ class Redactor:
             svc = {
                 "service_type": service,
                 "instances": [],
+                "advertisers": [],
+                "advertiser": None,
                 "port": None,
                 "target": None,
                 "txt_keys": OrderedDict(),
                 "txt_constants": OrderedDict(),
                 "txt_redacted": OrderedDict(),
                 "first_ts": ts,
+                "last_ts": ts,
             }
             self.seen_services[service] = svc
+        svc["last_ts"] = ts
         return svc
+
+    def note_instance_time(self, pseudonym: str, ts: float) -> None:
+        window = self.instance_times.setdefault(pseudonym, [ts, ts])
+        window[0] = min(window[0], ts)
+        window[1] = max(window[1], ts)
+
+    def note_advertiser(self, svc: dict, src: str) -> None:
+        """谁广播了这条服务（只记假名；用于回答"手机到底广没广播"）。"""
+        pseudonym = self.ips.of(src)
+        if svc["advertiser"] is None:
+            svc["advertiser"] = pseudonym
+        if pseudonym not in svc["advertisers"]:
+            svc["advertisers"].append(pseudonym)
 
     # ---- SSDP ---------------------------------------------------------
     def ssdp_message(self, payload: bytes, ts: float) -> None:
@@ -399,7 +489,28 @@ class Redactor:
         )
 
     def summary(self, meta: dict) -> dict:
+        real_by_pseudonym = {p: real for real, p in self.ips.mapping.items()}
+        observed = set(self.ips.mapping.keys())
         for svc in self.seen_services.values():
+            advertiser_addrs = {
+                real_by_pseudonym[p] for p in svc["advertisers"] if p in real_by_pseudonym
+            }
+            for k, v in svc.pop("txt_ip_values", {}).items():
+                svc["txt_redacted"][k]["matches_advertiser"] = v in advertiser_addrs
+                svc["txt_redacted"][k]["matches_any_observed"] = v in observed
+            svc["first_ts"] = round(svc["first_ts"] - meta["first_ts"], 3)
+            svc["last_ts"] = round(svc["last_ts"] - meta["first_ts"], 3)
+            svc["instance_windows"] = [
+                {
+                    "pseudonym": p,
+                    "name_len": self.instance_lens.get(p),
+                    "first_char": self.instance_prefix.get(p),
+                    "first_ts": round(self.instance_times[p][0] - meta["first_ts"], 3),
+                    "last_ts": round(self.instance_times[p][1] - meta["first_ts"], 3),
+                }
+                for p in svc["instances"]
+                if p in self.instance_times
+            ]
             svc["txt_keys"] = list(svc["txt_keys"].keys())
             svc["txt_constants"] = dict(svc["txt_constants"])
             svc["txt_redacted"] = dict(svc["txt_redacted"])
@@ -415,8 +526,15 @@ class Redactor:
             ],
             "mdns": {
                 "questions": [
-                    {"name": name, "type": qtype, "count": count}
-                    for (name, qtype), count in self.mdns_questions.items()
+                    {
+                        "name": name,
+                        "type": qtype,
+                        "count": info["count"],
+                        "askers": [
+                            {"pseudonym": who, "count": n} for who, n in info["askers"].items()
+                        ],
+                    }
+                    for (name, qtype), info in self.mdns_questions.items()
                 ],
                 "services": list(self.seen_services.values()),
             },
@@ -496,14 +614,15 @@ def run(path: pathlib.Path, label: str) -> tuple[dict, str]:
             red.non_ip_frames += 1
             continue
         src, dst, proto, payload = parsed
+        family = "v6" if l3[0] == ETH_IPV6 else "v4"
         try:
             if proto == IPPROTO_UDP and len(payload) >= 8:
                 sport, dport, ulen, _cksum = struct.unpack(">HHHH", payload[:8])
                 body = payload[8:ulen] if 8 <= ulen <= len(payload) else payload[8:]
-                flow = red.flow("udp", src, sport, dst, dport, ts, len(frame))
+                flow = red.flow("udp", src, sport, dst, dport, ts, len(frame), family)
                 if PORT_MDNS in (sport, dport):
                     flow["protocol_hint"] = "mdns"
-                    red.mdns(body, ts)
+                    red.mdns(body, ts, src)
                 elif PORT_SSDP in (sport, dport):
                     flow["protocol_hint"] = "ssdp"
                     red.ssdp_message(body, ts)
@@ -511,7 +630,7 @@ def run(path: pathlib.Path, label: str) -> tuple[dict, str]:
                 sport, dport = struct.unpack(">HH", payload[:4])
                 data_off = (payload[12] >> 4) * 4
                 body = payload[data_off:]
-                flow = red.flow("tcp", src, sport, dst, dport, ts, len(frame))
+                flow = red.flow("tcp", src, sport, dst, dport, ts, len(frame), family)
                 if body:
                     red.tcp_preview(flow, body, ts, f"{flow['src']}->{flow['dst']}")
         except PcapError:
@@ -548,7 +667,15 @@ def render_text(summary: dict) -> str:
     out.append("")
     out.append("## mDNS 服务")
     for svc in summary["mdns"]["services"]:
-        out.append(f"- {svc['service_type']} port={svc['port']} 实例数={len(svc['instances'])}")
+        out.append(
+            f"- {svc['service_type']} port={svc['port']} 实例数={len(svc['instances'])} "
+            f"广播者={svc['advertisers']} [{svc['first_ts']}s..{svc['last_ts']}s]"
+        )
+        for w in svc.get("instance_windows", []):
+            out.append(
+                f"  实例 {w['pseudonym']}: 首字符={w['first_char']!r} 长度={w['name_len']} "
+                f"[{w['first_ts']}s..{w['last_ts']}s]"
+            )
         if svc["txt_keys"]:
             out.append(f"  TXT 键: {', '.join(svc['txt_keys'])}")
         for k, v in svc["txt_constants"].items():
@@ -559,7 +686,8 @@ def render_text(summary: dict) -> str:
         out.append("")
         out.append("## mDNS 查询")
         for q in summary["mdns"]["questions"]:
-            out.append(f"- {q['name']} type={q['type']} ×{q['count']}")
+            askers = ", ".join(f"{a['pseudonym']}×{a['count']}" for a in q["askers"])
+            out.append(f"- {q['name']} type={q['type']} ×{q['count']}（询问者：{askers}）")
     if summary["ssdp"]:
         out.append("")
         out.append("## SSDP")

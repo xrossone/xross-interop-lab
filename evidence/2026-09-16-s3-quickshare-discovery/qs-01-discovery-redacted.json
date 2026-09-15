@@ -1,0 +1,365 @@
+{
+ "meta": {
+  "source_sha256": "d7002bd8ad7e4e7a74528b65c93cb74add22cee71006c584f1a2972cf71d1abf",
+  "source_bytes": 88809,
+  "linktype": 1,
+  "packet_count": 287,
+  "first_ts": 1789492817.930169,
+  "last_ts": 1789492930.262738,
+  "duration_s": 112.333,
+  "redactor": "tools/capture_redact.py"
+ },
+ "flows": [
+  {
+   "proto": "udp",
+   "src": "<ip-1>",
+   "sport": 5353,
+   "dst": "<ip-2>",
+   "dport": 5353,
+   "family": "v4",
+   "packets": 211,
+   "bytes": 63752,
+   "protocol_hint": "mdns",
+   "first_ts_rel": 0.0,
+   "last_ts_rel": 112.333
+  },
+  {
+   "proto": "udp",
+   "src": "<ip-3>",
+   "sport": 5353,
+   "dst": "<ip-4>",
+   "dport": 5353,
+   "family": "v4",
+   "packets": 1,
+   "bytes": 88,
+   "protocol_hint": "mdns",
+   "first_ts_rel": 1.983,
+   "last_ts_rel": 1.983
+  },
+  {
+   "proto": "udp",
+   "src": "<ip-3>",
+   "sport": 5353,
+   "dst": "<ip-5>",
+   "dport": 5353,
+   "family": "v4",
+   "packets": 1,
+   "bytes": 88,
+   "protocol_hint": "mdns",
+   "first_ts_rel": 1.984,
+   "last_ts_rel": 1.984
+  },
+  {
+   "proto": "udp",
+   "src": "<ip-3>",
+   "sport": 5353,
+   "dst": "<ip-2>",
+   "dport": 5353,
+   "family": "v4",
+   "packets": 6,
+   "bytes": 2298,
+   "protocol_hint": "mdns",
+   "first_ts_rel": 1.985,
+   "last_ts_rel": 42.403
+  },
+  {
+   "proto": "udp",
+   "src": "<ip-6>",
+   "sport": 5353,
+   "dst": "<ip-7>",
+   "dport": 5353,
+   "family": "v6",
+   "packets": 6,
+   "bytes": 2418,
+   "protocol_hint": "mdns",
+   "first_ts_rel": 1.985,
+   "last_ts_rel": 42.404
+  },
+  {
+   "proto": "udp",
+   "src": "<ip-8>",
+   "sport": 62826,
+   "dst": "<ip-3>",
+   "dport": 5353,
+   "family": "v4",
+   "packets": 1,
+   "bytes": 88,
+   "protocol_hint": "mdns",
+   "first_ts_rel": 2.001,
+   "last_ts_rel": 2.001
+  },
+  {
+   "proto": "udp",
+   "src": "<ip-3>",
+   "sport": 5353,
+   "dst": "<ip-8>",
+   "dport": 62826,
+   "family": "v4",
+   "packets": 1,
+   "bytes": 209,
+   "protocol_hint": "mdns",
+   "first_ts_rel": 2.005,
+   "last_ts_rel": 2.005
+  },
+  {
+   "proto": "udp",
+   "src": "<ip-4>",
+   "sport": 5353,
+   "dst": "<ip-2>",
+   "dport": 5353,
+   "family": "v4",
+   "packets": 8,
+   "bytes": 2704,
+   "protocol_hint": "mdns",
+   "first_ts_rel": 2.05,
+   "last_ts_rel": 42.496
+  },
+  {
+   "proto": "udp",
+   "src": "<ip-9>",
+   "sport": 5353,
+   "dst": "<ip-7>",
+   "dport": 5353,
+   "family": "v6",
+   "packets": 8,
+   "bytes": 2864,
+   "protocol_hint": "mdns",
+   "first_ts_rel": 2.051,
+   "last_ts_rel": 42.497
+  },
+  {
+   "proto": "udp",
+   "src": "<ip-5>",
+   "sport": 5353,
+   "dst": "<ip-3>",
+   "dport": 5353,
+   "family": "v4",
+   "packets": 1,
+   "bytes": 116,
+   "protocol_hint": "mdns",
+   "first_ts_rel": 2.183,
+   "last_ts_rel": 2.183
+  },
+  {
+   "proto": "udp",
+   "src": "<ip-10>",
+   "sport": 5353,
+   "dst": "<ip-2>",
+   "dport": 5353,
+   "family": "v4",
+   "packets": 22,
+   "bytes": 4616,
+   "protocol_hint": "mdns",
+   "first_ts_rel": 27.751,
+   "last_ts_rel": 101.684
+  },
+  {
+   "proto": "udp",
+   "src": "<ip-11>",
+   "sport": 5353,
+   "dst": "<ip-7>",
+   "dport": 5353,
+   "family": "v6",
+   "packets": 21,
+   "bytes": 4952,
+   "protocol_hint": "mdns",
+   "first_ts_rel": 27.751,
+   "last_ts_rel": 101.684
+  }
+ ],
+ "mdns": {
+  "questions": [
+   {
+    "name": "_xross1._udp.local",
+    "type": 12,
+    "count": 104,
+    "askers": [
+     {
+      "pseudonym": "<ip-1>",
+      "count": 104
+     }
+    ]
+   },
+   {
+    "name": "_services._dns-sd._udp.local",
+    "type": 12,
+    "count": 28,
+    "askers": [
+     {
+      "pseudonym": "<ip-3>",
+      "count": 9
+     },
+     {
+      "pseudonym": "<ip-6>",
+      "count": 6
+     },
+     {
+      "pseudonym": "<ip-8>",
+      "count": 1
+     },
+     {
+      "pseudonym": "<ip-4>",
+      "count": 6
+     },
+     {
+      "pseudonym": "<ip-9>",
+      "count": 6
+     }
+    ]
+   },
+   {
+    "name": "_FC9F5ED42C8A._tcp.local",
+    "type": 255,
+    "count": 10,
+    "askers": [
+     {
+      "pseudonym": "<ip-10>",
+      "count": 5
+     },
+     {
+      "pseudonym": "<ip-11>",
+      "count": 5
+     }
+    ]
+   },
+   {
+    "name": "_quickshare._tcp.local",
+    "type": 12,
+    "count": 8,
+    "askers": [
+     {
+      "pseudonym": "<ip-10>",
+      "count": 4
+     },
+     {
+      "pseudonym": "<ip-11>",
+      "count": 4
+     }
+    ]
+   },
+   {
+    "name": "_FC9F5ED42C8A._tcp.local",
+    "type": 12,
+    "count": 5,
+    "askers": [
+     {
+      "pseudonym": "<ip-10>",
+      "count": 3
+     },
+     {
+      "pseudonym": "<ip-11>",
+      "count": 2
+     }
+    ]
+   }
+  ],
+  "services": [
+   {
+    "service_type": "_xross1._udp.local",
+    "instances": [
+     "<instance-1>"
+    ],
+    "advertisers": [
+     "<ip-1>"
+    ],
+    "advertiser": "<ip-1>",
+    "port": 9559,
+    "target": "<name-1>",
+    "txt_keys": [],
+    "txt_constants": {},
+    "txt_redacted": {},
+    "first_ts": 0.103,
+    "last_ts": 112.333,
+    "instance_windows": [
+     {
+      "pseudonym": "<instance-1>",
+      "name_len": 52,
+      "first_char": "d",
+      "first_ts": 0.103,
+      "last_ts": 112.333
+     }
+    ]
+   },
+   {
+    "service_type": "_FC9F5ED42C8A._tcp.local",
+    "instances": [
+     "<instance-3>",
+     "<instance-4>",
+     "<instance-8>"
+    ],
+    "advertisers": [
+     "<ip-10>",
+     "<ip-11>"
+    ],
+    "advertiser": "<ip-10>",
+    "port": 53601,
+    "target": "<name-2>",
+    "txt_keys": [
+     "f",
+     "n",
+     "IPv4"
+    ],
+    "txt_constants": {
+     "f": "5200"
+    },
+    "txt_redacted": {
+     "n": {
+      "class": "text",
+      "len": 23,
+      "structure": {
+       "declared_form": "base64url（F-02）",
+       "decoded": true,
+       "decoded_len": 17,
+       "bitfield_hex": "32",
+       "identity_bytes": 16,
+       "name_len_byte": null,
+       "name_bytes_present": 0,
+       "trailing_bytes": 0
+      }
+     },
+     "IPv4": {
+      "class": "ip",
+      "len": 13,
+      "matches_advertiser": true,
+      "matches_any_observed": true
+     }
+    },
+    "first_ts": 27.751,
+    "last_ts": 101.684,
+    "instance_windows": [
+     {
+      "pseudonym": "<instance-3>",
+      "name_len": 14,
+      "first_char": "I",
+      "first_ts": 27.751,
+      "last_ts": 31.746
+     },
+     {
+      "pseudonym": "<instance-4>",
+      "name_len": 14,
+      "first_char": "I",
+      "first_ts": 27.955,
+      "last_ts": 62.567
+     },
+     {
+      "pseudonym": "<instance-8>",
+      "name_len": 14,
+      "first_char": "I",
+      "first_ts": 97.997,
+      "last_ts": 101.684
+     }
+    ]
+   }
+  ]
+ },
+ "ssdp": [],
+ "tcp_payload_previews": [],
+ "redaction": {
+  "text_pseudonyms": 2,
+  "ip_pseudonyms": 11,
+  "instance_pseudonyms": 8,
+  "redacted_txt_values": 2,
+  "skipped_frames": 0,
+  "non_ip_frames": 0
+ }
+}

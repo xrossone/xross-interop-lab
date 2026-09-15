@@ -1,0 +1,43 @@
+# 脱敏摘录（287 包 / 112.333 s）
+原文 sha256: d7002bd8ad7e4e7a74528b65c93cb74add22cee71006c584f1a2972cf71d1abf
+
+## 流
+- udp <ip-1>:5353 → <ip-2>:5353 211 包 / 63752 字节 [0.0s..112.333s] mdns
+- udp <ip-3>:5353 → <ip-4>:5353 1 包 / 88 字节 [1.983s..1.983s] mdns
+- udp <ip-3>:5353 → <ip-5>:5353 1 包 / 88 字节 [1.984s..1.984s] mdns
+- udp <ip-3>:5353 → <ip-2>:5353 6 包 / 2298 字节 [1.985s..42.403s] mdns
+- udp <ip-6>:5353 → <ip-7>:5353 6 包 / 2418 字节 [1.985s..42.404s] mdns
+- udp <ip-8>:62826 → <ip-3>:5353 1 包 / 88 字节 [2.001s..2.001s] mdns
+- udp <ip-3>:5353 → <ip-8>:62826 1 包 / 209 字节 [2.005s..2.005s] mdns
+- udp <ip-4>:5353 → <ip-2>:5353 8 包 / 2704 字节 [2.05s..42.496s] mdns
+- udp <ip-9>:5353 → <ip-7>:5353 8 包 / 2864 字节 [2.051s..42.497s] mdns
+- udp <ip-5>:5353 → <ip-3>:5353 1 包 / 116 字节 [2.183s..2.183s] mdns
+- udp <ip-10>:5353 → <ip-2>:5353 22 包 / 4616 字节 [27.751s..101.684s] mdns
+- udp <ip-11>:5353 → <ip-7>:5353 21 包 / 4952 字节 [27.751s..101.684s] mdns
+
+## mDNS 服务
+- _xross1._udp.local port=9559 实例数=1 广播者=['<ip-1>'] [0.103s..112.333s]
+  实例 <instance-1>: 首字符='d' 长度=52 [0.103s..112.333s]
+- _FC9F5ED42C8A._tcp.local port=53601 实例数=3 广播者=['<ip-10>', '<ip-11>'] [27.751s..101.684s]
+  实例 <instance-3>: 首字符='I' 长度=14 [27.751s..31.746s]
+  实例 <instance-4>: 首字符='I' 长度=14 [27.955s..62.567s]
+  实例 <instance-8>: 首字符='I' 长度=14 [97.997s..101.684s]
+  TXT 键: f, n, IPv4
+  TXT 常量: f=5200
+  TXT 已脱敏: n <text len=23>
+  TXT 已脱敏: IPv4 <ip len=13>
+
+## mDNS 查询
+- _xross1._udp.local type=12 ×104（询问者：<ip-1>×104）
+- _services._dns-sd._udp.local type=12 ×28（询问者：<ip-3>×9, <ip-6>×6, <ip-8>×1, <ip-4>×6, <ip-9>×6）
+- _FC9F5ED42C8A._tcp.local type=255 ×10（询问者：<ip-10>×5, <ip-11>×5）
+- _quickshare._tcp.local type=12 ×8（询问者：<ip-10>×4, <ip-11>×4）
+- _FC9F5ED42C8A._tcp.local type=12 ×5（询问者：<ip-10>×3, <ip-11>×2）
+
+## 脱敏统计
+- text_pseudonyms: 2
+- ip_pseudonyms: 11
+- instance_pseudonyms: 8
+- redacted_txt_values: 2
+- skipped_frames: 0
+- non_ip_frames: 0
