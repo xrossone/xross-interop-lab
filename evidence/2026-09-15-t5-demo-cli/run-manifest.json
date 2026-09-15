@@ -19,7 +19,8 @@
     "D-09",
     "D-10",
     "D-11",
-    "D-12"
+    "D-12",
+    "D-13"
   ],
   "result": "pass",
   "commands": [
@@ -106,6 +107,20 @@
       "command": "cargo test --manifest-path impl/Cargo.toml --workspace; cargo clippy --manifest-path impl/Cargo.toml --workspace --all-targets; python3 -m unittest discover -s tools",
       "exit_code": 0,
       "result": "pass：199 tests 全绿（T43 后 194 → T42 +5 crate）；clippy 0 warnings；lab 68 tests OK"
+    },
+    {
+      "seq": 13,
+      "purpose": "green：T21+ Quick Share 控制帧段后重跑 demo 套件",
+      "command": "cargo test --manifest-path impl/Cargo.toml -p interop-demo --test demo_cli",
+      "exit_code": 0,
+      "result": "pass：13 tests（12 → 13，新增 D-13：keep-alive 10 s 节奏与 ack、对端静默 31000 ms 判死、paired-key 层号与材料往返、默认不免确认码 vs 显式开关、两条控制帧负向、人类输出复述同一批结论）"
+    },
+    {
+      "seq": 14,
+      "purpose": "全 workspace 回归 + 静态检查 + lab 检查（T21+ 后）",
+      "command": "cargo test --manifest-path impl/Cargo.toml --workspace; cargo clippy --manifest-path impl/Cargo.toml --workspace --all-targets; python3 -m unittest discover -s tools",
+      "exit_code": 0,
+      "result": "pass：impl 209 tests 全绿；clippy 0 warnings；lab 72 tests OK"
     }
   ],
   "acceptance_mapping": {
@@ -122,7 +137,8 @@
     "D-10": "DLNA/UPnP AV 段（T41）：M-SEARCH 与 alive 通告往返成功、4 条 SSDP 负向（缺 MAN/MX 超上限/未知方法/未知 NTS）全部 InvalidFrame；抓取策略对 loopback/云元数据/file:///https/userinfo 五类目标一律 permission-required，且注册表按声明的 protocolInfo 判 push 能力（video/mp4 允许、hevc 拒绝、rtsp 拒绝）——不因“对方是投屏设备”就假装能收屏；SOAP 动作往返与 UPnPError 701 解析成功、3 条越界请求被拒；受限 DMS 根子项 2、越权 objectID 701、超分页 402；URL lease 在 Stop 前有效、Stop 后被撤销；XXE 与超深 XML 均被拒；blocked 清单非空",
     "D-11": "WFD/Miracast 段（T37）：消息层登记 10 条且 M1/M2 同形而按发送方区分；会话从 M1 应答→M2→M3（应答体来自本端实现清单）→M4 协商→M5 触发→SETUP（带 Transport）→Session→PLAY 一路走到 playing，keep-alive 到点才发、30 s（来源取值）无入站即超时结束，player_available 恒 false（能协商 ≠ 能显示）；协商段展示 native 拆表/索引、profile/level 位图、切片字段、音频 mode 位，并把两处来源分歧摆成可观察值（port1=0 抑制 keep-alive / R34 严格读法会拒绝 port1≠0）；IE 段子元素 9 字节往返，**完整 IE 的构造与解析都返回 UnsupportedFeature**（F-24）；RTP 段连续包不请求、缺口请求一次 M13、乱序不请求、非 33 的 PT 只记账；15 条负向覆盖顺序/方向/走私/HDCP/URL/端口/描述符/RTP，没有任何一条被接受",
     "D-12": "Google Cast 段（T43）：CastMessage 信封往返（含 BINARY）与三处拒绝（分块 unsupported-feature、长度前缀超 64 KiB resource-limit、未知协议版本 invalid-frame）；四个命名空间与载荷键（CONNECT 的 origin/connType/userAgent/senderInfo、LOAD 的 media 键且**不写 duration**、SEEK 的 resumeState 只认 PLAYBACK_START）；sender 会话走到 media-session（CONNECT→CONNECTED→LAUNCH→RECEIVER_STATUS→LOAD→MEDIA_STATUS→PLAY/SEEK/PAUSE→STOP）；**T43-01** 生产闸门（认证不可得）下 CONNECT/LOAD 都返回 vendor-gated 且已发命令数=0（不启动播放）；**T43-02** 未配置的 app ID 在 launch 阶段即被拒；**T43-03** 本地 stop 与接收端停应用两条路径都释放 URL 并清空 mediaSessionId；**T43-04** screen_capability 恒 false；心跳到点发 PING、收到 PING 回 PONG、未应答请求超时；发现段只解析 TXT（不组播）；17 条负向覆盖载荷/URL/TXT/闸门，无一被接受",
-    "D-10（T42 扩展）": "DLNA 段的 renderer 部分：`file://` 与内网/元数据/带 userinfo 的 URI 全部拒绝（402）且拒绝后状态保持 NO_MEDIA_PRESENT（T42-01 不留播放入口）；合法 URI 先要求用户同意，同意前 Play 返回 701、同意后进入 PLAYING；直播流 Seek → 710 且位置不变，点播设定时长后 REL_TIME 定位生效（0:01:30 → 90s）；重复 Stop 幂等；音量越界 → 402；越界回调地址 → 402 且订阅不建立（T42-04），合法订阅可建立与退订；blocked 清单明确 GENA 投递不实现、无 native player 接入"
+    "D-10（T42 扩展）": "DLNA 段的 renderer 部分：`file://` 与内网/元数据/带 userinfo 的 URI 全部拒绝（402）且拒绝后状态保持 NO_MEDIA_PRESENT（T42-01 不留播放入口）；合法 URI 先要求用户同意，同意前 Play 返回 701、同意后进入 PLAYING；直播流 Seek → 710 且位置不变，点播设定时长后 REL_TIME 定位生效（0:01:30 → 90s）；重复 Stop 幂等；音量越界 → 402；越界回调地址 → 402 且订阅不建立（T42-04），合法订阅可建立与退订；blocked 清单明确 GENA 投递不实现、无 native player 接入",
+    "D-13": "Quick Share 控制帧段（T21+）：外层帧经真实字节往返（`encode_offline` → `decode_keepalive_offline`）并在同进程第二实例上解出；65 s 时间轴上 7 帧心跳 ↔ 7 条 ack 且帧间隔全等 10000 ms；对端静默时在 31000 ms 判死（阈值 30000 ms 为本仓策略，其间已发 4 帧心跳、received=0，demonstrating 自己发心跳不能把判死推后）；paired-key 内层帧走 BYTES payload（层号 3、材料往返、payload id 沿用）；对端 encryption → 我们的 result=UNABLE；**默认策略下对端 SUCCESS 仍 RequireConfirmation**、只有 `allowing_skip_confirmation()` 才 SkipConfirmation；两条负向（外层帧用内层编号、FILE 载荷冒充协商帧）均 InvalidFrame"
   },
   "artifacts": [
     {

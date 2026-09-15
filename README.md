@@ -177,6 +177,21 @@ tools/                          # 仓库检查脚本与测试（python3 -m unitt
   demo 新增 `wfd` 段（`xinterop-demo wfd`，见 D-11）。测试逼出四处实现缺陷（M3 查询正文是**裸参数名**、
   M13 正文是裸 `wfd_idr_request`、keep-alive 基准、M13/M16 应用控制 URI），详见 run manifest 的 red→green 记录。
 
+- **T21+ Quick Share 控制帧（keep-alive 与 paired-key，headless 切片）**：`specs-reviewed/f02` 补
+  F-30..F-33 —— F-30 裁决**两层编号冲突**（外层 Nearby Connections 与内层 Nearby Share 用各自的
+  `V1Frame.FrameType` 编号，同号不同义；内层帧包在 BYTES payload 里，依据 R15
+  `NearbyConnection.swift:207-226` + PROTOCOL.md:204-206），F-31 keep-alive（10 s 为**来源取值**、
+  超时与判死基准为**本仓策略**）、F-32/F-33 paired-key 帧（材料**不可离线推导** → 只做帧与状态机，
+  材料由调用方给）。实现 `crates/proto-quickshare/src/control.rs`：外层 KEEP_ALIVE(5) 与内层
+  PAIRED_KEY_ENCRYPTION(3)/RESULT(4) 分列编解码、10 s 节奏 tracker（收到即回 ack、判死后停收发）、
+  BYTES 载荷装载/解出（`kind` 非 BYTES 或 offset≠0 一律拒绝）、交换状态机（对端 encryption → 回
+  `UNABLE`；**默认策略即使对端报 `SUCCESS` 也仍要求 4 位确认码**，只有调用方显式
+  `allowing_skip_confirmation()` 才跳过）。控制帧层**不含任何密码学原语**（lab gate 机器检查）。
+  证据：[evidence/2026-09-15-t21b-quickshare-control](evidence/2026-09-15-t21b-quickshare-control/run-manifest.json)；
+  demo 的 `qshare` 段新增控制帧块（`xinterop-demo qshare`，见 D-13）。qs-020 的"对端静默"要求抓出一处
+  **真实缺陷**：判死基准原为 `max(last_sent, last_received)`，自己继续发心跳就把判死无限推后——只发不听
+  的连接永远不会被判死；现在基准是"最后一次**收到**的对端帧，从未收到时用首个心跳"。
+
 - **T43 Google Cast 媒体 URL sender（headless 切片）**：gate 重写 `specs-reviewed/m08` 为 F-01..F-25 字段表
   （CASTV2 信封字段号与 required 声明、4 字节长度前缀与 64 KiB 上限、namespace 集合、四个命名空间的
   载荷键、requestId/超时、DeviceAuth 消息与发送端强制认证点、mDNS 服务类型与 TXT 键），
@@ -199,7 +214,7 @@ tools/                          # 仓库检查脚本与测试（python3 -m unitt
   demo 的 `dlna` 段新增 renderer 子块（D-10 扩展）。
 
 **未开始 / 待批准**：T30（UxPlay provider 闭环，需 scope S1/S2）、T33/T34（AirPlay 音视频接收真机）、
-T22（Quick Share 发送闭环，需 QR/可发现路径）、keep-alive 与 paired-key 帧、Quick Share 发现源
+T22（Quick Share 发送闭环，需 QR/可发现路径）、Quick Share 发现源
 （待 P-F02-1/2/3 关闭与 S3 抓包批准）、T42 的媒体字节服务与 native player 接入（T24/host gateway）、
 T38/T39（WFD 真机序列与 IE 播发、平台入口 probe，需 P-M05-1/2/3）、T44（Cast 实时 streaming，在 T43 之后）、
 T45（Cast receiver 可行性 gate）、xross-dev 侧 bridge 窗口（S4）、

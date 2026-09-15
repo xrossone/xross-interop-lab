@@ -91,7 +91,7 @@ pub struct MirrorReport {
     pub blocked: Vec<String>,
 }
 
-// ---------- Quick Share / UKEY2（T19/T20）----------
+// ---------- Quick Share / UKEY2（T19/T20/T21+）----------
 
 #[derive(Debug, Clone, Serialize)]
 pub struct QuickShareReport {
@@ -104,6 +104,8 @@ pub struct QuickShareReport {
     pub negatives: Vec<(String, String)>,
     pub transport: serde_json::Value,
     pub payload_gate: serde_json::Value,
+    /// keep-alive 节奏与 paired-key 交换（T21+，字段行 F-30..F-33）。
+    pub control: serde_json::Value,
     pub conflict: serde_json::Value,
     pub blocked: Vec<String>,
 }

@@ -1,0 +1,124 @@
+{
+  "schema_version": 1,
+  "run_id": "2026-09-15-t21b-quickshare-control",
+  "task": "T21+ · Quick Share keep-alive 与 paired-key 控制帧（headless 帧层 + 状态机）",
+  "kind": "manual",
+  "evidence_level": "build-verified",
+  "is_test_evidence": true,
+  "synthetic": false,
+  "base_commit": "d5b9b6d（T21+ gate：F-30..F-33 字段行 + qs-019..qs-024 语料 + lab gate 11 例）",
+  "case_ids": [
+    "T21+-01",
+    "T21+-02",
+    "T21+-03",
+    "T21+-04"
+  ],
+  "result": "pass",
+  "commands": [
+    {
+      "seq": 1,
+      "purpose": "red：控制帧验收套件首次运行",
+      "command": "cargo test --manifest-path impl/Cargo.toml -p proto-quickshare --test quickshare_control",
+      "exit_code": 101,
+      "result": "fail：8 例中 4 例失败。四例**都是测试自己的假设错**、不是实现缺陷：① 把 `OfflineFrame` 的 v1 长度前缀当 1 字节定长读（`offline[2]`/`inner[4]`），而 protobuf 长度是真 varint，材料字段一超 127 字节就整体移位；② 把自家的 encryption 帧当成对端 result 帧喂回状态机。修法是引入 varint 感知的 `offline_type()` 解析层号，并另造对端 result 帧"
+    },
+    {
+      "seq": 2,
+      "purpose": "green：测试假设修正后（q-019..q-024 全覆盖）",
+      "command": "cargo test --manifest-path impl/Cargo.toml -p proto-quickshare --test quickshare_control",
+      "exit_code": 0,
+      "result": "pass：8 tests（keep-alive 帧往返与层号、负例、节奏与超时、paired-key 材料往返、四态 status、BYTES 载体、默认策略不免确认码、双向交换状态机）"
+    },
+    {
+      "seq": 3,
+      "purpose": "red：qs-020 的『对端静默』要求抓出真实缺陷（阶段性回退旧逻辑取真实红）",
+      "command": "cargo test --manifest-path impl/Cargo.toml -p proto-quickshare --test quickshare_control",
+      "exit_code": 101,
+      "result": "fail：`silent_peer_is_detected_while_we_keep_sending` 断言『对端静默 30 s 后必须判死』失败。原因：判死基准是 `max(last_sent, last_received)` ⇒ **自己还在发心跳就把判死无限推后**，一个只发不听的连接永远不会被判死——与 qs-020『对端静默后的超时判定』相悖（这正是该 case 存在的意义，没有它不会暴露）"
+    },
+    {
+      "seq": 4,
+      "purpose": "green：判死基准改为『最后一次收到的对端帧，从未收到时用首个心跳』",
+      "command": "cargo test --manifest-path impl/Cargo.toml -p proto-quickshare",
+      "exit_code": 0,
+      "result": "pass：37 tests（含新增 `silent_peer_is_detected_while_we_keep_sending`）。语义：对方静默超过 30 s（本仓策略）即判死，判死后连心跳也停（不再对死连接说话）"
+    },
+    {
+      "seq": 5,
+      "purpose": "demo 接入：`qshare` 段跑真实控制帧链路",
+      "command": "cargo test --manifest-path impl/Cargo.toml -p interop-demo --test demo_cli",
+      "exit_code": 0,
+      "result": "pass：13 tests（新增 d13）。JSON 与人类输出均给出：65 s 内 7 帧心跳 + 7 条应答、节奏全等、线上往返；对端静默 31000 ms 判死（其间已发 4 帧）；paired-key 层号/材料往返；`our_result_status=Some(Unable)`；`peer_success_decision_default=RequireConfirmation` vs `opted_in=SkipConfirmation`；两条控制帧负向均 InvalidFrame"
+    },
+    {
+      "seq": 6,
+      "purpose": "全量回归 + 静态检查 + lab 纪律",
+      "command": "cargo test --manifest-path impl/Cargo.toml --workspace; cargo clippy --manifest-path impl/Cargo.toml --workspace --all-targets; cargo fmt --check（仅新增/改动文件）; python3 -m unittest discover -s tools",
+      "exit_code": 0,
+      "result": "pass：impl 199 → **209** tests 全绿；clippy 0 warnings；lab 72 tests OK。fmt：本任务改动的 6 个文件已 rustfmt（仓库其余文件的 fmt 差异是既有状态，未一并改动）"
+    }
+  ],
+  "acceptance_mapping": {
+    "T21+-01": "keep-alive 帧与节奏：外层 `V1Frame{type=KEEP_ALIVE(5)} + KeepAliveFrame{ack=1, seq_num=2}` 往返等值（含 ack=false/true 与 seq=0/7/4294967295），序号单调递增；10 s 为**来源取值**（PROTOCOL.md:228-230）、30 s 判死与基准为**本仓策略**并在 demo 里标注来源；两端 65 s 时间轴上 7 帧心跳 → 7 条 ack，帧间间隔全等 10 s，且每帧都经 `encode_offline` → `decode_keepalive_offline` 真实字节往返（`wire_roundtrip_ok=true`）",
+    "T21+-02": "对端静默判死：独立 tracker 每 10 s 照发心跳但 `received=0`，在 31000 ms（> 阈值 30000 ms）判死并给出毫秒值（demo `silent_peer_detected_ms`）；判死后 `on_received` 返回 invalid-frame、`on_tick` 不再产出帧。回归测试 `silent_peer_is_detected_while_we_keep_sending` 固定该语义（seq 3 的红即为旧逻辑在此失败）",
+    "T21+-03": "paired-key 帧与分层：内层 `PAIRED_KEY_ENCRYPTION(3)`/字段 4、`PAIRED_KEY_RESULT(4)`/字段 5 与外层 `KEEP_ALIVE(5)`/字段 6 分列（F-30）；内层帧装进 BYTES payload（`header.kind=bytes`、`offset=0`、`flags=0`）并经真实字节回到对端解出材料；对端 encryption 帧 → 我们回 `UNABLE`（F-33 参考实现行为）且沿用对端 payload id；层号混用（外层帧用内层编号 3）与 FILE 载荷冒充协商帧均 InvalidFrame",
+    "T21+-04": "默认不免确认码：材料一律由调用方提供（本层无任何密码学原语或随机源，lab gate `test_control_module_is_pure_framing` 机器检查）；对端 `UNABLE` → `RequireConfirmation`；对端 `SUCCESS` → 默认仍 `RequireConfirmation`，只有调用方显式 `allowing_skip_confirmation()` 才 `SkipConfirmation`；未知 status（9）与超上限材料分别 InvalidFrame / ResourceLimit"
+  },
+  "extra_coverage": {
+    "framing_negatives": "缺 `V1Frame.type`、缺 `keep_alive` 字段、`seq_num` 超出 uint32、`version != V1`（VersionUnsupported）、截断字节 —— 各自给明确错误码",
+    "keepalive_accounting": "`KeepAliveStats{sent, received, acks_sent, expired}`：收到 ack=true 只记账不回、收到 ack=false 回一帧 ack=true、判死后一律拒绝",
+    "material_bounds": "四个字段全带与只带前两个各一例；`signed_data`/`secret_id_hash` 为空 → InvalidFrame；单字段超过本仓上限 512 B → ResourceLimit"
+  },
+  "honesty_notes": [
+    "evidence_level=build-verified：全部为本机自动化测试与 demo 输出，**未与任何 Android 设备互通**，也没有抓包；对端角色由本进程内的第二实例扮演",
+    "paired-key 材料是**演示用固定字节**，不代表任何真实配对材料：F-32 记录该内容语义需与 Google 服务器交互、不可离线推导 ⇒ 本仓只做帧与状态机，不做配对存储、不据 SUCCESS 免 4 位确认码",
+    "keep-alive 的 10 s 是来源取值、30 s 与判死基准是本仓策略：真机实际取值与断开阈值仍需 P-F02-2 的真机对跑（用户手动执行）",
+    "paired-key result 的真机取值（Android 是否也回 UNABLE）待 P-F02-2 复核；本轮只固化参考实现的取值",
+    "本轮新增的可信边界检查：控制帧层被机器禁止出现 hkdf/hmac/sha2/aes/cbc/getrandom/rand 等符号（lab gate 11 例）"
+  ],
+  "artifacts": [
+    {
+      "path": "impl/crates/proto-quickshare/src/control.rs",
+      "note": "T21+ 帧层与状态机（本任务主体）"
+    },
+    {
+      "path": "impl/crates/proto-quickshare/src/lib.rs",
+      "note": "注册 pub mod control"
+    },
+    {
+      "path": "impl/crates/proto-quickshare/tests/quickshare_control.rs",
+      "note": "9 例：keep-alive 帧/节奏/判死 + paired-key 帧/策略"
+    },
+    {
+      "path": "specs-reviewed/f02-quickshare-lan.md",
+      "note": "F-30..F-33 字段行（T21+ gate 产出，见 d5b9b6d）；本轮补充 F-31 的判死基准为『本仓策略』"
+    },
+    {
+      "path": "evidence/quickshare/corpus-plan.json",
+      "note": "qs-019..qs-024；qs-020 补明『自己继续发心跳不算』的静默语义"
+    },
+    {
+      "path": "tools/test_quickshare_gate.py",
+      "note": "11 例，含控制帧层纯净性机器检查（无密码学原语）"
+    },
+    {
+      "path": "impl/apps/interop-demo/src/quickshare.rs",
+      "note": "qshare 段的 run_control_chain"
+    },
+    {
+      "path": "impl/apps/interop-demo/src/report.rs",
+      "note": "QuickShareReport.control"
+    },
+    {
+      "path": "impl/apps/interop-demo/src/lib.rs",
+      "note": "控制帧人类输出（去掉 JSON 引号）"
+    },
+    {
+      "path": "impl/apps/interop-demo/tests/demo_cli.rs",
+      "note": "D-13：控制帧验收（13 例）"
+    }
+  ],
+  "credentials_redacted": true,
+  "license_route_approved": false,
+  "notes": "T21+ 的 headless 切片：只做控制帧与状态机，不连设备、不做配对存储；evidence_level=build-verified（本机测试与 demo 输出，非真机互通）"
+}

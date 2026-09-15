@@ -398,6 +398,14 @@
       "date": "2026-09-15",
       "path": "evidence/2026-09-15-t42-dlna-renderer/run-manifest.json",
       "notes": "T42 DLNA renderer 接收侧（headless）：AVTransport/RenderingControl 动作与状态变量、媒体 URL 策略与用户同意、幂等 Stop、live 流 Seek 710、GENA 订阅校验（越界回调拒绝）；无真实控制器、无事件投递、无媒体字节服务"
+    },
+    {
+      "id": "run-2026-09-15-t21b-quickshare-control",
+      "kind": "run-manifest",
+      "level": "build-verified",
+      "date": "2026-09-15",
+      "path": "evidence/2026-09-15-t21b-quickshare-control/run-manifest.json",
+      "notes": "T21+ Quick Share keep-alive 与 paired-key 控制帧（headless）：外层 KEEP_ALIVE(5) 与内层 PAIRED_KEY_ENCRYPTION(3)/RESULT(4) 两套编号分列（F-30），10 s 来源取值节奏 + 30 s 本仓策略判死（qs-020 的对端静默要求抓出并修掉了『自己发心跳就把判死推后』的缺陷），paired-key 材料由调用方提供、默认不免 4 位确认码（T21+-01..04）；真机对跑仍需 P-F02-2"
     }
   ]
 }

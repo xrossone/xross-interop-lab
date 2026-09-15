@@ -454,3 +454,78 @@ fn d07_blocked_and_manual_lists_are_reported() {
         "必须列出 Quick Share 真机/抓包测试项"
     );
 }
+
+/// D-13：Quick Share 控制帧（T21+）——keep-alive 节奏/判死与 paired-key 交换必须真跑并如实报告。
+#[test]
+fn d13_quickshare_control_frames() {
+    let (code, v) = run_json(&["qshare", "--json"]);
+    assert_eq!(code, 0);
+    let c = &v["quickshare"]["control"];
+
+    // keep-alive：10 s 来源取值 + 30 s 本仓策略，两端走真实字节。
+    let k = &c["keepalive"];
+    assert_eq!(k["interval_ms"], 10_000);
+    assert_eq!(k["timeout_ms"], 30_000);
+    assert!(
+        k["interval_source"]
+            .as_str()
+            .unwrap_or("")
+            .contains("来源取值"),
+        "{k:?}"
+    );
+    assert!(
+        k["timeout_source"]
+            .as_str()
+            .unwrap_or("")
+            .contains("本仓策略"),
+        "{k:?}"
+    );
+    assert_eq!(k["cadence_ok"], true, "节奏必须恰好 10 s");
+    assert_eq!(k["wire_roundtrip_ok"], true, "帧必须经真实字节往返");
+    let sent = k["sent"].as_u64().expect("sent");
+    assert_eq!(k["acks_returned"], sent, "每一帧都应拿到 ack");
+    assert!(sent >= 7, "65 s 内至少 7 帧：{sent}");
+
+    // 对端静默：判定明确（有毫秒值）且期间我们确实还在发心跳。
+    let died = k["silent_peer_detected_ms"].as_u64().expect("判死时刻");
+    assert!(
+        died > 30_000 && died <= 31_000,
+        "判死应在阈值之后立刻发生：{died}"
+    );
+    assert!(k["silent_peer_heartbeats_sent"].as_u64().unwrap_or(0) >= 3);
+
+    // paired-key：层号、BYTES 载体、材料往返。
+    let p = &c["paired_key"];
+    assert_eq!(p["inner_type"], "PAIRED_KEY_ENCRYPTION(3)");
+    assert_eq!(p["inner_type_ok"], true);
+    assert_eq!(p["material_roundtrip"], true);
+    assert_eq!(
+        p["our_result_status"], "Some(Unable)",
+        "参考实现回 UNABLE（F-33）"
+    );
+
+    // 核心诚实性：默认策略**不因 SUCCESS 免确认码**；只有显式开关才跳过。
+    assert_eq!(p["peer_unable_decision"], "RequireConfirmation");
+    assert_eq!(p["peer_success_decision_default"], "RequireConfirmation");
+    assert_eq!(p["peer_success_decision_opted_in"], "SkipConfirmation");
+    assert_eq!(p["skips_confirmation_by_default"], false);
+
+    // 控制帧负向：层号混用与 FILE 载荷冒充都必须被拒。
+    let rejects = c["rejects"].as_array().expect("rejects");
+    assert!(rejects.len() >= 2);
+    for case in rejects {
+        assert_eq!(case["outcome"], "InvalidFrame", "负向未拒绝：{case}");
+    }
+
+    // 人类输出同样给出这些结论。
+    let out = Command::new(bin()).arg("qshare").output().expect("可执行");
+    assert_eq!(out.status.code(), Some(0));
+    let text = String::from_utf8_lossy(&out.stdout);
+    assert!(text.contains("T19/T20/T21+"), "{text}");
+    assert!(
+        text.contains("10000 ms") && text.contains("30000 ms"),
+        "{text}"
+    );
+    assert!(text.contains("RequireConfirmation"), "{text}");
+    assert!(text.contains("默认不免，F-32"), "{text}");
+}

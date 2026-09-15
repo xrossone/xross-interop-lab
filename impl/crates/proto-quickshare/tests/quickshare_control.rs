@@ -181,6 +181,29 @@ fn keepalive_cadence_and_expiry() {
     assert_eq!(stats.acks_sent, 1);
 }
 
+#[test]
+fn silent_peer_is_detected_while_we_keep_sending() {
+    // qs-020：对端静默才是死的信号。自己每 10 s 照发，不得把判死往后推。
+    let mut tracker = KeepAliveTracker::new();
+    let mut forwarded = 0u32;
+    for second in 0..=60u64 {
+        let now = second * 1_000;
+        if let Some(frame) = tracker.on_tick(now) {
+            forwarded += 1; // 发出去了，但对端一直不回
+            assert!(!frame.ack);
+        }
+        tracker.expired(now);
+    }
+    assert!(tracker.stats().expired, "对端静默 30 s 后必须判死");
+    assert_eq!(tracker.stats().received, 0);
+    // 判死发生在第二次发送之后：0 s、10 s、20 s 发出，30 s 后（> 首次发送 + 30 s）判死。
+    assert!(forwarded >= 3, "心跳确实在发：{forwarded}");
+    assert!(
+        tracker.on_tick(120_000).is_none(),
+        "判死后连心跳都停（不再对死连接说话）"
+    );
+}
+
 // ------------------------------------------------------------------ F-32/F-33 paired-key
 
 #[test]

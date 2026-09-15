@@ -260,3 +260,39 @@ Quick Share ↔ Android）、抓包、可见性矩阵、native 窗口、Tauri GU
   （"播放"只体现在状态与位置记账，进度由播放器上报）、无 GENA 事件投递、无媒体字节服务（T24）。
 - **测试面**：impl 194 → **199**（proto-upnp 26，其中 T41 的 10 例在动作集扩张后仍全绿）；clippy 0；
   lab 64 → **68**。
+
+
+---
+
+## 补充 7（2026-09-15）：T21+ Quick Share keep-alive 与 paired-key 控制帧（headless 切片）已落地
+
+**commit** `d5b9b6d`（gate：F-30..F-33 + 语料 qs-019..qs-024）、`b9e074f`（control.rs + 测试）。
+
+- **gate 扩展**：F-02 字段表补 F-30..F-33。**F-30 是本切片的核心事实**：Quick Share 有两层
+  `V1Frame` 编号——外层 Nearby Connections 层（R17 `offline_wire_formats.proto:45,61,444-449`）与内层
+  Nearby Share 层（R15 `wire_format.proto:189-212,322-356`）**同号不同义**；裁决依据是 R15
+  `NearbyConnection.swift:207-226`（内层帧序列化后交给 `sendBytesPayload` → 外层 BYTES 载荷）与
+  PROTOCOL.md:204-206（paired-key"包在 payload 层里"），待复核的 probe 是 P-F02-2。F-31 keep-alive
+  （`KEEP_ALIVE(5)` + `KeepAliveFrame{ack=1, seq_num=2}`；10 s 是**来源取值**，超时阈值与判死基准是
+  **本仓策略**）、F-32 paired-key encryption（四个 optional 字段号；材料**不可离线推导** → 由调用方给）、
+  F-33 paired-key result（status 0..3；参考实现双方都回 `UNABLE`）。语料 qs-019..qs-024、
+  lab gate 68 → **72**（新增字段行、**paired-key 不得声称免 PIN**、语料覆盖、**控制帧层不得含密码学原语**）。
+- **实现** `crates/proto-quickshare/src/control.rs`：两套编号分列编解码（外层收到内层编号 3 直接拒绝并
+  说明分层）、`KeepAliveTracker`（10 s 节奏、收到即回 ack、判死后停收发）、paired-key 材料与 result 帧
+  编解码、BYTES 载荷装载/解出（`kind` 非 BYTES 或 `offset≠0` 拒绝）、`PairedKeyExchange` 状态机
+  （对端 encryption → 回 `UNABLE`（F-33 参考实现行为），沿用对端 payload id）。**材料语义不做**：
+  本层无任何密码学原语或随机源（lab gate 机器检查），也不做配对存储——**默认策略下对端报 `SUCCESS`
+  仍要求用户核对 4 位确认码**，只有调用方显式 `allowing_skip_confirmation()` 才允许跳过。
+- **qs-020 抓出一处真实缺陷**：判死基准原为 `max(last_sent, last_received)` —— 自己还在发心跳就把判死
+  无限推后，**只发不听的连接永远不会被判死**，与语料里"对端静默后的超时判定"相悖。现在基准是
+  "最后一次**收到**的对端帧，从未收到时用**首个**心跳"，并新增回归测试
+  `silent_peer_is_detected_while_we_keep_sending`（旧逻辑下该测试失败，红→绿记录见 run manifest 的 seq 3/4）。
+- **demo**：`qshare` 段新增控制帧块（D-13）——65 s 时间轴上 7 帧心跳 ↔ 7 条 ack、帧间隔全等 10000 ms、
+  每帧经真实字节往返；对端静默 31000 ms 判死（其间已发 4 帧）；paired-key 层号/材料往返、
+  `our_result_status=Some(Unable)`、`peer_success_decision_default=RequireConfirmation` vs
+  `opted_in=SkipConfirmation`；两条控制帧负向均 InvalidFrame。
+- **诚实边界**：全部为本机自动化（对端角色由同进程第二实例扮演），**未与任何 Android 设备互通**；
+  paired-key 材料是演示用固定字节、不代表任何真实配对材料；10 s/断开阈值/真机 result 取值仍待
+  P-F02-2 的真机对跑（用户手动）。
+- **测试面**：impl 199 → **209**（proto-quickshare 37，其中控制帧 9 例 + demo D-13）；clippy 0；
+  lab 68 → **72**。

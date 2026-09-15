@@ -86,6 +86,14 @@ pub fn compute_report() -> DemoReport {
 }
 
 /// 人类可读渲染。`section` 为 `None` 时输出全部；否则只输出该段（顶部仍打印诚实标注）。
+/// 人类可读输出里展示 JSON 字符串时去掉引号（`Value` 的 Display 会给字符串加引号）。
+fn text(v: &serde_json::Value) -> String {
+    match v {
+        serde_json::Value::String(s) => s.clone(),
+        other => other.to_string(),
+    }
+}
+
 pub fn render_human(r: &DemoReport, section: Option<&str>) -> String {
     let mut out = String::new();
     out.push_str(&format!(
@@ -602,7 +610,7 @@ pub fn render_human(r: &DemoReport, section: Option<&str>) -> String {
 
     if want("qshare") {
         let q = &r.quickshare;
-        out.push_str("\n## Quick Share / UKEY2（T19/T20）\n");
+        out.push_str("\n## Quick Share / UKEY2（T19/T20/T21+）\n");
         out.push_str(&format!(
             "framing           : {} 字节大端长度前缀，本仓上限 {} B（非协议常量，F-05）\n",
             q.framing["length_prefix_bytes"], q.framing["default_max_frame_bytes"]
@@ -651,6 +659,43 @@ pub fn render_human(r: &DemoReport, section: Option<&str>) -> String {
             q.payload_gate["wrong_code"],
             q.payload_gate["after_confirmation"]
         ));
+        if !q.control.is_null() {
+            let k = &q.control["keepalive"];
+            let p = &q.control["paired_key"];
+            out.push_str(&format!(
+                "keep-alive（T21+）: {} ms 间隔（{}）→ 65 s 内发 {} 帧、收 {} 应答、节奏全等={} 线上往返={}\n",
+                k["interval_ms"],
+                text(&k["interval_source"]),
+                k["sent"],
+                k["acks_returned"],
+                k["cadence_ok"],
+                k["wire_roundtrip_ok"]
+            ));
+            out.push_str(&format!(
+                "对端静默          : {} ms 判死（本仓策略 {} ms；其间仍发了 {} 帧心跳，received=0）\n",
+                k["silent_peer_detected_ms"], k["timeout_ms"], k["silent_peer_heartbeats_sent"]
+            ));
+            out.push_str(&format!(
+                "paired-key        : 内层 {} 层号={} 材料往返={}；我们的 result={}\n",
+                text(&p["inner_type"]),
+                p["inner_type_ok"],
+                p["material_roundtrip"],
+                text(&p["our_result_status"])
+            ));
+            out.push_str(&format!(
+                "  确认码策略      : 对端 UNABLE→{}；对端 SUCCESS→默认 {} / 显式开关 {}（默认不免，F-32）\n",
+                text(&p["peer_unable_decision"]),
+                text(&p["peer_success_decision_default"]),
+                text(&p["peer_success_decision_opted_in"])
+            ));
+            for case in q.control["rejects"].as_array().into_iter().flatten() {
+                out.push_str(&format!(
+                    "  - 控制帧负向 {:<24} {}\n",
+                    text(&case["case"]),
+                    text(&case["outcome"])
+                ));
+            }
+        }
         out.push_str(&format!(
             "F-15 冲突         : 采用 {}；{} 待真机裁决\n",
             q.conflict["adopted"], q.conflict["awaiting"]

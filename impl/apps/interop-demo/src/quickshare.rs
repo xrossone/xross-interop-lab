@@ -5,6 +5,11 @@
 //! 发现/QR/传输加密/payload 层未实现（P-F02-1/3 未关闭）——报告里如实标 blocked。
 
 use crate::report::QuickShareReport;
+use proto_quickshare::control::{
+    decode_keepalive_offline, unwrap_bytes_payload, wrap_inner_as_bytes_payload, KeepAliveTracker,
+    PairedKeyDecision, PairedKeyEvent, PairedKeyExchange, PairedKeyMaterial, PairedKeyResultFrame,
+    PairedKeyStatus, INNER_TYPE_PAIRED_KEY_ENCRYPTION, KEEPALIVE_INTERVAL_MS, KEEPALIVE_TIMEOUT_MS,
+};
 use proto_quickshare::framing::{encode_frame, DEFAULT_MAX_FRAME_BYTES, LENGTH_PREFIX_BYTES};
 use proto_quickshare::handshake::{
     ClientConfig, DiscoveryProvenance, HandshakeConfig, Ukey2Client, Ukey2Server,
@@ -271,6 +276,9 @@ pub fn quickshare_scenario() -> (QuickShareReport, bool) {
     // ---- 传输链路（T21）：SecureMessage 加解密 + payload 流式落盘 ----
     let transport = run_transport_chain(&mut ok);
 
+    // ---- 控制帧（T21+）：keep-alive 节奏与 paired-key 交换 ----
+    let control = run_control_chain(&mut ok);
+
     let report = QuickShareReport {
         evidence_level: "simulated",
         wire: "self-authored-fixture",
@@ -302,6 +310,7 @@ pub fn quickshare_scenario() -> (QuickShareReport, bool) {
         }),
         negatives,
         transport,
+        control,
         payload_gate: serde_json::json!({
             "before_confirmation": gate_before,
             "wrong_code": wrong_code,
@@ -318,7 +327,8 @@ pub fn quickshare_scenario() -> (QuickShareReport, bool) {
         blocked: vec![
             "LAN 发现（mDNS `_FC9F5ED42C8A._tcp.`/BLE 触发）：P-F02-1 需用户抓包 → 不实现".to_string(),
             "QR/可见性隐藏实例（AES-GCM 名称加密、TLV）：P-F02-1/3 未关闭 → 不实现".to_string(),
-            "keep-alive（每 10s 心跳）与 paired-key 帧未实现：真机联调时才需要（F-23/F-22）".to_string(),
+            "paired-key 材料的**内容语义**（signed_data/secret_id_hash 怎么算）：不可离线推导，需跟 Google 服务器对话 → 只做帧与状态机，材料由调用方给".to_string(),
+            "配对存储（免 4 位确认码）：本仓没有，默认策略一律要求用户核对（F-32）".to_string(),
             "4 位确认码与 stock Android 的一致性：需真机比对（当前是 R15 实现的兼容启发式）".to_string(),
             "F-12 cipher 选择规则冲突（规范概览 vs 实现）：以实现侧为准，待真机裁决".to_string(),
         ],
@@ -355,6 +365,7 @@ fn failed_report() -> QuickShareReport {
         negatives: vec![],
         transport: serde_json::Value::Null,
         payload_gate: serde_json::Value::Null,
+        control: serde_json::Value::Null,
         conflict: serde_json::Value::Null,
         blocked: vec!["Quick Share 场景提前失败（熵源或状态机异常）".to_string()],
     }
@@ -547,4 +558,260 @@ fn run_transport_chain(ok: &mut bool) -> serde_json::Value {
 /// 与 `interop-file` 相同的 SHA-256 十六进制（只用于展示对照）。
 fn hex_sha256(bytes: &[u8]) -> String {
     interop_file::integrity::sha256_hex(bytes)
+}
+
+/// 跑一遍控制帧链路（T21+，字段行 F-30..F-33）：
+/// 1) keep-alive：两端 tracker 按 10 s 推进 65 s 时钟，帧**编成字节再解**（证明线上格式），
+///    记录到点节奏、ack 往返；随后让对端静默，验证 30 s 判死并停发（qs-020）。
+/// 2) paired-key：内层帧装进 BYTES payload 走一遍双向交换，重点报告**默认策略不免确认码**。
+///
+/// 全在本进程内、不连任何设备：证明的是"我们的帧与状态机自洽"，不是与 Android 互通。
+fn run_control_chain(ok: &mut bool) -> serde_json::Value {
+    // ---- keep-alive：双向 65 秒 ----
+    let mut side_a = KeepAliveTracker::new();
+    let mut side_b = KeepAliveTracker::new();
+    let mut gaps: Vec<u64> = Vec::new();
+    let mut sent_by_a = 0u32;
+    let mut acks_seen_by_a = 0u32;
+    let mut last_send_at: Option<u64> = None;
+    let mut layer_ok = true;
+
+    for second in 0..=65u64 {
+        let now = second * 1_000;
+        if let Some(frame) = side_a.on_tick(now) {
+            sent_by_a += 1;
+            if let Some(prev) = last_send_at {
+                gaps.push(now - prev);
+            }
+            last_send_at = Some(now);
+
+            // 走一遍真实字节（外层帧编解码）再交给 B。
+            let wire_bytes = frame.encode_offline();
+            let decoded = match decode_keepalive_offline(&wire_bytes) {
+                Ok(d) => d,
+                Err(_) => {
+                    layer_ok = false;
+                    break;
+                }
+            };
+            match side_b.on_received(&decoded, now) {
+                Ok(Some(ack)) => {
+                    let ack_bytes = ack.encode_offline();
+                    match decode_keepalive_offline(&ack_bytes) {
+                        Ok(ack) => {
+                            if side_a.on_received(&ack, now).map(|r| r.is_none()) == Ok(true) {
+                                acks_seen_by_a += 1;
+                            } else {
+                                *ok = false;
+                            }
+                        }
+                        Err(_) => layer_ok = false,
+                    }
+                }
+                // B 判死后不再回应：这是**预期**行为（qs-020 的下半段），不算失败。
+                Err(_) => {}
+                Ok(None) => {}
+            }
+        }
+        side_a.expired(now);
+        side_b.expired(now);
+    }
+
+    if !layer_ok || acks_seen_by_a != sent_by_a {
+        *ok = false;
+    }
+    let cadence_ok = !gaps.is_empty() && gaps.iter().all(|g| *g == KEEPALIVE_INTERVAL_MS);
+
+    // ---- 对端静默 → 30 s 判死（本次用独立的一对，避免与上面的 65 s 时钟纠缠）----
+    let mut lonely = KeepAliveTracker::new();
+    let mut heartbeat = 0u32;
+    let mut died_at: Option<u64> = None;
+    for second in 0..=40u64 {
+        let now = second * 1_000;
+        if lonely.on_tick(now).is_some() {
+            heartbeat += 1;
+        }
+        if lonely.expired(now) && died_at.is_none() {
+            died_at = Some(now);
+        }
+    }
+    let silent_peer_detected = died_at.is_some() && lonely.stats().received == 0;
+    if !silent_peer_detected {
+        *ok = false;
+    }
+
+    // ---- paired-key：双向交换（材料为演示用固定字节，不是任何真实配对材料）----
+    let demo_material = PairedKeyMaterial::new(vec![0x11; 72], vec![0x22; 6]);
+    let Ok(demo_material) = demo_material else {
+        return serde_json::Value::Null;
+    };
+
+    // 我们发起：内层帧 → BYTES payload → **经真实字节回到对端解析**
+    let mut ours = PairedKeyExchange::new();
+    let our_payload = match ours.begin(&demo_material) {
+        Ok(p) => p,
+        Err(_) => return serde_json::Value::Null,
+    };
+    let (inner_bytes, payload_id) = match unwrap_bytes_payload(&our_payload) {
+        Ok(v) => v,
+        Err(_) => return serde_json::Value::Null,
+    };
+    let inner_type_ok = offline_type_is(&inner_bytes, INNER_TYPE_PAIRED_KEY_ENCRYPTION);
+    let peer_sees_material = PairedKeyMaterial::decode_inner(&inner_bytes).is_ok();
+    if !(inner_type_ok && peer_sees_material) {
+        *ok = false;
+    }
+
+    // 对端收到后回一条 result：参考实现回 UNABLE（F-33）→ 我们仍然要求用户核对确认码。
+    let peer_result = PairedKeyResultFrame::unable();
+    let peer_payload = match wrap_inner_as_bytes_payload(&peer_result.encode_inner(), payload_id) {
+        Ok(p) => p,
+        Err(_) => return serde_json::Value::Null,
+    };
+    let default_decision = match ours.on_bytes_payload(&peer_payload) {
+        Ok(PairedKeyEvent::Result { status, decision }) => {
+            if status != PairedKeyStatus::Unable {
+                *ok = false;
+            }
+            decision
+        }
+        _ => {
+            *ok = false;
+            PairedKeyDecision::RequireConfirmation
+        }
+    };
+
+    // 对端报 SUCCESS：默认策略**仍然**要求确认码；只有调用方显式开启开关才允许跳过。
+    let mut exchange = PairedKeyExchange::new();
+    let _ = exchange.begin(&demo_material);
+    let success_payload = match wrap_inner_as_bytes_payload(
+        &PairedKeyResultFrame {
+            status: PairedKeyStatus::Success,
+            os_type: Some(1),
+        }
+        .encode_inner(),
+        4242,
+    ) {
+        Ok(p) => p,
+        Err(_) => return serde_json::Value::Null,
+    };
+    let success_decision_default = match exchange.on_bytes_payload(&success_payload) {
+        Ok(PairedKeyEvent::Result { decision, .. }) => decision,
+        _ => PairedKeyDecision::RequireConfirmation,
+    };
+    let mut opted_in = PairedKeyExchange::new().allowing_skip_confirmation();
+    let _ = opted_in.begin(&demo_material);
+    let success_decision_opted_in = match opted_in.on_bytes_payload(&success_payload) {
+        Ok(PairedKeyEvent::Result { decision, .. }) => decision,
+        _ => PairedKeyDecision::RequireConfirmation,
+    };
+    if default_decision != PairedKeyDecision::RequireConfirmation
+        || success_decision_default != PairedKeyDecision::RequireConfirmation
+        || success_decision_opted_in != PairedKeyDecision::SkipConfirmation
+    {
+        *ok = false;
+    }
+
+    // 对端发来 encryption 帧 → 我们回的必须是 UNABLE（F-33：本仓没有可用的配对材料）
+    let mut responder = PairedKeyExchange::new();
+    let _ = responder.begin(&demo_material);
+    let peer_encryption = match wrap_inner_as_bytes_payload(&demo_material.encode_inner(), 5150) {
+        Ok(p) => p,
+        Err(_) => return serde_json::Value::Null,
+    };
+    let reply_status = match responder.on_bytes_payload(&peer_encryption) {
+        Ok(PairedKeyEvent::NeedResult { reply }) => match unwrap_bytes_payload(&reply) {
+            Ok((bytes, 5150)) => PairedKeyResultFrame::decode_inner(&bytes)
+                .map(|f| f.status)
+                .ok(),
+            _ => None,
+        },
+        _ => None,
+    };
+    if reply_status != Some(PairedKeyStatus::Unable) {
+        *ok = false;
+    }
+
+    // 负向：层号混用（外层帧用内层编号 3）与 FILE 载荷冒充协商帧。
+    let mut inner_numbered = Vec::new();
+    let mut v1 = Vec::new();
+    v1.extend_from_slice(&[0x08, INNER_TYPE_PAIRED_KEY_ENCRYPTION as u8]);
+    v1.extend_from_slice(&[0x32, 0x02, 0x08, 0x01]);
+    inner_numbered.extend_from_slice(&[0x08, 0x01]);
+    inner_numbered.push(0x12);
+    inner_numbered.push(v1.len() as u8);
+    inner_numbered.extend_from_slice(&v1);
+    let layer_confusion = match decode_keepalive_offline(&inner_numbered) {
+        Ok(_) => {
+            *ok = false;
+            "accepted(unexpected)".to_string()
+        }
+        Err(e) => format!("{:?}", e.code),
+    };
+    let file_frame = PayloadTransferFrame::data(7, 4, 0, true, vec![0u8; 4]);
+    let file_carrier = match proto_quickshare::payload::encode_payload_transfer_frame(&file_frame) {
+        Ok(bytes) => match unwrap_bytes_payload(&bytes) {
+            Ok(_) => {
+                *ok = false;
+                "accepted(unexpected)".to_string()
+            }
+            Err(e) => format!("{:?}", e.code),
+        },
+        Err(_) => "encode-failed".to_string(),
+    };
+
+    serde_json::json!({
+        "keepalive": {
+            "interval_ms": KEEPALIVE_INTERVAL_MS,
+            "interval_source": "来源取值（PROTOCOL.md:228-230 的 10 秒）",
+            "timeout_ms": KEEPALIVE_TIMEOUT_MS,
+            "timeout_source": "本仓策略（来源只说 'a while'）",
+            "sent": sent_by_a,
+            "acks_returned": acks_seen_by_a,
+            "gaps_ms": gaps,
+            "cadence_ok": cadence_ok,
+            "wire_roundtrip_ok": layer_ok,
+            "silent_peer_detected_ms": died_at,
+            "silent_peer_heartbeats_sent": heartbeat,
+        },
+        "paired_key": {
+            "inner_type": "PAIRED_KEY_ENCRYPTION(3)",
+            "inner_type_ok": inner_type_ok,
+            "payload_id_preserved": payload_id != 0,
+            "material_roundtrip": peer_sees_material,
+            "material_source": "演示用固定字节；真实材料不可离线推导（F-32）",
+            "our_result_status": format!("{reply_status:?}"),
+            "peer_unable_decision": format!("{default_decision:?}"),
+            "peer_success_decision_default": format!("{success_decision_default:?}"),
+            "peer_success_decision_opted_in": format!("{success_decision_opted_in:?}"),
+            "skips_confirmation_by_default": false,
+        },
+        "rejects": [
+            {"case": "外层帧用内层编号 3", "outcome": layer_confusion},
+            {"case": "FILE 载荷冒充协商帧", "outcome": file_carrier},
+        ],
+    })
+}
+
+/// 从内层 `OfflineFrame` 取 `V1Frame.type`（演示用；长度前缀是真 varint）。
+fn offline_type_is(buf: &[u8], expected: i64) -> bool {
+    fn read_varint(buf: &[u8]) -> Option<(u64, usize)> {
+        let mut value = 0u64;
+        let mut shift = 0;
+        for (i, byte) in buf.iter().enumerate() {
+            value |= u64::from(byte & 0x7f) << shift;
+            if byte & 0x80 == 0 {
+                return Some((value, i + 1));
+            }
+            shift += 7;
+        }
+        None
+    }
+    let Some((len, n)) = read_varint(buf.get(3..).unwrap_or_default()) else {
+        return false;
+    };
+    let Some(v1) = buf.get(3 + n..3 + n + len as usize) else {
+        return false;
+    };
+    matches!(read_varint(v1.get(1..).unwrap_or_default()), Some((ty, _)) if ty == expected as u64)
 }

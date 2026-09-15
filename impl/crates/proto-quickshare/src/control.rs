@@ -185,6 +185,7 @@ pub struct KeepAliveTracker {
     interval_ms: u64,
     timeout_ms: u64,
     next_seq: u32,
+    first_sent_ms: Option<u64>,
     last_sent_ms: Option<u64>,
     last_received_ms: Option<u64>,
     sent: u32,
@@ -210,6 +211,7 @@ impl KeepAliveTracker {
             interval_ms,
             timeout_ms,
             next_seq: 1,
+            first_sent_ms: None,
             last_sent_ms: None,
             last_received_ms: None,
             sent: 0,
@@ -244,6 +246,7 @@ impl KeepAliveTracker {
         }
         let frame = KeepAliveFrame::new(false, self.next_seq);
         self.next_seq = self.next_seq.wrapping_add(1);
+        self.first_sent_ms.get_or_insert(now_ms);
         self.last_sent_ms = Some(now_ms);
         self.sent += 1;
         Some(frame)
@@ -270,17 +273,14 @@ impl KeepAliveTracker {
         Ok(Some(KeepAliveFrame::new(true, 0)))
     }
 
-    /// 是否已判超时（以最后一次收发为准；**阈值是本仓策略**）。
+    /// 是否已判超时（**阈值与基准都是本仓策略**：基准取最后一次**收到**的对端帧——对端静默才是死的
+    /// 信号，自己还在发心跳不能把判死往后推；从未收到过任何对端帧时，以**首个**心跳为基准，
+    /// 这样"发了但永远没人理"的连接也会被判死）。
     pub fn expired(&mut self, now_ms: u64) -> bool {
         if self.expired {
             return true;
         }
-        let reference = match (self.last_sent_ms, self.last_received_ms) {
-            (Some(sent), Some(received)) => Some(sent.max(received)),
-            (Some(sent), None) => Some(sent),
-            (None, Some(received)) => Some(received),
-            (None, None) => None,
-        };
+        let reference = self.last_received_ms.or(self.first_sent_ms);
         if let Some(reference) = reference {
             if now_ms.saturating_sub(reference) > self.timeout_ms {
                 self.expired = true;
