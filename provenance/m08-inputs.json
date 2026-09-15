@@ -1,0 +1,60 @@
+{
+  "schema_version": 1,
+  "created_at": "2026-09-15",
+  "scope": "cast.media-control（M08 / T43）线的输入清单：每一份进入实现上下文的材料都登记用途/许可/边界",
+  "rules": [
+    "没有登记的来源不得进入 impl/ 的实现上下文（T43 gate）",
+    "只取字段名/常量/结构事实（行级引用注明 commit+文件+行）；不复制表达、不翻译、不链接",
+    "F-18（DeviceAuth 握手）不实现：缺设备证书材料，seam 恒拒绝——未认证不得发送任何命令",
+    "F-17/F-23：不申请、不伪造 app ID；注册体系在 Google 侧，注册 ≠ 通用硬件授权",
+    "F-05：分块（continued/remaining_length）不实现，收到即拒绝",
+    "heartbeat 周期（10 s/10 s）是实现取值（来源单一），引用时必须标注不是协议常量",
+    "真机语料（抓包/log）由用户执行，pcap 不入库；不得包含设备证书或任何密钥"
+  ],
+  "entries": [
+    {
+      "id": "R42",
+      "name": "chromium/openscreen",
+      "commit_ref": "2963401",
+      "license": "BSD 风格（逐文件核；该 checkout 含 fork 提交）",
+      "use": "facts-source：CastMessage 信封字段号与 required 声明、ProtocolVersion/PayloadType 枚举、4 字节长度前缀与 64 KiB 正文上限、分块字段的存在与实现缺席、namespace 字面量集合、connection 载荷键、receiver 侧 LAUNCH/GET_STATUS/STOP 处理、DeviceAuth 消息字段号与发送端强制认证点、mDNS 服务类型与 TXT 键",
+      "boundary": "只取常量/字段名/结构事实；不复制 C++/protobuf 表达、不链接其构建系统；fork 新增的 sender 代码只作为事实引用（F-18）",
+      "allowed_in_crate": true,
+      "gate": "字段表 = 唯一入口；实现按字段表写"
+    },
+    {
+      "id": "R43",
+      "name": "googlecast/CastReceiver",
+      "commit_ref": "ddfb06c7",
+      "license": "Apache-2.0",
+      "use": "facts-source：接收端参考应用只实现 LOAD 拦截与错误映射（LOAD_FAILED/INVALID_REQUEST）、命令集合；app 注册流程与'注册 ≠ 通用硬件授权'的边界（README）",
+      "boundary": "其 JS 依赖 CAF SDK（不在本仓上下文）；只取「接收端实际实现面」与注册边界的事实，不复制 JS 表达、不加载其 SDK",
+      "allowed_in_crate": true,
+      "gate": "本仓不实现 receiver 侧，只登记边界"
+    },
+    {
+      "id": "R44",
+      "name": "home-assistant-libs/pychromecast",
+      "commit_ref": "5cfdb607",
+      "license": "MIT",
+      "use": "facts-source：namespace/类型字面量与 JSON 键（media 的 LOAD/PLAY/PAUSE/STOP/SEEK/GET_STATUS/MEDIA_STATUS、receiver 的 LAUNCH/GET_STATUS/STOP/SET_VOLUME/RECEIVER_STATUS/LAUNCH_ERROR）、playerState/streamType 取值、requestId 注入与默认超时 10 s、heartbeat 周期取值、mDNS 服务类型与 TXT 键、默认媒体接收器 app ID",
+      "boundary": "只取字段名/常量/默认值事实；不复制 Python 表达、不链接；app ID 仅作「注册体系存在」的事实，本仓不得据此伪造 sender 身份",
+      "allowed_in_crate": true,
+      "gate": "本仓只用调用方显式配置的 app ID"
+    },
+    {
+      "id": "R45",
+      "name": "cast-web/protocol",
+      "commit_ref": "c906d210",
+      "license": "未完成文件级核验（restricted）",
+      "use": "本轮未使用（只登记）",
+      "boundary": "restricted：任何表达不进入实现上下文",
+      "allowed_in_crate": false,
+      "gate": "如需使用先补文件级许可核验"
+    }
+  ],
+  "device_evidence": {
+    "status": "none",
+    "note": "真实 Chromecast/Google TV 对第三方 sender 的认证强制点（P-M08-1）需要用户在场；本阶段不产生任何器件级证据"
+  }
+}

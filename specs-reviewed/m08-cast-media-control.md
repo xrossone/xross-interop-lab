@@ -1,26 +1,91 @@
-# Reviewed Wire Spec — cast.media-control（M08）
+# Reviewed Wire Spec — cast.media-control（M08 / T43）
 
-**状态**：review pending。CASTV2 通道细节未 source-review；**P-M08-1/2 关闭前本文件不是 wire spec**。
+**状态**：字段级事实表已建立（2026-09-15，T43 gate）。**P-M08-1（真实设备对第三方 sender 的认证强制点）
+blocked**：需要库存 Chromecast/Google TV 与用户在场。P-M08-2（openscreen cast/ 组件边界）与
+P-M08-3（mDNS TXT 字段矩阵）同样未关闭。
 
-## 已登记的事实入口
+**红线**：状态 `blocked` 的行不得写进实现；本文件不复制第三方表达，只记字段名/常量/结构事实。
+**认证（DeviceAuth）与 app ID 是两条硬边界**：本仓不实现认证握手（缺设备证书材料），也不伪造/申请 app ID
+（注册体系属 Google Cast SDK Developer Console，注册 ≠ 通用硬件授权）。
 
-| 主题 | 来源 |
-|---|---|
-| 公开 libcast/CASTV2 实现（BSD 系混合，逐文件核） | R42 openscreen @29634014（cast/ 目录） |
-| CAF receiver 语义（Apache-2.0） | R43 CastReceiver @ddfb06c7 |
-| sender 行为对照（MIT） | R44 pychromecast @5cfdb607 |
-| CASTV2 交叉参考（restricted） | R45 cast-web/protocol @c906d210 |
-| 平台文档（sender/receiver 区别、注册、Web Receiver） | S07/S08/S09 |
+## A. 字段级事实表
 
-## 骨架（catalogued）
+| # | 层 | 事实 | 来源（commit+位置） | 状态 | impl-allowed |
+|---|---|---|---|---|---|
+| F-01 | channel | CASTV2 信封 `CastMessage` 字段号：`protocol_version`=1(required)、`source_id`=2(required)、`destination_id`=3(required)、`namespace`=4(required)、`payload_type`=5(required)、`payload_utf8`=6、`payload_binary`=7、`continued`=8、`remaining_length`=9 | R42 2963401 `cast/common/channel/proto/cast_channel.proto:20,36,37,42,51,58-70` | source-reviewed | yes |
+| F-02 | channel | `ProtocolVersion` 枚举：`CASTV2_1_0`=0、`CASTV2_1_1`=1（分块，注释标 deprecated）、`CASTV2_1_2`=2（重做分块）、`CASTV2_1_3`=3（二进制载荷走 utf8） | R42 `cast/common/channel/proto/cast_channel.proto:12-19` | source-reviewed | yes |
+| F-03 | channel | `PayloadType` 枚举：`STRING`=0、`BINARY`=1；两个载荷字段"二选一" | R42 `cast/common/channel/proto/cast_channel.proto:44-51` | source-reviewed | yes |
+| F-04 | channel | 帧 = 4 字节长度前缀（`kHeaderSize = sizeof(uint32_t)`）+ 正文；**正文上限 64 KiB**（`kMaxBodySize = 65536`），序列化与反序列化两侧都拒绝超限 | R42 `cast/common/channel/message_framer.cc:20-23,29-31,46-48` | source-reviewed | yes |
+| F-05 | channel | 分块字段（`continued`/`remaining_length`）在参考实现里**没有实现路径**（只出现在 proto 与调试串）；本仓同样不实现：收到 `continued = true` 明确拒绝 | R42 `cast/common/channel/proto/cast_channel.proto:58-70`、`cast/common/channel/message_util.cc:168` | source-reviewed（实现侧缺席） | yes（只做拒绝） |
+| F-06 | channel | 特殊端点 id：`sender-0`、`receiver-0`、通配 `*` | R42 `cast/common/channel/proto/cast_channel.proto:26-33`（注释）；R44 5cfdb607 `pychromecast/const.py:83`（`PLATFORM_DESTINATION_ID = "receiver-0"`） | source-reviewed | yes |
+| F-07 | channel | namespace 字面量：`urn:x-cast:com.google.cast.media`、`.receiver`、`.tp.connection`、`.tp.heartbeat`、`.tp.deviceauth`、`.broadcast`、`.setup`、`.receiver.discovery` | R42 `cast/common/channel/message_util.h:20-37`；R44 `pychromecast/socket_client.py:47`、`controllers/heartbeat.py:16`、`controllers/receiver.py:28`、`controllers/media.py:385` | source-reviewed | yes |
+| F-08 | channel | 载荷 JSON 的类型键是 `type`；connection 命名空间类型 `CONNECT`/`CLOSE`/`CONNECTED`；CONNECT 携带 `origin`（对象）、`connType`、`userAgent`、`senderInfo`（含 `sdkType`/`version`/`browserVersion`/`platform` 等键） | R42 `cast/common/channel/message_util.h:58,69-71,76-84`、`message_util.cc:124,142`；R44 `socket_client.py:49-50,1013-1030,1036-1042` | source-reviewed | yes |
+| F-09 | channel | heartbeat 类型 `PING`/`PONG`；**周期只在 R44 给出取值**（`HB_PING_TIME = 10`、`HB_PONG_TIME = 10`，超时判定为两者之和），R42 无周期常量且文档写明控制层 PING/PONG 已弃用 → 取值属**实现取值，不是协议常量** | R44 `pychromecast/controllers/heartbeat.py:18-22,87-90`；R42 `cast/protocol/streaming_session_protocol.md:664-666` | source-reviewed（取值来源单一并已标注） | yes |
+| F-10 | receiver | `receiver` 命名空间类型：`LAUNCH`{appId}、`GET_STATUS`、`STOP`、`SET_VOLUME`{volume{level 或 muted}}、`RECEIVER_STATUS`{status{applications[]{appId,displayName,namespaces[],sessionId,transportId,statusText,iconUrl,controlType},volume{level,muted},isActiveInput,isStandBy}}、`LAUNCH_ERROR`{reason,appId,requestId} | R44 `controllers/receiver.py:25-35,118-119,149-151,223,238-242,252-265,277-300`；R42 `cast/receiver/application_agent.cc:141-156,226-293`（接收侧只认 GET_APP_AVAILABILITY/GET_STATUS/LAUNCH/STOP） | source-reviewed | yes |
+| F-11 | media | `media` 命名空间类型：`LOAD`、`PLAY`、`PAUSE`、`STOP`、`SEEK`、`GET_STATUS`、`MEDIA_STATUS`、`LOAD_FAILED`，另有 `QUEUE_INSERT`/`QUEUE_UPDATE`/`QUEUE_NEXT`/`QUEUE_PREV`/`SET_PLAYBACK_RATE`/`EDIT_TRACKS_INFO`（本仓不实现队列与倍速） | R44 `controllers/media.py:32-45` | source-reviewed | yes（队列/倍速除外） |
+| F-12 | media | `LOAD` 载荷：`{media:{contentId,streamType,contentType,metadata{metadataType,title,thumb,images[]{url}}}, type:"LOAD", autoplay, currentTime?, customData:{}, activeTrackIds?}`；**`duration` 不在 LOAD 里写**（只从状态读） | R44 `controllers/media.py:47-51,476-498,536-546` | source-reviewed | yes |
+| F-13 | media | `SEEK` 载荷：`{type:"SEEK", currentTime, resumeState:"PLAYBACK_START"}`；`relativeTime` 在本组来源里不存在 | R44 `controllers/media.py:657-664`、`controllers/plex.py:32,316,324` | source-reviewed | yes |
+| F-14 | media | `MEDIA_STATUS` 载荷键：`media{contentId,contentType,duration,streamType,metadata}`、`mediaSessionId`、`playerState`、`idleReason`、`currentTime`、`volume{level,muted}` | R44 `controllers/media.py:313-334` | source-reviewed | yes |
+| F-15 | media | `playerState` 取值 `PLAYING`/`BUFFERING`/`PAUSED`/`IDLE`/`UNKNOWN`；`streamType` 取值 `UNKNOWN`/`BUFFERED`/`LIVE` | R44 `controllers/media.py:22-30` | source-reviewed | yes |
+| F-16 | channel | `requestId`：每条连接一个单调计数器，逐条注入载荷；响应按 `requestId` 关联回调；默认请求超时 10 s（库级默认值） | R44 `socket_client.py:204,515-519,884-886,926-927,664-665`、`const.py:13` | source-reviewed（默认值为实现取值） | yes |
+| F-17 | app | app ID 属注册体系：默认媒体接收器 `CC1AD845`、待机/backdrop `E8C28D3C`；自定义 receiver 必须在 Google Cast SDK Developer Console 注册、登记 sender 与设备后才可被拉起 | R44 `config.py:10-12`、`__init__.py:39`；R43 ddfb06c7 `README.md:5,12,15,18,20,21` | source-reviewed（**本仓不申请、不伪造 app ID**） | yes（只做校验：非本节点配置的 app ID 不得发送） |
+| F-18 | auth | DeviceAuth 消息：`AuthChallenge`(1-3)、`AuthResponse`(1-7，含 `signature`/`client_auth_certificate`/`intermediate_certificate`/`signature_algorithm`/`sender_nonce`/`hash_algorithm`/`crl`)、`AuthError`(1，枚举 INTERNAL_ERROR/NO_TLS/SIGNATURE_ALGORITHM_UNAVAILABLE)、`DeviceAuthMessage`(challenge=1/response=2/error=3)；**发送端实现强制认证**（非认证首包 → `kCastV2AuthenticationError` 并断链），接收端参考实现不拒绝未认证 sender | R42 `cast/common/channel/proto/cast_channel.proto:73-118`、`cast/sender/channel/sender_socket_factory.cc:175-178,181-202`、`cast/receiver/application_agent.cc:126-129`；R42 `cast/protocol/streaming_session_protocol.md:703-706` | source-reviewed（**认证握手不实现**：缺设备证书材料） | yes（只做 seam 与拒绝） |
+| F-19 | discovery | 发现：服务类型 `_googlecast._tcp`、域 `local`；TXT 键 `id`/`ve`/`ca`/`st`/`fn`/`md`；`st` 取值 0/1（idle/busy）；`ca` 位掩码；连接端口 8009 | R42 `cast/common/public/receiver_info.h:19-28,31-51`；R44 `discovery.py:215-217,243`、`socket_client.py:324` | source-reviewed | yes（只做解析，不做组播） |
+| F-20 | compat | 真实 Chromecast/Google TV 对第三方 sender 的实际认证强制点（哪些默认接受、哪些要求 DeviceAuth）**未固化** | P-M08-1 未关闭 | **blocked**（impl 不准入） | **no** |
+| F-21 | scope | openscreen `cast/` 内 sender/streaming/receiver 与本 profile 的边界（M09 分界）**未固化** | P-M08-2 未关闭 | **blocked** | **no** |
+| F-22 | discovery | mDNS TXT 字段矩阵（各代设备实际携带的键与取值）**未固化** | P-M08-3 未关闭 | **blocked** | **no** |
+| F-23 | app | app 注册与签发：注册需要开发者账号与设备登记，且"注册 ≠ 通用硬件授权"（S08） | R43 `README.md:12,15,18,20`；S08（设计包编目） | source-reviewed（**不实现注册**） | **no**（登记在案） |
+| F-24 | policy | 媒体 URL 由本节点签发（短时/单资源/可撤销），可达性属 host gateway lease（T24）；**本仓不拥有 lease**，只在停止/被终止时报告"必须释放" | 本仓策略（T43-03）；契约见 `docs/` 的 media URL 模型 | source-reviewed（策略由本仓定义） | yes |
+| F-25 | media | 媒体字节服务（HTTP 拉取路径）与实时 streaming sender 不在本 task（T44 与 host gateway） | P-M08-1/T44 未开始 | **blocked**（本切片不实现） | **no** |
 
-- 发现：mDNS `_googlecast._tcp`，TXT 携带 UUID/型号/能力（字段矩阵待 P-M08-3）。
-- 通道：TLS + protobuf（CASTV2）；namespace 消息（CONNECT/CLOSE、media 控制、GET_STATUS）。
-- payload：receiver 按 URL 拉取；本节点签发短时/单资源/可撤销 URL lease。
-- 认证边界：第三方可通信 ≠ 官方认证；不做认证绕过、不伪造 app ID（S08）。
+## B. 与本仓实现的关系（T43 headless 切片）
 
-## 待固化
+- **实现**：F-01..F-19、F-24 中不依赖真机与证书材料的部分——
+  1. **信封层（`castv2.rs`）**：`CastMessage` 字段号 1..9 的编解码、required 字段强制、
+     STRING/BINARY 载荷二选一、4 字节长度前缀与 64 KiB 上限（分配前拒绝）、
+     `continued = true` → `unsupported-feature`（F-05）、协议版本 0..3 白名单；
+  2. **命名空间层（`namespaces.rs`）**：namespace 与类型字面量、connection/heartbeat/receiver/media
+     四组消息的载荷编解码（JSON 键逐条对应 F-08/F-10..F-15），未知类型 → 明确拒绝；
+  3. **控制会话（`controller.rs`）**：连接 → （认证 seam）→ CONNECT/CONNECTED → LAUNCH →
+     LOAD → PLAY/PAUSE/SEEK/STOP → CLOSE；`requestId` 单调注入与关联、超时、
+     heartbeat 到点发送与过期判定；LAUNCH_ERROR 与 MEDIA_STATUS 的分流处理；
+  4. **发现解析（`discovery.rs`）**：`_googlecast._tcp` 的 TXT 键值解析为 `ReceiverInfo`（不组播）。
+- **不实现**：F-18 的认证握手（缺设备证书材料 → seam 恒 `vendor-gated`，未认证不得发送任何命令）、
+  F-23 的 app 注册与 app ID 签发（未配置即拒绝）、F-20/F-21/F-22（真机与规范边界）、
+  F-25（媒体字节服务/实时 streaming）、队列与倍速播放（F-11 的 QUEUE_*/SET_PLAYBACK_RATE）。
 
-1. lab Chromecast（具名型号）无认证 sender 的接受条件与 media 命令集（P-M08-1）。
-2. openscreen cast/ 组件边界（sender/streaming/receiver 与 M09 的分界）（P-M08-2）。
-3. mDNS TXT 字段矩阵（P-M08-3）。
+## C. 能力分声明
+
+| 能力 | 状态 | 障碍 / 重评条件 |
+|---|---|---|
+| CASTV2 信封与命名空间消息（编解码） | `source-reviewed`（T43 实现） | 真机通道未验（P-M08-1） |
+| sender 控制会话（launch/load/play/pause/seek/stop） | `source-reviewed`（T43 实现） | 真机命令集与接受条件未验（P-M08-1） |
+| TXT 解析（`_googlecast._tcp`） | `source-reviewed`（T43 实现） | 字段矩阵未验（P-M08-3） |
+| **设备认证（DeviceAuth）** | `not-implemented` | F-18：缺设备证书材料；seam 恒拒绝，未认证不发送命令 |
+| **app 注册 / app ID 签发** | `not-implemented` | F-23：注册体系在 Google 侧；本仓只用已配置的 app ID |
+| **屏幕镜像（screen mirroring）** | `not-implemented` | 本 profile 只做"媒体 URL"（T43-04）：screen 能力恒 false，不假装镜像 |
+| 媒体字节服务 / 实时 streaming | `blocked` | F-25 + P-M08-1：本切片不服务媒体字节（T44 与 host gateway） |
+| 真实设备兼容矩阵 | `blocked` | P-M08-1：需库存 Chromecast/Google TV 与用户在场 |
+
+## D. 语料规则（`evidence/cast/`）
+
+1. 全部 fixture 自制（CastMessage 字节、namespace 载荷 JSON、TXT 键值由测试构造），**不含抓包**；
+2. 负向必须含：required 字段缺失、`payload_type` 与实际载荷不符、正文超 64 KiB、`continued = true`、
+   未知 `protocol_version`、未知 namespace/类型、`requestId` 不匹配、LAUNCH_ERROR 后的 LOAD、
+   未认证就发命令、未配置 app ID、TXT 缺 `id`/`fn`、状态里出现未知 `playerState`；
+3. 真机语料（抓包/log）后置、由用户执行；pcap 不入库；
+4. 语料不得包含真实设备证书、注册材料或任何密钥。
+
+## E. 平台/许可
+
+- 事实来源：R42 openscreen（BSD 风格，逐文件核——该 checkout 有 fork 提交，F-18 里的
+  `cast/sender/...` 属 fork 新增，仅作"发送端强制认证"的事实）、R43 CastReceiver（Apache-2.0）、
+  R44 pychromecast（MIT）——**只取字段名/常量/结构事实**，不复制表达、不翻译、不链接。
+- R45（cast-web/protocol，restricted，文件级许可未核清）**未使用**；S07/S08/S09 为文档事实。
+- 本实现不链接任何 Cast SDK；TLS 由宿主提供（本切片不含传输层）。
+
+## F. 决策
+
+**路线**：sender 侧"媒体 URL"控制面作为独立 headless 实现（本切片），认证作为 seam
+（生产缺席 = 能力缺席，与 AirPlay keying seam 同一纪律）。屏幕镜像由 Miracast/AirPlay 承担，
+Cast 只做媒体 URL 推送。重评条件：P-M08-1/2/3 关闭。
