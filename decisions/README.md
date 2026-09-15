@@ -25,8 +25,9 @@
   `production_approved` 仍为 `false`。核心是 F01 LocalSend profile 是否保持 P0 且走 reuse（主仓 adapter）；
   其余（GStreamer 插件矩阵、windows-rs intake 等）按计划推进项。
 - **阶段 3 scope 行（首个真机 vertical）**：AirPlay via UxPlay 外部引擎 / Quick Share LAN 接收需要用户
-  新开 scope（外部引擎二进制、真机矩阵、可能的抓包批准）——清单由阶段 2 T5 产出。**执行与信任边界本身
-  已裁决**（见上表 ADR-003，accepted），不再属于 open。
+  新开 scope——**清单与理由见 [../research/vertical-gates.md](../research/vertical-gates.md) §3**：
+  S1 UxPlay 外部引擎接入、S2 真机互联矩阵、S3 抓包+脱敏、S4 xross-dev bridge 窗口、S5 provider 放行。
+  （执行与信任边界本身已裁决：见上表 ADR-003，accepted，不再属于 open。）
 - **xross-dev 基线复核**：T03 映射锚定 `099b6c72`，xross-dev HEAD 已前移；
   首次实现对接前复核映射是否仍成立（`tools/test_xross_baseline.py` 会提示）。
 

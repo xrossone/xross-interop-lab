@@ -51,9 +51,39 @@ tools/                          # 仓库检查脚本与测试（python3 -m unitt
 `catalogued → source-reviewed → build-verified → simulated → device-verified → release-qualified`；
 受阻任务标 `blocked` 并写明障碍与重评条件。README 声明、模拟自通、未固定 commit 一律不升级证据等级。
 
-## 当前状态（2026-09-15，基础阶段 T01–T14 完成）
+## 当前状态（2026-09-15，阶段 2：T11–T13 收尾 + 执行边界 + seam 模拟实证 完成）
 
-**研究与决策（T02–T05，全部完成）**
+**阶段 2（2026-09-15，全部完成）**
+
+- **T0 执行与信任边界（ADR-003，accepted）**：产品集成 = xrossd 内第一方 interop bridge
+  （协议名到此为止）；协议执行 = 隔离低权限 worker（supervisor 管理，只经 scoped 能力面，
+  禁用 `control.v1` 全权）；provider 部署类 A/B/C（LocalSend=A grandfathered）。
+  落 `decisions/adr-003-execution-and-trust-boundary.md` + `decisions/provider-adoption.json`
+  的 `deployment_class`/`source_role`；恢复 ADR 纪律测试（ADR-01..04）。用户采纳原话记录于
+  [provenance/review-log.md](provenance/review-log.md)。
+- **T11 endpoint registry**：`interop-platform` 新 crate（观察形状校验、明文候选如实标注、
+  确定性 fake 源）+ registry/路由——去重键含来源与 identity claim（**同名/同 IP/同地址都不合并**）、
+  地址候选带 TTL 与接口（接口断开即失效）、用户 alias 只生成**派生展示分组**（不参与授权）、
+  路由检查 purpose/方向、能力与媒体形态、安全策略（默认禁明文回落）、平台状态（拒绝而非降级）。
+- **T12 只读 platform probe + radio lease**：`xinterop doctor [--json]`（白名单只读命令、不经 shell、
+  只保留接口名）；radio arbiter 共享/独占 lease（pending 期间零网络变更、批准后一次 apply、
+  释放/退出按 rollback 恢复）。真机只读输出见 [research/platform-probes.md](research/platform-probes.md)
+  （macOS：P2P/WFD 无公开 API → `unavailable`；媒体输出 `not-run`——不伪装可用）。
+- **T13 worker supervisor + 真实隔离**：binary hash pin、固定参数、环境清空 + 白名单、parent pipe
+  bootstrap、有限重启（4 次/5 分钟）、关闭无孤儿；canary 探针在**本机真实 OS 沙箱**
+  （macOS sandbox-exec）下被内核拒绝（`permission denied`）→ 等级 `platform-sandbox`；无沙箱时
+  如实报 `process-only` 并限制可发布 profile。真实子进程 worker 在 `impl/workers/mock-provider`。
+- **T4 seam 模拟实证（`simulated`）**：外来 offer → registry/路由 → Entry scoped grant → HostPorts →
+  interop-file 原子落盘 → EventBus 投影；负向 = 无 grant 拒绝、Vault 越权、预算、路径形状、
+  symlink no-follow、监听默认关闭、无渲染器不开假窗口；媒体面只落本地 spool（不上 fabric）+
+  worker 崩溃只影响挂靠会话。**simulated 不冒充真机**。
+- **T5 首个真机 vertical gate**：[research/vertical-gates.md](research/vertical-gates.md)——
+  AirPlay 优先（T28→T29→T30 路线）、Quick Share 待 F02 wire；R01–R12 用途/边界盘点、
+  A1–A10 真机验收清单、**5 条待用户批准的 scope 行（S1–S5）**。
+- **测试面**：`cargo test --manifest-path impl/Cargo.toml --workspace` **69 tests 全绿**
+  （46 → 69）；clippy 0 warnings；`python3 -m unittest discover -s tools` **28 tests OK**（含 ADR 纪律）。
+
+**基础阶段（T01–T14，2026-09-15 完成）**
 
 - **T02 来源 intake**：file-core+airplay 19 项只读扫描（[research/source-intake.md](research/source-intake.md)、
   [decisions/source-allowlist.json](decisions/source-allowlist.json)）；restricted：R10/R13/R16（许可不明）；
@@ -69,24 +99,14 @@ tools/                          # 仓库检查脚本与测试（python3 -m unitt
   LocalSend→reuse（主仓 adapter；用户自有 localsend-rs 属另一项目不引入）、
   QuickShare 参考→independent、GStreamer→worker、WinRT→independent、**FairPlay→永久 vendor-gated**；
   全部 `production_approved=false`（放行权保留给用户）。
-- **执行与信任边界（ADR-003，accepted 2026-09-15 用户采纳）**：产品集成 = xrossd 内第一方 interop
-  bridge（协议名到此为止）；协议执行 = 隔离低权限 worker（supervisor 管理，只经 scoped 能力面，
-  禁用 `control.v1` 全权）；provider 部署类 A/B/C（LocalSend=A grandfathered）。见
-  [decisions/adr-003-execution-and-trust-boundary.md](decisions/adr-003-execution-and-trust-boundary.md)
-  与 [decisions/README.md](decisions/README.md) 台账。
-- **T01/T06–T10/T14 实现**：`impl/` 7 个 crate + 1 adapter + 1 app；
-  `cargo test --manifest-path impl/Cargo.toml --workspace` **46 tests 全绿**；
-  clippy 0 warnings；覆盖 T01（卫生）、T06（schema/大整数/能力协商）、T07（scoped grant）、
-  T08（路径/预算/symlink/原子发布/hash）、T09（分片粘包/超长/hello/版本）、T10（幂等终态/
-  bounded replay/worker 隔离）、T14（fixture hash/分级 manifest/脱敏）。
-- **AirPlay 接收**：[docs/research/airplay-research.md](docs/research/airplay-research.md) —— Gate 1
-  供应链审计已过；Gate 2 真机进行中（transient 视频链路已通，画质/音频/PIN 待解）；Gate 3/4 未开始。
+- **T01/T06–T10/T14 实现**：契约/策略/存储/IPC/会话/测试基建，见
+  [evidence/2026-09-15-phase-1-final-report.md](evidence/2026-09-15-phase-1-final-report.md)。
 
-**未开始**：T11（多发现源 endpoint registry）、T12（platform probe/radio lease）、T13（worker
-supervisor 真实隔离）、T15+ 协议 provider 实现。阶段 2 的 goal prompt 已就绪：
-[docs/goal-phase-2.md](docs/goal-phase-2.md)——T0 执行与信任边界 ADR-003（建议形态为 first-party
-bridge + 隔离低权限 worker，**待用户采纳**，见 [decisions/README.md](decisions/README.md) 待裁决清单）、
-T1–T3 即上列三项、T4 seam 模拟实证、T5 首个真机 vertical gate。
+**未开始 / 待批准**：T28/T29（媒体形态与 sink，T30 前置）、T30（UxPlay provider 闭环，
+需 scope S1/S2）、T19–T21（Quick Share，待 P-F02-1/2/3 关闭与 S3 抓包批准）、xross-dev 侧
+bridge 窗口（S4）、provider 放行（S5）。阶段 2 的 goal prompt 见
+[docs/goal-phase-2.md](docs/goal-phase-2.md)，执行结果见
+[evidence/2026-09-15-phase-2-final-report.md](evidence/2026-09-15-phase-2-final-report.md)。
 
 Agent 工作规则、禁止事项与汇报格式见 [AGENTS.md](AGENTS.md)；基础阶段执行提示词见
 [docs/goal-phase-1.md](docs/goal-phase-1.md)（已执行完毕，期末报告见
