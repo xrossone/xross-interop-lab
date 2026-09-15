@@ -58,8 +58,9 @@ tools/                          # 仓库检查脚本与测试（python3 -m unitt
 - **T0 执行与信任边界（ADR-003，accepted）**：产品集成 = xrossd 内第一方 interop bridge
   （协议名到此为止）；协议执行 = 隔离低权限 worker（supervisor 管理，只经 scoped 能力面，
   禁用 `control.v1` 全权）；provider 部署类 A/B/C（LocalSend=A grandfathered）。
-  落 `decisions/adr-003-execution-and-trust-boundary.md` + `decisions/provider-adoption.json`
-  的 `deployment_class`/`source_role`；恢复 ADR 纪律测试（ADR-01..04）。用户采纳原话记录于
+  见 [decisions/adr-003-execution-and-trust-boundary.md](decisions/adr-003-execution-and-trust-boundary.md)
+  （台账 [decisions/README.md](decisions/README.md)）；`decisions/provider-adoption.json` 增
+  `deployment_class`/`source_role`；恢复 ADR 纪律测试（ADR-01..04）。用户采纳原话记录于
   [provenance/review-log.md](provenance/review-log.md)。
 - **T11 endpoint registry**：`interop-platform` 新 crate（观察形状校验、明文候选如实标注、
   确定性 fake 源）+ registry/路由——去重键含来源与 identity claim（**同名/同 IP/同地址都不合并**）、

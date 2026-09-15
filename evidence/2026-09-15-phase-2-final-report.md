@@ -76,8 +76,10 @@ S1 UxPlay 外部引擎接入 · S2 真机互联矩阵 · S3 抓包+脱敏 · S4 
 - **接口影响**：无。本阶段所有产物都在 lab 内（`impl/` 与文档）；interop 契约仍是独立版本面
   （`interop.api/0.1`），未触碰 `xross.*` 命名空间。
 - **已由用户裁决**：ADR-003 执行与信任边界（用户 2026-09-15 原话采纳，记录于
-  `provenance/review-log.md`）——产品集成走第一方 bridge、协议执行走隔离 worker、provider 分
-  A/B/C 部署类；LocalSend 作为 class A grandfathered。
+  `provenance/review-log.md`；决议见
+  [decisions/adr-003-execution-and-trust-boundary.md](../decisions/adr-003-execution-and-trust-boundary.md)）
+  ——产品集成走第一方 bridge、协议执行走隔离 worker、provider 分 A/B/C 部署类；
+  LocalSend 作为 class A grandfathered。
 - **仍需用户裁决**：§5 的五条 scope 行；以及 F01 LocalSend profile 是否保持 P0 与 reuse 路线
   （阶段 1 遗留）。
 
