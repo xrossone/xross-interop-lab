@@ -1,0 +1,87 @@
+{
+  "schema_version": 1,
+  "run_id": "2026-09-15-t42-dlna-renderer",
+  "task": "T42 · DLNA renderer 接收媒体 URL（headless 切片）",
+  "kind": "manual",
+  "evidence_level": "build-verified",
+  "is_test_evidence": true,
+  "synthetic": false,
+  "base_commit": "3d5ad7f（T42 gate）",
+  "case_ids": [
+    "T42-01",
+    "T42-02",
+    "T42-03",
+    "T42-04"
+  ],
+  "result": "pass",
+  "commands": [
+    {
+      "seq": 1,
+      "purpose": "red：renderer 尚未实现（验收套件不存在，编译期即失败）",
+      "command": "cargo test --manifest-path impl/Cargo.toml -p proto-upnp --test dlna_renderer",
+      "exit_code": 101,
+      "result": "fail：no test target `dlna_renderer`（T42 gate 已把语料 dl-019..dl-022 与字段行 F-15..F-22 固定，实现与测试同时落地）"
+    },
+    {
+      "seq": 2,
+      "purpose": "green：T42 验收套件",
+      "command": "cargo test --manifest-path impl/Cargo.toml -p proto-upnp --test dlna_renderer",
+      "exit_code": 0,
+      "result": "pass：5 tests（T42-01..04 各 1 例 + SOAP 层往返/Fault/速度限制/播放结束反馈）"
+    },
+    {
+      "seq": 3,
+      "purpose": "既有 DLNA 测试回归（SOAP 动作集扩张后）",
+      "command": "cargo test --manifest-path impl/Cargo.toml -p proto-upnp",
+      "exit_code": 0,
+      "result": "pass：11 + 10 + 5 tests —— T41 的 10 例全绿：新增动作（Pause/GetPositionInfo/RenderingControl 四动作）没有放松既有拒绝语义（未知动作、服务类型不符、InstanceID≠0 仍然拒绝）"
+    },
+    {
+      "seq": 4,
+      "purpose": "全 workspace 回归 + 静态检查 + lab 纪律",
+      "command": "cargo test --manifest-path impl/Cargo.toml --workspace; cargo clippy --manifest-path impl/Cargo.toml --workspace --all-targets; python3 -m unittest discover -s tools",
+      "exit_code": 0,
+      "result": "pass：impl 194 → **199** tests 全绿；clippy 0 warnings；lab 64 → **68** tests OK（dlna gate 7 → 11 例：renderer 字段行、能力表拆分、T42 语料、renderer 实现无网络 I/O）"
+    }
+  ],
+  "acceptance_mapping": {
+    "T42-01": "`SetAVTransportURI` 为 `file://` → 拒绝：只接受 http(s)，policy 拒绝时返回 fault 402 且描述含 T42-01；**拒绝后状态仍是 NO_MEDIA_PRESENT、没有 media 记录、Play 也不可用**（不留播放入口）。同组负向：loopback、链路本地/云元数据、带 userinfo、ftp/rtsp scheme。合法 URI 先返回 `NeedsUserConsent`，授权后才可 Play——对应实现决策里的 policy/用户同意",
+    "T42-02": "重复 `Stop` → 幂等结束：NO_MEDIA_PRESENT、STOPPED、以及播放中停止后再次 Stop 全部返回成功；从 PLAYING 停止会清位置，停止态下状态不再变化（不会变成错误或迁移态）",
+    "T42-03": "live 流 `Seek` 不支持 → 710：时长未知的媒体一律 `Seek mode not supported` 且**位置不变**；点播（已知时长）`REL_TIME` 定位生效并可经 `GetPositionInfo` 读回；未实现单位（ABS_TIME 等 F-17 的其余五种）→ 710；目标非 H:MM:SS 或超时长 → 711；无媒体 → 701",
+    "T42-04": "外来 event 订阅 callback 越界 → 拒绝：`file://`、loopback、链路本地/元数据、带 userinfo、尖括号多地址全部 fault 402（描述含 T42-04）且**不建立订阅**；超时越界（>1800s 或 0）同样拒绝；合法单地址订阅可建立/续订（同 SID 不新增）/退订（未知 SID 拒绝）；订阅数达上限 → 720 明确拒绝"
+  },
+  "extra_coverage": {
+    "state_variables": "TransportState 取值逐字对应 F-15（含 PAUSED_PLAYBACK/NO_MEDIA_PRESENT）；TransportStatus OK/ERROR_OCCURRED；CurrentTransportActions 由状态推导（F-19）；GetPositionInfo 的 RelTime/AbsTime/TrackDuration 用 H:MM:SS",
+    "rendering_control": "GetVolume/SetVolume/GetMute/SetMute 经 SOAP 往返；Volume 范围 0..100（F-18），越界 → 402 且音量不变；Channel 只认 Master（本仓策略，SOAP 参数校验层拒绝）",
+    "soap_versions": "AVTransport `:1` 与 `:2` 两个已登记版本串都可构造/解析（F-20）；动作与服务类型不匹配（Play 发到 RenderingControl）仍被拒绝",
+    "fault_roundtrip": "DmrFault → SOAP Fault 编码 → 解析回错误码与描述（控制器侧可读）",
+    "human_note": "错误码全部来自来源：402/701/710/711/712/717/718 见 F-16 与 F-08；720 在本切片用于『订阅数超上限』属**本仓策略复用**，描述里已写明"
+  },
+  "artifacts": [
+    {
+      "path": "impl/crates/proto-upnp/src/dmr.rs"
+    },
+    {
+      "path": "impl/crates/proto-upnp/src/soap.rs",
+      "note": "新增 Pause/GetPositionInfo/RenderingControl 四动作与服务类型别名匹配（F-18/F-20）"
+    },
+    {
+      "path": "impl/crates/proto-upnp/tests/dlna_renderer.rs"
+    },
+    {
+      "path": "specs-reviewed/m07-dlna-upnp-av.md",
+      "note": "F-15..F-22（T42 gate 产出，见 3d5ad7f）"
+    },
+    {
+      "path": "evidence/dlna/corpus-plan.json",
+      "note": "dl-019..dl-024"
+    },
+    {
+      "path": "tools/test_dlna_gate.py",
+      "note": "11 例（含 renderer 实现不得做网络 I/O）"
+    }
+  ],
+  "credentials_redacted": true,
+  "license_route_approved": false,
+  "notes": "**证据等级 build-verified**（状态机/策略/SOAP 往返/订阅校验在本机可证）。**不是** device-verified：没有真实控制器（库存 TV 或手机 App）驱动过本渲染器（P-M07-1 blocked）。**不做**：GENA 事件投递（F-22 只做校验与拒绝）、媒体字节服务与拉取（T24/host gateway）、真正的播放（没有 native player 接入）——因此本切片的『播放』只体现在状态与位置记账上，`on_playback_position` 由播放器上报。测试里的 URI/回调/TXT 全为自制地址。"
+}

@@ -19,6 +19,10 @@ pub const SOAP_ENV_NS: &str = "http://schemas.xmlsoap.org/soap/envelope/";
 pub const AV_TRANSPORT: &str = "urn:schemas-upnp-org:service:AVTransport:1";
 /// ContentDirectory:1 服务类型（F-07）。
 pub const CONTENT_DIRECTORY: &str = "urn:schemas-upnp-org:service:ContentDirectory:1";
+/// AVTransport 的第二个已登记版本串（F-20：R49 `rygel-av-transport.vala:35`）。
+pub const AV_TRANSPORT_V2: &str = "urn:schemas-upnp-org:service:AVTransport:2";
+/// RenderingControl 服务类型（F-18/F-20：R49 `rygel-rendering-control.vala:30` 声明 `:2`）。
+pub const RENDERING_CONTROL: &str = "urn:schemas-upnp-org:service:RenderingControl:2";
 /// `CurrentURIMetaData` 的字节上限（本仓策略值；DIDL-Lite 元数据通常几 KB）。
 pub const MAX_URI_METADATA_BYTES: usize = 32 * 1024;
 
@@ -35,10 +39,16 @@ fn unsupported(why: impl Into<String>) -> Error {
 pub enum SoapAction {
     SetAvTransportUri,
     Play,
+    Pause,
     Stop,
     Seek,
     GetTransportInfo,
     GetMediaInfo,
+    GetPositionInfo,
+    GetVolume,
+    SetVolume,
+    GetMute,
+    SetMute,
     Browse,
 }
 
@@ -47,10 +57,16 @@ impl SoapAction {
         match self {
             Self::SetAvTransportUri => "SetAVTransportURI",
             Self::Play => "Play",
+            Self::Pause => "Pause",
             Self::Stop => "Stop",
             Self::Seek => "Seek",
             Self::GetTransportInfo => "GetTransportInfo",
             Self::GetMediaInfo => "GetMediaInfo",
+            Self::GetPositionInfo => "GetPositionInfo",
+            Self::GetVolume => "GetVolume",
+            Self::SetVolume => "SetVolume",
+            Self::GetMute => "GetMute",
+            Self::SetMute => "SetMute",
             Self::Browse => "Browse",
         }
     }
@@ -77,10 +93,21 @@ impl SoapAction {
                 required: &["InstanceID", "Unit", "Target"],
                 optional: &[],
             },
-            Self::GetTransportInfo | Self::GetMediaInfo => ActionSpec {
+            Self::Pause => ActionSpec {
                 service: AV_TRANSPORT,
                 required: &["InstanceID"],
                 optional: &[],
+            },
+            Self::GetTransportInfo | Self::GetMediaInfo | Self::GetPositionInfo => ActionSpec {
+                service: AV_TRANSPORT,
+                required: &["InstanceID"],
+                optional: &[],
+            },
+            // RenderingControl：Channel 是必需参数（F-18；DMR 只认 Master，见 dmr.rs）
+            Self::GetVolume | Self::SetVolume | Self::GetMute | Self::SetMute => ActionSpec {
+                service: RENDERING_CONTROL,
+                required: &["InstanceID", "Channel"],
+                optional: &["DesiredVolume", "DesiredMute"],
             },
             Self::Browse => ActionSpec {
                 service: CONTENT_DIRECTORY,
@@ -98,15 +125,29 @@ impl SoapAction {
             "Seek" => Ok(Self::Seek),
             "GetTransportInfo" => Ok(Self::GetTransportInfo),
             "GetMediaInfo" => Ok(Self::GetMediaInfo),
+            "Pause" => Ok(Self::Pause),
+            "GetPositionInfo" => Ok(Self::GetPositionInfo),
+            "GetVolume" => Ok(Self::GetVolume),
+            "SetVolume" => Ok(Self::SetVolume),
+            "GetMute" => Ok(Self::GetMute),
+            "SetMute" => Ok(Self::SetMute),
             "Browse" => Ok(Self::Browse),
             other => Err(unsupported(format!(
-                "未知 SOAP 动作 {other:?}：只实现 AVTransport/ContentDirectory 的固定集合（不做尽力解析）"
+                "未知 SOAP 动作 {other:?}：只实现 AVTransport/RenderingControl/ContentDirectory 的固定集合（不做尽力解析）"
             ))),
         }
     }
 
     pub fn service(self) -> &'static str {
         self.spec().service
+    }
+
+    /// 声明的服务类型是否与该动作相容（F-20：AVTransport 有 `:1` 与 `:2` 两个已登记版本串）。
+    pub fn service_matches(self, declared: &str) -> bool {
+        if declared == self.service() {
+            return true;
+        }
+        self.service() == AV_TRANSPORT && declared == AV_TRANSPORT_V2
     }
 }
 
@@ -135,9 +176,9 @@ impl SoapMessage {
     ) -> Result<Self, Error> {
         let action = SoapAction::from_wire(action)?;
         let spec = action.spec();
-        if spec.service != service {
+        if !action.service_matches(service) {
             return Err(unsupported(format!(
-                "动作 {} 属于 {}，不属于 {service}",
+                "动作 {} 属于 {}，不属于 {service}（F-20 只放 AVTransport :1/:2 两个版本串）",
                 action.as_wire(),
                 spec.service
             )));
@@ -208,9 +249,9 @@ impl SoapMessage {
             .find(|(k, _)| k.starts_with("xmlns:"))
             .map(|(_, v)| v.clone())
             .ok_or_else(|| invalid("动作元素缺少服务类型命名空间声明（xmlns:u）"))?;
-        if service_type != action.service() {
+        if !action.service_matches(&service_type) {
             return Err(unsupported(format!(
-                "动作 {} 声明的服务类型 {service_type:?} 与期望 {} 不符",
+                "动作 {} 声明的服务类型 {service_type:?} 与期望 {} 不符（F-20 只放 AVTransport :1/:2 两个版本串）",
                 action.as_wire(),
                 action.service()
             )));
@@ -284,6 +325,9 @@ impl SoapMessage {
     }
 }
 
+/// RenderingControl 的 `Channel` 只认 `Master`（**本仓策略**：多声道通道不在本切片范围）。
+pub const CHANNEL_MASTER: &str = "Master";
+
 fn validate_args(action: SoapAction, args: &BTreeMap<String, String>) -> Result<(), Error> {
     let spec = action.spec();
     for req in spec.required {
@@ -321,6 +365,13 @@ fn validate_args(action: SoapAction, args: &BTreeMap<String, String>) -> Result<
     if let Some(uri) = args.get("CurrentURI") {
         if uri.is_empty() {
             return Err(invalid("CurrentURI 不得为空（停止播放用 Stop，不是空 URI）"));
+        }
+    }
+    if let Some(channel) = args.get("Channel") {
+        if channel != CHANNEL_MASTER {
+            return Err(unsupported(format!(
+                "RenderingControl 只支持 Channel={CHANNEL_MASTER}（收到 {channel:?}）：多通道未实现"
+            )));
         }
     }
     Ok(())

@@ -15,6 +15,7 @@
 #![allow(clippy::result_large_err)]
 
 pub mod dmc;
+pub mod dmr;
 pub mod dms;
 pub mod soap;
 pub mod ssdp;

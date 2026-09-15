@@ -390,6 +390,14 @@
       "date": "2026-09-15",
       "path": "evidence/2026-09-15-t43-cast-sender/run-manifest.json",
       "notes": "T43 Google Cast 媒体 URL sender（headless）：CASTV2 信封（字段号 1..9/64 KiB/分块拒绝）、四个命名空间的载荷编解码、sender 控制会话（连接→拉起→媒体会话→收尾）与 T43-01..04 四条约束；无认证握手（seam 恒拒绝）、无 app 注册、无媒体字节服务、不提供镜像"
+    },
+    {
+      "id": "run-2026-09-15-t42-dlna-renderer",
+      "kind": "run-manifest",
+      "level": "build-verified",
+      "date": "2026-09-15",
+      "path": "evidence/2026-09-15-t42-dlna-renderer/run-manifest.json",
+      "notes": "T42 DLNA renderer 接收侧（headless）：AVTransport/RenderingControl 动作与状态变量、媒体 URL 策略与用户同意、幂等 Stop、live 流 Seek 710、GENA 订阅校验（越界回调拒绝）；无真实控制器、无事件投递、无媒体字节服务"
     }
   ]
 }
