@@ -1,0 +1,59 @@
+{
+ "schema_version": 1,
+ "run_id": "2026-09-15-t29-media-sinks",
+ "task": "T29 · 实现 null/file/native 播放器 sink（native 本阶段明确不可用）",
+ "kind": "manual",
+ "evidence_level": "build-verified",
+ "is_test_evidence": true,
+ "synthetic": false,
+ "base_commit": "88c6873（T28 提交）",
+ "case_ids": [
+  "T29-01",
+  "T29-02",
+  "T29-03"
+ ],
+ "result": "pass",
+ "commands": [
+  {
+   "seq": 1,
+   "purpose": "red：sinks 模块未实现",
+   "command": "cargo test --manifest-path impl/Cargo.toml -p interop-media --test sinks",
+   "exit_code": 101,
+   "result": "fail（E0432 unresolved import interop_media::sinks，预期 red）"
+  },
+  {
+   "seq": 2,
+   "purpose": "green：T29 验收套件",
+   "command": "cargo test --manifest-path impl/Cargo.toml -p interop-media --test sinks",
+   "exit_code": 0,
+   "result": "pass：4 tests（null headless 统计、显式 resample、受控 dimensions 失败、file sink 落盘+索引）"
+  },
+  {
+   "seq": 3,
+   "purpose": "全 workspace 回归 + 静态检查",
+   "command": "cargo test --manifest-path impl/Cargo.toml --workspace; cargo clippy --manifest-path impl/Cargo.toml --workspace --all-targets",
+   "exit_code": 0,
+   "result": "pass：84 tests 全绿（80 → 84）；clippy 0 warnings"
+  }
+ ],
+ "acceptance_mapping": {
+  "T29-01": "null sink 在无 DISPLAY/无音频设备的本测试进程中打开成功；逐帧统计 frames/bytes/first_pts/last_pts/format_changes/codec/dimensions；带 NO_PTS 的帧不写入时间统计（first/last 保持 None）",
+  "T29-02": "ResamplePlan::plan(44100,48000) → 显式 Resample{ratio 147:160}；同率 → Passthrough；1 秒 44.1k 单声道 → 48000 样本（时长保持=不变速）；立体声按帧交错；采样率 0 → invalid-frame（拒绝而不是静默 1:1）",
+  "T29-03": "Dimensions::parse 坏形状/零宽/缺高度 → invalid-frame；100000×100000 → 分配前 resource-limit；失败后 null sink 仍可正常打开并工作（不拖垮 supervisor）；native 窗口请求 → platform-unavailable（不开假窗口）"
+ },
+ "extra_coverage": {
+  "file_sink": "payload 顺序串接落盘（ONETWO!THREE!! 实测回读一致）+ 帧数/字节/路径统计；codec config 不进内容文件",
+  "native_sink_deferred": "workers/presentation/ 未创建：native 窗口需要桌面会话（无 GUI 自动化），列入待用户手动测试清单；T29 的实现决策按 null → file → native 顺序执行，native 是明确未实现而非假成功"
+ },
+ "artifacts": [
+  {
+   "path": "impl/crates/interop-media/src/sinks.rs"
+  },
+  {
+   "path": "impl/crates/interop-media/tests/sinks.rs"
+  }
+ ],
+ "credentials_redacted": true,
+ "license_route_approved": false,
+ "notes": "无 codec、无 GUI、无音频设备依赖：null/file sink 在 headless 环境可验证全部验收 case。重采样为线性插值（自有实现，不引入 libsamplerate 等第三方）。native 窗口 sink 明确 platform-unavailable，留待桌面会话手动验证。"
+}

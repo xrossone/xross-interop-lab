@@ -4,6 +4,14 @@
  "notes": "证据登记簿：dossier/specs 中的 evidence_refs 必须指向这里登记的 id（tools/test_dossiers.py 强制）。kind 词表：run-manifest | device-run | source-tree | page-review | user-observation。",
  "entries": [
   {
+   "id": "run-2026-09-15-t29-media-sinks",
+   "kind": "run-manifest",
+   "level": "build-verified",
+   "date": "2026-09-15",
+   "path": "evidence/2026-09-15-t29-media-sinks/run-manifest.json",
+   "notes": "T29 null/file sink（T29-01..03 + file 落盘/显式 resample）；native 窗口明确未实现、留手动"
+  },
+  {
    "id": "run-2026-09-15-t28-media-forms",
    "kind": "run-manifest",
    "level": "build-verified",

@@ -13,4 +13,5 @@
 
 pub mod clock;
 pub mod descriptor;
+pub mod sinks;
 pub mod stream;
