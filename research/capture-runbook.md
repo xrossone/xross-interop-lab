@@ -134,6 +134,51 @@ sudo tcpdump -i bridge100 -U -w captures/qs-02-transfer.pcap 'tcp or udp'
 > 如果 `bridge100` 上一个包都没有：这**不是失败**——它说明这次传输没走 Wi-Fi LAN
 > （很可能走了 BLE/蓝牙/Wi-Fi Direct），那本身就是 P-F02-1 要的结论，记下来。
 
+## 2b. 两台设备同时广播（ROG + 手机，**最优先**，约 10 分钟，零网络改动）
+
+目的：让 `_FC9F5ED42C8A._tcp` 上**同时出现两个广播者**（手机 + ROG），从而对照 F-02 位域里的
+`device_type` 位与两台各自的 `n`/`f`/`IPv4` 取值——这是把位域语义钉死最快的路径（也顺带回答
+「`_quickshare._tcp` 为什么只被查询、没人广播」）。
+
+**ROG 侧准备（先在家里 Wi-Fi 上做完，避免后面热点里没有网）**：
+
+1. 打开 Quick Share（Google 的 Quick Share for Windows），**登录 Google 账号**（与手机同一个账号）。
+2. 设置里把可见性改成 **「所有人 / Everyone」**（默认是"仅联系人"）。
+3. 保持 Quick Share 窗口开着（前台）。
+4. **Windows 防火墙的坑**：换网络后 Windows 会把新网络当「公用网络」并**静默拦掉入站**。
+   控制面板 → 网络和共享中心 → 把当前网络改为 **「专用网络 / Private」**；弹出
+   「是否允许此电脑可被发现」时选 **是**。不做这一步，抓包里会一个包都没有。
+
+**Mac 侧抓取**（家里 Wi-Fi，不用开热点——mDNS 是组播，en0 直接看得见）：
+
+```bash
+sudo tcpdump -i en0 -U -w captures/qs-04-twodev.pcap 'udp port 5353 or udp port 1900'
+```
+
+**动作顺序（每步后在终端跑一次 `date +%H:%M:%S`）**：
+
+1. ROG 的 Quick Share 窗口保持前台 → 等 20 秒。
+2. 手机打开快速分享面板（设备列表）→ 等 20–30 秒（两台应当互相看见）。
+3. 在手机上**改一次可见性**（所有人 ↔ 仅联系人），每档停 15 秒。
+4. 关掉两边面板 → 结束抓取。
+
+我会比对：两个广播者的 `n` 位域（`device_type` 位该不同）、`f` 取值、实例名长度/首字符、端口、
+以及 ROG 是否广播 `_quickshare._tcp`（手机一直在查它）。
+
+## 2c. 传输字节（在同一份操作里顺手做，需要热点）
+
+发现做完后，若要拿 TCP 字节（UKEY2 与 4 字节长度前缀帧），把两台设备都放进 Mac 热点：
+
+1. Mac：系统设置 → 通用 → 共享 → 互联网共享（来源：Wi-Fi，目标端口：Wi-Fi）→ 打开。
+2. ROG 与手机都连这个热点；**ROG 上再次确认网络是「专用网络」**（换网络会重置）。
+3. 抓网桥：`sudo tcpdump -i bridge100 -U -w captures/qs-05-transfer.pcap 'tcp or udp'`
+4. 手机 → 快速分享 → 选 **ROG**（名字形如 `DESKTOP-XXXX` / 自定名）→ 发一个 **1–2 MB** 文件，
+   在 ROG 上**接受**；然后**再发第二个文件**（两次传输 = 两段可对照的会话）。
+5. 结束：关掉互联网共享，恢复原网络。
+
+> 若 bridge100 上只有 mDNS 没有 TCP：说明这次传输没走 Wi-Fi LAN（可能走了 BLE/蓝牙/Wi-Fi Direct）——
+> 那本身是 P-F02-1 的结论，记下来即可。
+
 ## 3. AirPlay：**iPhone/iPad（发）→ 库存 Apple TV（收）**（不需要 S1，约 20 分钟）
 
 > 这条线**不用三星**（安卓没有 AirPlay 发送端），也别在这条线里开快速分享。
