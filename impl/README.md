@@ -23,6 +23,13 @@
 | `adapters/standalone-host` | standalone 显式 policy（profile 默认关闭、60s TTL、只签发 Entry scope） | T07 |
 | `apps/interopd` | headless daemon 骨架：UDS 0600 + 帧循环（Windows pipe 载体后续） | T09 |
 | `apps/interop-cli`（bin `xinterop`） | 诊断 CLI：`xinterop doctor [--json]` 输出只读平台报告 | T12 |
+| `workers/mock-provider` | T13 测试 worker（真实子进程 + 最小行协议；canary/exec/崩溃/listener 模式） | T13 |
+
+`interop-runtime` 另含 **worker supervisor**（T13）：profile 来自 `impl/policies/worker-profiles.json`
+（binary hash pin、固定参数、环境白名单、有限重启 4 次/5 分钟、关闭无孤儿），并提供 canary
+隔离探针——只有 OS 沙箱真的拒绝读取时才报 `platform-sandbox`（本机 macOS 走 `sandbox-exec`），
+否则如实报 `process-only` 并限制可发布 profile。worker 隔离测试需要 `target/debug/mock-provider`：
+`cargo test --workspace` 会构建全部成员，单独跑某个测试前先 `cargo build --workspace`。
 
 `interop-runtime` 另含 **endpoint registry + 路由**（T11）：去重键含来源与 identity claim，
 同名/同 IP/同地址都不合并；地址候选带 TTL 与接口，接口断开即失效；用户 alias 只影响
@@ -30,7 +37,7 @@
 平台状态（拒绝而非降级）。
 
 后续按任务需要创建（docs/04 §2：不一次创建所有空 crate）：
-`impl/workers/` 与 `impl/policies/worker-profiles.json`（T13）。
+阶段 3 的媒体/协议 worker 与 `adapters/` 集成侧。
 
 ## 依赖分层（T01-01）
 

@@ -1,0 +1,12 @@
+[
+  {
+    "profile_id": "mock-provider",
+    "binary": "target/debug/mock-provider",
+    "sha256": null,
+    "args": [],
+    "env_allow": ["INTEROP_WORKER_ID"],
+    "max_restarts": 4,
+    "restart_window_ms": 300000,
+    "sandbox": true
+  }
+]

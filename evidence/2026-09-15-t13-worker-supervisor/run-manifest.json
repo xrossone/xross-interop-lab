@@ -1,0 +1,84 @@
+{
+ "schema_version": 1,
+ "run_id": "2026-09-15-t13-worker-supervisor",
+ "task": "T13 · 实现 worker supervisor 和真实隔离 probe",
+ "kind": "manual",
+ "evidence_level": "build-verified",
+ "is_test_evidence": true,
+ "synthetic": false,
+ "base_commit": "adcdddd（T12 提交）",
+ "case_ids": [
+  "T13-01",
+  "T13-02",
+  "T13-03",
+  "T13-04"
+ ],
+ "result": "pass",
+ "commands": [
+  {
+   "seq": 1,
+   "purpose": "构建 mock-provider（真实子进程 + 最小行协议）与 supervisor",
+   "command": "cargo build --manifest-path impl/Cargo.toml --workspace",
+   "exit_code": 101,
+   "result": "fail（mock-provider: borrow of moved value `lines`；修后为 0）"
+  },
+  {
+   "seq": 2,
+   "purpose": "T13 验收套件（真实进程/管道/文件）",
+   "command": "cargo test --manifest-path impl/Cargo.toml --workspace --test worker_isolation",
+   "exit_code": 0,
+   "result": "pass：6 tests（hash pin/校验、canary 隔离、exec 拒绝、重启上限、无孤儿、env 清洗）"
+  },
+  {
+   "seq": 3,
+   "purpose": "隔离证据（--nocapture 输出等级与 canary 细节）",
+   "command": "cargo test --manifest-path impl/Cargo.toml -p interop-runtime --test worker_isolation -- --nocapture",
+   "exit_code": 0,
+   "result": "evidence: sandbox_available=true actual=PlatformSandbox canary=Denied{detail=\"OS 拒绝读取：permission denied\"}；mock-provider pinned sha256=09e88d0bc34e6d182d83d44a5ab5415333e9c4606e1774a0b919a6bf5049debb（与 /usr/bin/shasum -a 256 输出一致）"
+  },
+  {
+   "seq": 4,
+   "purpose": "全 workspace 回归 + 静态检查",
+   "command": "cargo test --manifest-path impl/Cargo.toml --workspace; cargo clippy --manifest-path impl/Cargo.toml --workspace --all-targets",
+   "exit_code": 0,
+   "result": "pass：66 tests 全绿（60 → 66）；clippy 0 warnings"
+  }
+ ],
+ "acceptance_mapping": {
+  "T13-01": "canary 探针（真实 worker 以 read_canary 模式运行）：本机 OS 沙箱生效 → canary=denied(permission denied) 且等级报 platform-sandbox；等级与证据不一致时测试直接失败（进程边界不得说成 sandbox）",
+  "T13-02": "worker 发出 exec-request:/bin/sh -c id → supervisor 回 denied:auth-denied，worker 输出 exec-denied:auth-denied；日志留下 ExecDenied 审计事件；任何情况下不出现 exec-allowed",
+  "T13-03": "crash 模式下窗口内崩溃超过 max_restarts=4 → 总启动次数 5（1+4）、事件 RestartLimitReached{restarts:4}、不再自动重启、后续 start 返回 busy（需人工介入）",
+  "T13-04": "open_listener 模式：shutdown 通过 stdin EOF 指令优雅关闭（killed=0），worker 清理 listener 文件，断言无孤儿进程与无孤儿 socket 文件"
+ },
+ "extra_coverage": {
+  "hash_pin": "未 pin 的 dev profile 首次启动计算并 pin；pin 后 hash 不匹配 → integrity-failed 且不生成进程、不留 Spawned 事件",
+  "env_clearing": "env_clear + 白名单：父进程的 INTEROP_CANARY_SECRET 与 HOME 在 worker 中均为 absent，白名单变量 INTEROP_WORKER_ID=present",
+  "profile_file": "impl/policies/worker-profiles.json 可被 supervisor 加载（默认 max_restarts=4 / window=300000 / sandbox=true）"
+ },
+ "artifacts": [
+  {
+   "path": "impl/crates/interop-runtime/src/workers.rs"
+  },
+  {
+   "path": "impl/crates/interop-runtime/tests/worker_isolation.rs"
+  },
+  {
+   "path": "impl/workers/mock-provider/Cargo.toml"
+  },
+  {
+   "path": "impl/workers/mock-provider/src/main.rs"
+  },
+  {
+   "path": "impl/policies/worker-profiles.json"
+  },
+  {
+   "path": "impl/Cargo.toml"
+  },
+  {
+   "path": "impl/README.md"
+  }
+ ],
+ "credentials_redacted": true,
+ "license_route_approved": false,
+ "notes": "canary 是**假秘密**（测试自造值，非真实凭据）。macOS sandbox-exec 是弃用但仍真实的 OS 沙箱：本 run 用它证明机制可行，探针 profile 只窄化到 canary 子树；发布级 profile 必须收紧读/写白名单与网络策略（已写入 IsolationReport.note 与 impl/README，列为发布 gate 待办）。未在无沙箱环境重复验证 process-only 分支，但该分支的断言（受限 profile 列表 + 说明）已由测试固定。测试位于 impl/crates/interop-runtime/tests/worker_isolation.rs（plans/01 的 tests/e2e/worker_isolation.rs 在 impl/ 下的映射位置）。"
+}

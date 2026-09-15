@@ -11,6 +11,7 @@ members = [
     "adapters/standalone-host",
     "apps/interopd",
     "apps/interop-cli",
+    "workers/mock-provider",
 ]
 
 [workspace.package]

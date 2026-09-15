@@ -1,0 +1,13 @@
+[package]
+name = "mock-provider"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+publish.workspace = true
+
+# T13 测试 worker：真实子进程，只讲最小行协议；不实现任何协议栈、不联网。
+[[bin]]
+name = "mock-provider"
+path = "src/main.rs"
+
+[dependencies]

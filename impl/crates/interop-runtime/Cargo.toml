@@ -9,6 +9,9 @@ publish.workspace = true
 interop-contract = { path = "../interop-contract" }
 interop-policy = { path = "../interop-policy" }
 interop-platform = { path = "../interop-platform" }
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+sha2 = "0.10"  # worker 二进制 hash 固定（与 interop-file/testkit 同一原语）
 
 [dev-dependencies]
 standalone-host = { path = "../../adapters/standalone-host" }

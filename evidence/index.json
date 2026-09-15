@@ -12,6 +12,14 @@
    "notes": "ADR-003 执行与信任边界（用户 2026-09-15 采纳，accepted）+ decisions 台账同步 + ADR 纪律测试恢复（ADR-01..04）"
   },
   {
+   "id": "run-2026-09-15-t13-worker-supervisor",
+   "kind": "run-manifest",
+   "level": "build-verified",
+   "date": "2026-09-15",
+   "path": "evidence/2026-09-15-t13-worker-supervisor/run-manifest.json",
+   "notes": "T13 worker supervisor + 真实隔离 probe（T13-01..04 + hash pin/env 清洗）；真实子进程 mock-provider；本机 sandbox-exec 拒绝 canary（platform-sandbox 等级有证据）"
+  },
+  {
    "id": "run-2026-09-15-t12-platform-probe",
    "kind": "run-manifest",
    "level": "build-verified",

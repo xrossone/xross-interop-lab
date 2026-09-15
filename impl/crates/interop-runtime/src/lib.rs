@@ -8,6 +8,8 @@
 //! - [`limits`]：资源上限常量与校验。
 //! - [`endpoints`]：endpoint registry——观察去重/过期，**永不合并 identity**（T11）。
 //! - [`routing`]：purpose/能力/安全/平台状态四项检查与稳定选路（T11）。
+//! - [`workers`]：worker supervisor——binary hash pin、参数/环境白名单、有限重启、
+//!   关闭无孤儿，以及如实标注的隔离等级（T13）。
 //!
 //! 不持有 Xross 账号，不创建 Iroh 实例——INT-02。
 
@@ -21,3 +23,4 @@ pub mod host;
 pub mod limits;
 pub mod routing;
 pub mod session;
+pub mod workers;
