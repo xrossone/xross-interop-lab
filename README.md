@@ -136,7 +136,7 @@ tools/                          # 仓库检查脚本与测试（python3 -m unitt
   `python3 -m unittest discover -s tools` **39 tests OK**。每 task 的 run manifest 见
   [evidence/index.json](evidence/index.json)。
 
-**阶段 4 首批（2026-09-15 稍后追加）**
+**阶段 4 首批（2026-09-15 稍后追加，两项已完成）**
 
 - **T21 Quick Share 传输闭环（headless 部分）**：`crates/proto-quickshare` 新增
   `secure_message`（D2D 密钥链 + SecureMessage AES-256-CBC/HMAC-SHA256 + 严格 +1 序号，跳号/重放即
@@ -145,6 +145,13 @@ tools/                          # 仓库检查脚本与测试（python3 -m unitt
   payloadID↔entryID 绑定、预算、CANCEL 清理；落盘经 `interop-file`，文件名穿越由 FILE-05 拒绝）。
   证据：[evidence/2026-09-15-t21-quickshare-transport](evidence/2026-09-15-t21-quickshare-transport/run-manifest.json)；
   demo 的 `qshare` 段现在能一次跑完 握手→加密→分块→落盘 hash 对照。**发现与真机仍未做**（P-F02-1/3）。
+
+- **T33 AirPlay 镜像接收路径（headless 部分）**：`crates/proto-airplay` 新增 `mirror`（格式协商→encoded AU
+  直通 sink；背压超预算进入**关键帧恢复**；未配置/无 reset 的帧被拒）、`audio`（只收 PCM 块，44.1k→48k
+  **显式重采样**、ALAC 需 decoder → 拒绝）、`timing`（按连接的 clock generation + 漂移观测）。
+  **不含 decoder**：能力广告保持为空（能路由 ≠ 能显示）。顺带修掉 `interop-media` sink 侧复判 format
+  变化的接口缺口。证据：[evidence/2026-09-15-t33-airplay-mirror](evidence/2026-09-15-t33-airplay-mirror/run-manifest.json)；
+  demo 新增 `mirror` 段（`xinterop-demo mirror`）。
 
 **未开始 / 待批准**：T30（UxPlay provider 闭环，需 scope S1/S2）、T33/T34（AirPlay 音视频接收真机）、
 T22（Quick Share 发送闭环，需 QR/可发现路径）、keep-alive 与 paired-key 帧、Quick Share 发现源

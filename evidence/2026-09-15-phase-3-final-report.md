@@ -132,3 +132,23 @@ Quick Share ↔ Android）、抓包、可见性矩阵、native 窗口、Tauri GU
 - **测试面**：impl 113 → **126**（proto-quickshare 28）；clippy 0；lab 39 OK。
 - **仍未做**：Quick Share 发现（P-F02-1/3 未关闭）、keep-alive 与 paired-key 帧、与 Android 的真机传输。
   因此 §5 的「传输闭环」一行从"未实现"改为"headless 已实现、真机未验"。
+
+
+## 补充 2（2026-09-15）：T33 AirPlay 镜像接收路径（headless 部分）已落地
+
+**commit** `1831556`（实现 + demo `mirror` 段 + 证据）。
+
+- **实现**：`proto-airplay` 新增 `mirror.rs`（格式协商 → encoded access unit 直通 sink；缓冲超预算进入
+  **关键帧恢复**；未配置就送帧、缺 discontinuity 的 format 变化、超大尺寸/超大 payload 全部拒绝）、
+  `audio.rs`（只收 PCM 块；44.1k→48k 显式重采样、时长不变；ALAC 等编码 → `unsupported-feature`）、
+  `timing.rs`（**按连接**发放 clock generation + 漂移观测，无 PTS 不伪造时间）。
+- **验收**：T33-01（横竖屏往返 format 更新/画面恢复/越界拒绝）、T33-02（30 分钟合成音画：drift max ≤2ms、
+  0 丢帧、缓冲高水位有界且后半程不增长）、T33-03（20 次断开重连：20 个 generation、keying 调用 20 次、
+  每轮资源归零）、T33-04（HEVC 不广告；能力广告仍为空）全部有可运行测试。
+- **发现的接口缺口（已修）**：`interop-media` 的 sink 侧用 `discontinuity=false` 复判 format 变化，
+  导致协议层已校验通过的旋转在 sink 里被拒；现在 sink 收到 `on_config` 即视为被要求重置解码器，
+  判定归协议层（T29 既有断言不回归）。
+- **测试面**：impl 126 → **141**；clippy 0；lab 39 OK。
+- **边界**：本 task **不含 decoder**，encoded AU/PCM 只被路由到 null sink 统计 —— 不声称"能看到画面"。
+  T33-02 是**合成时间轴**（非 30 分钟墙钟），内存结论以缓冲高水位为代理；真机镜像、RSS 趋势与画面呈现
+  仍在 §5 的待用户手动清单。
