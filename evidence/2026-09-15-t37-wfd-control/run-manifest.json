@@ -1,0 +1,114 @@
+{
+  "schema_version": 1,
+  "run_id": "2026-09-15-t37-wfd-control",
+  "task": "T37 · WFD/Miracast 接收侧控制面与媒体协商（headless 切片）",
+  "kind": "manual",
+  "evidence_level": "build-verified",
+  "is_test_evidence": true,
+  "synthetic": false,
+  "base_commit": "dfcb0b5（T37 gate）",
+  "case_ids": [
+    "T37-01",
+    "T37-02",
+    "T37-03",
+    "T37-04"
+  ],
+  "result": "pass",
+  "commands": [
+    {
+      "seq": 1,
+      "purpose": "red：crate 骨架缺解析入口（编译期就红）",
+      "command": "cargo build --manifest-path impl/Cargo.toml -p proto-wfd",
+      "exit_code": 101,
+      "result": "fail：E0432 unresolved imports（parse_video_formats/parse_audio_codecs 未定义，lib.rs 的 re-export 先于实现写好）"
+    },
+    {
+      "seq": 2,
+      "purpose": "red：验收套件首次运行（编译期错误：to_wire 私有）",
+      "command": "cargo test --manifest-path impl/Cargo.toml -p proto-wfd",
+      "exit_code": 101,
+      "result": "fail：E0624 `to_wire` is private"
+    },
+    {
+      "seq": 3,
+      "purpose": "red→定位：验收套件 17 例中 8 例失败，其中 4 例是**实现缺陷**（不是测试写错）",
+      "command": "cargo test --manifest-path impl/Cargo.toml -p proto-wfd",
+      "exit_code": 101,
+      "result": "fail：9 passed / 8 failed —— ① M3 的 GET_PARAMETER 正文是**裸参数名**（R33 wfd-params.c:6-8 的查询列表），实现却按 `名字: 值` 严格解析；② M13 的正文同样是裸 `wfd_idr_request`（R34 ANetworkSession.cpp:380 的字面量），被同一处误拒；③ keep-alive 基准错（首个间隔未满就发 M16）；④ M13/M16 的 URI 应是控制 URI `rtsp://localhost/wfd1.0`（F-11/F-12），实现误用 streamid URL。另 2 例是测试自身的期望错误（frame_rate_ctrl 最低位、共享 fixture 的 port1=0 与 keep-alive 断言冲突）"
+    },
+    {
+      "seq": 4,
+      "purpose": "green：修掉上述四处实现缺陷 + 两处测试期望后重跑",
+      "command": "cargo test --manifest-path impl/Cargo.toml -p proto-wfd",
+      "exit_code": 0,
+      "result": "pass：17 tests（T37-01 协商 6 例、T37-02 IE 边界 2 例、T37-03 顺序与角色 6 例、T37-04 媒体记账 3 例）"
+    },
+    {
+      "seq": 5,
+      "purpose": "全 workspace 回归 + 静态检查 + lab 纪律",
+      "command": "cargo test --manifest-path impl/Cargo.toml --workspace; cargo clippy --manifest-path impl/Cargo.toml --workspace --all-targets; python3 -m unittest discover -s tools",
+      "exit_code": 0,
+      "result": "pass：impl 163 → **180** tests 全绿；clippy 0 warnings；lab 46 → **55** tests OK（含 test_wfd_gate 9 例，实现落地后 `test_no_blocked_material_in_implementation` 由 skip 转为实际检查）"
+    },
+    {
+      "seq": 6,
+      "purpose": "gate 纪律在实现落地后复核",
+      "command": "python3 -m unittest tools.test_wfd_gate -v",
+      "exit_code": 0,
+      "result": "pass：9 tests OK —— 实现里无 OUI 猜测值、无平台 P2P API 名（NetworkManager/wpa_supplicant/WifiP2p）、无品牌名；HDCP 仅出现在解析/拒绝路径（同行情报词表为空）"
+    }
+  ],
+  "acceptance_mapping": {
+    "T37-01": "媒体协商：`wfd_video_formats` 的三段结构与描述符字段序（profile/level/cea/vesa/hh/latency/min_slice_size/slice_params/frame_rate_ctrl + 两个占位）解析与序列化往返；`native` 拆表/索引；切片字段位布局（max_slice_num-1 / 比例）；`wfd_audio_codecs` 三元组与 mode 位语义（AAC bit0、LPCM bit0/bit1）；`wfd_client_rtp_ports` 形状校验与 F-14 的 RTCP quirk；`Transport` 三种形状与缺 client_port 的 19000 回退；`wfd_content_protection` 非 none 取值可解析但 `requires_hdcp()` 为真；**交集为空（含生产路径的空广告）一律 unsupported-feature，不静默降级**。负向：字段不足 9 段、profile 全 0、profile 含未登记位、非十六进制、空描述符、端口畸形、未知 profile/编码名",
+    "T37-02": "WFD IE 边界：子元素 id 0x00（设备信息 2 + 控制端口 2 + 最大吞吐 2，大端）9 字节往返、长度字段校验、错误 id、超预算 resource-limit；**完整 IE 的构造与解析都返回 unsupported-feature 且理由指向 P-M05-2**（F-24：OUI 未固化，实现不得臆造）",
+    "T37-03": "顺序与角色：M1（入站 OPTIONS + Require）应答带 Public；M1/M2 同形而按发送方区分（分类函数要求显式角色）；M2 应答必须声明 org.wfa.wfd1.0；M3 只列参数名、应答体由**本端实现清单**推导（生产路径为 none）；M4 完成协商（URL 形状校验、端口记录、quirk 记账）后才允许 M5 触发；SETUP 必须带 Transport、应答必须带 Session（取分号前子串）；PLAY 带 Session；M16 以进入 PLAYING 的时刻起算 25 s、30 s 无入站即超时结束；CSeq 回退、M1/M2 重复、乱序 M4/M5/SETUP/PLAY、未知方法、缺 Require/Transport、HDCP 要求、URL 带 userinfo 或路径不符全部拒绝",
+    "T37-04": "媒体边界：RTP 固定头解析（版本 2、PT 33 观察值、marker、seq/ts/ssrc、CSRC/扩展/padding 长度核算）与负向（版本错、截断、padding 非法、CSRC 超字节）；序号记账（连续、丢包、乱序、重复、SSRC 变化、非 33 PT 只记账）；**丢包后按本仓策略请求关键帧**（阈值与 200 ms 去抖是本仓策略，F-29）：缺口 → 会话直接给出 M13 字节（`SET_PARAMETER` + 裸 `wfd_idr_request` + Session），乱序/重复不触发；未进入 PLAYING 拒绝媒体包"
+  },
+  "extra_coverage": {
+    "discipline_findings": "验收套件逼出四处实现缺陷（M3 查询正文形状、M13 裸参数名正文、keep-alive 基准、M13/M16 的控制 URI）——这四处都是**来源字面量**决定的，不是风格问题；若没有测试，实现会以'看起来能跑'的方式与真实对端不通",
+    "policy_values": "RTP/CSRC/padding 长度核算之外的常量（子元素载荷上限 64、头/body/头数上限、关键帧阈值 1 与去抖 200 ms）一律标注为**本仓策略**，不是协议常量",
+    "source_divergence": "F-13（R34 要求 port1==0 / R33 接受 port1≠0）与 F-32（profile/level 按位图读）以代码可观察的方式暴露：`strict_aosp_view_would_reject()`、`H264Level` 位图，而不是替来源二选一"
+  },
+  "artifacts": [
+    {
+      "path": "impl/crates/proto-wfd/Cargo.toml"
+    },
+    {
+      "path": "impl/crates/proto-wfd/src/lib.rs"
+    },
+    {
+      "path": "impl/crates/proto-wfd/src/messages.rs"
+    },
+    {
+      "path": "impl/crates/proto-wfd/src/negotiate.rs"
+    },
+    {
+      "path": "impl/crates/proto-wfd/src/ie.rs"
+    },
+    {
+      "path": "impl/crates/proto-wfd/src/rtp.rs"
+    },
+    {
+      "path": "impl/crates/proto-wfd/src/session.rs"
+    },
+    {
+      "path": "impl/crates/proto-wfd/tests/wfd_control.rs"
+    },
+    {
+      "path": "specs-reviewed/m05-miracast-wfd.md",
+      "note": "F-01..F-32 字段表（本 task 的 gate 产出，另见 T37 gate 提交）"
+    },
+    {
+      "path": "provenance/m05-inputs.json"
+    },
+    {
+      "path": "evidence/wfd/corpus-plan.json"
+    },
+    {
+      "path": "tools/test_wfd_gate.py"
+    }
+  ],
+  "credentials_redacted": true,
+  "license_route_approved": false,
+  "notes": "**证据等级 build-verified**（RTSP 消息层/协商/子元素/RTP 记账都在本机可证）。**不是** device-verified：没有接触任何真实发送端或 TV（P-M05-2/P-M05-3 blocked）。**没有**发现实现（P2P/IE 播发）、没有 HDCP 握手、没有 TS 解复用与解码——因此 `SessionStats.player_available` 恒为 false，生产路径的能力广告是 `none`，协商必然以 unsupported-feature 结束（不假装能显示）。测试与 demo 里出现的数值全为自制。"
+}

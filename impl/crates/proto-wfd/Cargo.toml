@@ -1,0 +1,13 @@
+[package]
+name = "proto-wfd"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+publish.workspace = true
+
+# WFD（Wi-Fi Display / Miracast）接收侧控制面与媒体协商的 headless 核心（plans/03 T37）。
+# 事实来源见 specs-reviewed/m05-miracast-wfd.md 的字段表与 provenance/m05-inputs.json。
+# **不含**：WFD IE 容器（F-24 blocked：OUI 未固化）、P2P 组形成（F-25）、
+# HDCP 握手（F-22：只解析并拒绝）、TS 解复用/解码/渲染（F-28 只到 RTP 记账）。
+[dependencies]
+interop-contract = { path = "../../crates/interop-contract" }

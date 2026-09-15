@@ -1,379 +1,387 @@
 {
- "schema_version": 1,
- "updated_at": "2026-09-15",
- "notes": "证据登记簿：dossier/specs 中的 evidence_refs 必须指向这里登记的 id（tools/test_dossiers.py 强制）。kind 词表：run-manifest | device-run | source-tree | page-review | user-observation。",
- "entries": [
-  {
-   "id": "run-2026-09-15-t41-dlna-control",
-   "kind": "run-manifest",
-   "level": "build-verified",
-   "date": "2026-09-15",
-   "path": "evidence/2026-09-15-t41-dlna-control/run-manifest.json",
-   "notes": "T41 DLNA/UPnP AV 控制路径（headless）：SSDP 编解码、加固 XML、SOAP 动作校验、描述抓取策略、受限 ContentDirectory、URL lease 撤销（T41-01..04）；真实 TV 矩阵 blocked"
-  },
-  {
-   "id": "run-2026-09-15-t33-airplay-mirror",
-   "kind": "run-manifest",
-   "level": "build-verified",
-   "date": "2026-09-15",
-   "path": "evidence/2026-09-15-t33-airplay-mirror/run-manifest.json",
-   "notes": "T33 AirPlay 镜像路径（headless）：格式往返/关键帧恢复/显式重采样/按连接 clock generation（T33-01..04）；不含 decoder，广告为空；顺带修掉 interop-media sink 的 format 判定缺口"
-  },
-  {
-   "id": "run-2026-09-15-t21-quickshare-transport",
-   "kind": "run-manifest",
-   "level": "build-verified",
-   "date": "2026-09-15",
-   "path": "evidence/2026-09-15-t21-quickshare-transport/run-manifest.json",
-   "notes": "T21 Quick Share 传输闭环（headless）：SecureMessage AES-256-CBC+HMAC、D2D 严格序号、payload 分块与常数内存、接收会话的绑定/拒绝/预算/取消（T21-01..04）；发现与真机仍未做"
-  },
-  {
-   "id": "run-2026-09-15-t20-quickshare-core",
-   "kind": "run-manifest",
-   "level": "build-verified",
-   "date": "2026-09-15",
-   "path": "evidence/2026-09-15-t20-quickshare-core/run-manifest.json",
-   "notes": "T20 UKEY2 握手 + TCP framing + payload gate（T20-01..04；真实 P-256/SHA-512/HKDF；分片等价）；未与真机握手"
-  },
-  {
-   "id": "run-2026-09-15-t19-quickshare-gate",
-   "kind": "run-manifest",
-   "level": "source-reviewed",
-   "date": "2026-09-15",
-   "path": "evidence/2026-09-15-t19-quickshare-gate/run-manifest.json",
-   "notes": "T19 Quick Share wire/来源 gate（F-01..F-24 字段表 + 冲突具名裁决 + 语料计划；P-F02-2 关闭到 source-reviewed，P-F02-1/3 仍 blocked）"
-  },
-  {
-   "id": "run-2026-09-15-t5-demo-cli",
-   "kind": "run-manifest",
-   "level": "simulated",
-   "date": "2026-09-15",
-   "path": "evidence/2026-09-15-t5-demo-cli/run-manifest.json",
-   "notes": "T5 headless demo（发现/会话/sink/XMD1 数据面 CLI，D-01..D-07）：输出为真实 crate 执行结果，但 wire 自制、未连真机 → simulated"
-  },
-  {
-   "id": "run-2026-09-15-t32-airplay-control",
-   "kind": "run-manifest",
-   "level": "build-verified",
-   "date": "2026-09-15",
-   "path": "evidence/2026-09-15-t32-airplay-control/run-manifest.json",
-   "notes": "T32 AirPlay Rust discovery/control/session 核心（T32-01..04 严格 RTSP framing、认证前不建流、能力广告与实现一致、100 次快速断开资源回收）；keying 为 trait seam，默认不可用"
-  },
-  {
-   "id": "run-2026-09-15-t31-airplay-gate",
-   "kind": "run-manifest",
-   "level": "source-reviewed",
-   "date": "2026-09-15",
-   "path": "evidence/2026-09-15-t31-airplay-gate/run-manifest.json",
-   "notes": "T31 AirPlay 规范/来源/语料 gate（四份产出 + T31-01..03 纪律测试；字段级事实表每行带来源；FairPlay 不入实现）"
-  },
-  {
-   "id": "run-2026-09-15-t29-media-sinks",
-   "kind": "run-manifest",
-   "level": "build-verified",
-   "date": "2026-09-15",
-   "path": "evidence/2026-09-15-t29-media-sinks/run-manifest.json",
-   "notes": "T29 null/file sink（T29-01..03 + file 落盘/显式 resample）；native 窗口明确未实现、留手动"
-  },
-  {
-   "id": "run-2026-09-15-t28-media-forms",
-   "kind": "run-manifest",
-   "level": "build-verified",
-   "date": "2026-09-15",
-   "path": "evidence/2026-09-15-t28-media-forms/run-manifest.json",
-   "notes": "T28 媒体形态/时钟/XMD1 36 字节 frame（T28-01..04 + 时钟域/有界队列）；新 crate interop-media"
-  },
-  {
-   "id": "run-2026-09-15-t00-execution-trust-boundary",
-   "kind": "run-manifest",
-   "level": "source-reviewed",
-   "date": "2026-09-15",
-   "path": "evidence/2026-09-15-t00-execution-trust-boundary/run-manifest.json",
-   "notes": "ADR-003 执行与信任边界（用户 2026-09-15 采纳，accepted）+ decisions 台账同步 + ADR 纪律测试恢复（ADR-01..04）"
-  },
-  {
-   "id": "run-2026-09-15-t5-vertical-gates",
-   "kind": "run-manifest",
-   "level": "source-reviewed",
-   "date": "2026-09-15",
-   "path": "evidence/2026-09-15-t5-vertical-gates/run-manifest.json",
-   "notes": "T5 首个真机 vertical gate（AirPlay 优先，Quick Share 待 F02）+ 5 条 scope 请求；只做来源审查与计划"
-  },
-  {
-   "id": "run-2026-09-15-t4-seam-simulation",
-   "kind": "run-manifest",
-   "level": "simulated",
-   "date": "2026-09-15",
-   "path": "evidence/2026-09-15-t4-seam-simulation/run-manifest.json",
-   "notes": "T4 seam 模拟实证（文件面 offer→准入→原子落盘→事件投影 + 媒体面本地 spool/崩溃隔离）；**simulated**：fixture wire，非真机"
-  },
-  {
-   "id": "run-2026-09-15-t13-worker-supervisor",
-   "kind": "run-manifest",
-   "level": "build-verified",
-   "date": "2026-09-15",
-   "path": "evidence/2026-09-15-t13-worker-supervisor/run-manifest.json",
-   "notes": "T13 worker supervisor + 真实隔离 probe（T13-01..04 + hash pin/env 清洗）；真实子进程 mock-provider；本机 sandbox-exec 拒绝 canary（platform-sandbox 等级有证据）"
-  },
-  {
-   "id": "run-2026-09-15-t12-platform-probe",
-   "kind": "run-manifest",
-   "level": "build-verified",
-   "date": "2026-09-15",
-   "path": "evidence/2026-09-15-t12-platform-probe/run-manifest.json",
-   "notes": "T12 只读 platform probe + radio lease（T12-01..03 + 白名单/脱敏/诚实标注）；xinterop doctor CLI；research/platform-probes.md 为真机只读输出"
-  },
-  {
-   "id": "run-2026-09-15-t11-endpoint-registry",
-   "kind": "run-manifest",
-   "level": "build-verified",
-   "date": "2026-09-15",
-   "path": "evidence/2026-09-15-t11-endpoint-registry/run-manifest.json",
-   "notes": "T11 多发现源与 endpoint registry（T11-01..04 + 展示聚合不合并 + 观察形状校验 + 平台状态）；interop-platform 新 crate"
-  },
-  {
-   "id": "run-2026-09-15-t01-workspace",
-   "kind": "run-manifest",
-   "level": "build-verified",
-   "date": "2026-09-15",
-   "path": "evidence/2026-09-15-t01-workspace/run-manifest.json",
-   "notes": "impl/ workspace 骨架 + T01 卫生测试"
-  },
-  {
-   "id": "run-2026-09-15-t02-source-intake",
-   "kind": "run-manifest",
-   "level": "source-reviewed",
-   "date": "2026-09-15",
-   "path": "evidence/2026-09-15-t02-source-intake/run-manifest.json",
-   "notes": "file-core+airplay 19 项来源 intake 扫描与一致性测试"
-  },
-  {
-   "id": "run-2026-09-15-t03-xross-map",
-   "kind": "run-manifest",
-   "level": "source-reviewed",
-   "date": "2026-09-15",
-   "path": "evidence/2026-09-15-t03-xross-integration-map/run-manifest.json",
-   "notes": "xross-dev 集成映射（锚定 099b6c72）"
-  },
-  {
-   "id": "device-run-2026-09-15-airplay-poc",
-   "kind": "device-run",
-   "level": "device-verified",
-   "date": "2026-09-15",
-   "path": "docs/research/airplay-research.md",
-   "device": {
-    "sender": "iPad Pro 12.9 (iPad13,8), AirPlay/960.13.1, iPadOS（版本未记录完整 build）",
-    "receiver": "MacBook Pro, macOS 26.6 (25G5065a), arm64, 有线以太网"
-   },
-   "notes": "真机 POC：UxPlay 基线（视频✅ 音频❌）；shairplay-rust transient 直连（视频链路✅ 画质扭曲，音频❌，PIN 配对未实现）。日志 /tmp/shairplay-audit/player.log（重启即失，研究文档含摘录结论）。"
-  },
-  {
-   "id": "user-observed-uxplay-iphone-mirror",
-   "kind": "user-observation",
-   "level": "catalogued",
-   "date": "2026-09-15 前",
-   "path": "references/research/xross-interop-plan-2026-09-15/docs/00-decisions-and-scope.md",
-   "notes": "用户观察：本机 UxPlay 曾成功接收 iPhone 镜像并开窗。未固定版本 → user-observed/unpinned，不得替代可复现测试。"
-  },
-  {
-   "id": "src-r13-protocol",
-   "kind": "source-tree",
-   "level": "source-reviewed",
-   "date": "2026-09-15",
-   "path": "~/Dev/others/r13-protocol（commit 62bd3406，lock R13）",
-   "notes": "LocalSend 协议文档仓；无 LICENSE（restricted）：只作事实引用，逐条注明出处"
-  },
-  {
-   "id": "src-r14-localsend",
-   "kind": "source-tree",
-   "level": "source-reviewed",
-   "date": "2026-09-15",
-   "path": "~/Dev/others/r14-localsend（commit 230fb692，lock R14）",
-   "notes": "LocalSend app（Apache-2.0）；v2 行为参考"
-  },
-  {
-   "id": "src-xrossdev-localsend-adapter",
-   "kind": "source-tree",
-   "level": "source-reviewed",
-   "date": "2026-09-15",
-   "path": "xross-dev@099b6c72 crates/adapter/xross-adapter-localsend + vendors/localsend-rs@428981a",
-   "notes": "主仓 LocalSend adapter：端点路由/发现/TLS/同意语义的 source-reviewed 事实来源（T03 映射）"
-  },
-  {
-   "id": "src-shairplay-rust-audit",
-   "kind": "source-tree",
-   "level": "source-reviewed",
-   "date": "2026-09-15",
-   "path": "~/Dev/others/r02-shairplay-rust（commit 2fb72b3=v0.10.0，lock R02；本地分支 fix/pair-setup-pin）",
-   "notes": "完整供应链审计见 docs/research/airplay-research.md §2（Gate 1 已过）"
-  },
-  {
-   "id": "src-uxplay-lab-clone",
-   "kind": "source-tree",
-   "level": "source-reviewed",
-   "date": "2026-09-15",
-   "path": "~/Dev/others/r01-uxplay（commit d9791de，lock R01）；POC 用的用户自有 UxPlay clone 为 44024fe（2026-09-11，含 GHSA-479c-ww7g-wgp8 修复）",
-   "notes": "pair-setup-pin 参考实现在 lib/raop_handlers.h:275-430 + lib/srp.c"
-  },
-  {
-   "id": "src-r15-neardrop",
-   "kind": "source-tree",
-   "level": "catalogued",
-   "date": "2026-09-15",
-   "path": "~/Dev/others/r15-neardrop（commit 8f1fdc7d，lock R15）",
-   "notes": "T02 元数据扫描；深度 source-review 待 P-F02-2"
-  },
-  {
-   "id": "src-r16-bada",
-   "kind": "source-tree",
-   "level": "catalogued",
-   "date": "2026-09-15",
-   "path": "~/Dev/others/r16-bada（commit 9fba4ee6，lock R16；restricted：无根 LICENSE）",
-   "notes": "T02 元数据扫描"
-  },
-  {
-   "id": "src-r17-nearby",
-   "kind": "source-tree",
-   "level": "catalogued",
-   "date": "2026-09-15",
-   "path": "~/Dev/others/r17-nearby（commit 2ea517ea，lock R17）",
-   "notes": "T02 元数据扫描"
-  },
-  {
-   "id": "src-r19-rquickshare",
-   "kind": "source-tree",
-   "level": "catalogued",
-   "date": "2026-09-15",
-   "path": "~/Dev/others/r19-rquickshare（commit 378d8ae9，lock R19）",
-   "notes": "T02 元数据扫描"
-  },
-  {
-   "id": "page-r32-miraclecast",
-   "kind": "page-review",
-   "level": "catalogued",
-   "date": "2026-09-15",
-   "path": "references/research/xross-interop-plan-2026-09-15/docs/03-reference-projects.md#R32 albfan/miraclecast",
-   "notes": "设计包编目审查（page_review）：sink 参照；README 声明 source 未实现"
-  },
-  {
-   "id": "page-r33-gnome-network-displays",
-   "kind": "page-review",
-   "level": "catalogued",
-   "date": "2026-09-15",
-   "path": "references/research/xross-interop-plan-2026-09-15/docs/03-reference-projects.md#R33 GNOME/gnome-network-displays",
-   "notes": "设计包编目审查（page_review）：Linux source 参照"
-  },
-  {
-   "id": "page-r34-miracast-sink",
-   "kind": "page-review",
-   "level": "catalogued",
-   "date": "2026-09-15",
-   "path": "references/research/xross-interop-plan-2026-09-15/docs/03-reference-projects.md#R34 ivygroup/miracast-sink",
-   "notes": "设计包编目审查（page_review）：WFD RTSP 历史参照"
-  },
-  {
-   "id": "page-r37-castengine",
-   "kind": "page-review",
-   "level": "catalogued",
-   "date": "2026-09-15",
-   "path": "references/research/xross-interop-plan-2026-09-15/docs/03-reference-projects.md#R37 openharmony/castengine_wifi_display",
-   "notes": "设计包编目审查（page_review）：开放 WFD 组件；系统依赖边界"
-  },
-  {
-   "id": "page-s04-win-miracastreceiver",
-   "kind": "page-review",
-   "level": "catalogued",
-   "date": "2026-09-15",
-   "path": "references/research/xross-interop-plan-2026-09-15/docs/03-reference-projects.md#S04 Windows MiracastReceiver API",
-   "notes": "设计包编目审查（page_review）：系统 receiver 入口文档"
-  },
-  {
-   "id": "page-r42-openscreen",
-   "kind": "page-review",
-   "level": "catalogued",
-   "date": "2026-09-15",
-   "path": "references/research/xross-interop-plan-2026-09-15/docs/03-reference-projects.md#R42 chromium/openscreen",
-   "notes": "设计包编目审查（page_review）：libcast 公开实现"
-  },
-  {
-   "id": "page-r43-castreceiver",
-   "kind": "page-review",
-   "level": "catalogued",
-   "date": "2026-09-15",
-   "path": "references/research/xross-interop-plan-2026-09-15/docs/03-reference-projects.md#R43 googlecast/CastReceiver",
-   "notes": "设计包编目审查（page_review）：CAF receiver 语义"
-  },
-  {
-   "id": "page-r44-pychromecast",
-   "kind": "page-review",
-   "level": "catalogued",
-   "date": "2026-09-15",
-   "path": "references/research/xross-interop-plan-2026-09-15/docs/03-reference-projects.md#R44 pychromecast",
-   "notes": "设计包编目审查（page_review）：sender 行为对照"
-  },
-  {
-   "id": "page-r45-protocol",
-   "kind": "page-review",
-   "level": "catalogued",
-   "date": "2026-09-15",
-   "path": "references/research/xross-interop-plan-2026-09-15/docs/03-reference-projects.md#R45 cast-web/protocol",
-   "notes": "设计包编目审查（page_review）：CASTV2 交叉参考（restricted）"
-  },
-  {
-   "id": "page-r46-pupnp",
-   "kind": "page-review",
-   "level": "catalogued",
-   "date": "2026-09-15",
-   "path": "references/research/xross-interop-plan-2026-09-15/docs/03-reference-projects.md#R46 pupnp/pupnp",
-   "notes": "设计包编目审查（page_review）：SSDP/SOAP/GENA 能力"
-  },
-  {
-   "id": "page-r47-platinum",
-   "kind": "page-review",
-   "level": "catalogued",
-   "date": "2026-09-15",
-   "path": "references/research/xross-interop-plan-2026-09-15/docs/03-reference-projects.md#R47 plutinosoft/Platinum",
-   "notes": "设计包编目审查（page_review）：三角色结构（GPL/商业待核）"
-  },
-  {
-   "id": "page-r48-gerbera",
-   "kind": "page-review",
-   "level": "catalogued",
-   "date": "2026-09-15",
-   "path": "references/research/xross-interop-plan-2026-09-15/docs/03-reference-projects.md#R48 gerbera/gerbera",
-   "notes": "设计包编目审查（page_review）：DMS/TV profiles 对照"
-  },
-  {
-   "id": "page-r49-rygel",
-   "kind": "page-review",
-   "level": "catalogued",
-   "date": "2026-09-15",
-   "path": "references/research/xross-interop-plan-2026-09-15/docs/03-reference-projects.md#R49 GNOME/rygel",
-   "notes": "设计包编目审查（page_review）：DMR/DMS GNOME 实现"
-  },
-  {
-   "id": "page-s07-cast-getting-started",
-   "kind": "page-review",
-   "level": "catalogued",
-   "date": "2026-09-15",
-   "path": "references/research/xross-interop-plan-2026-09-15/docs/03-reference-projects.md#S07 Google Cast getting started",
-   "notes": "设计包编目审查（page_review）：sender/receiver 平台区别"
-  },
-  {
-   "id": "page-s08-registration",
-   "kind": "page-review",
-   "level": "catalogued",
-   "date": "2026-09-15",
-   "path": "references/research/xross-interop-plan-2026-09-15/docs/03-reference-projects.md#S08 Google Cast registration",
-   "notes": "设计包编目审查（page_review）：app ID/设备注册边界"
-  },
-  {
-   "id": "page-s09-web-receiver",
-   "kind": "page-review",
-   "level": "catalogued",
-   "date": "2026-09-15",
-   "path": "references/research/xross-interop-plan-2026-09-15/docs/03-reference-projects.md#S09 Google Cast Web Receiver",
-   "notes": "设计包编目审查（page_review）：CAF 运行条件"
-  }
- ]
+  "schema_version": 1,
+  "updated_at": "2026-09-15",
+  "notes": "证据登记簿：dossier/specs 中的 evidence_refs 必须指向这里登记的 id（tools/test_dossiers.py 强制）。kind 词表：run-manifest | device-run | source-tree | page-review | user-observation。",
+  "entries": [
+    {
+      "id": "run-2026-09-15-t41-dlna-control",
+      "kind": "run-manifest",
+      "level": "build-verified",
+      "date": "2026-09-15",
+      "path": "evidence/2026-09-15-t41-dlna-control/run-manifest.json",
+      "notes": "T41 DLNA/UPnP AV 控制路径（headless）：SSDP 编解码、加固 XML、SOAP 动作校验、描述抓取策略、受限 ContentDirectory、URL lease 撤销（T41-01..04）；真实 TV 矩阵 blocked"
+    },
+    {
+      "id": "run-2026-09-15-t33-airplay-mirror",
+      "kind": "run-manifest",
+      "level": "build-verified",
+      "date": "2026-09-15",
+      "path": "evidence/2026-09-15-t33-airplay-mirror/run-manifest.json",
+      "notes": "T33 AirPlay 镜像路径（headless）：格式往返/关键帧恢复/显式重采样/按连接 clock generation（T33-01..04）；不含 decoder，广告为空；顺带修掉 interop-media sink 的 format 判定缺口"
+    },
+    {
+      "id": "run-2026-09-15-t21-quickshare-transport",
+      "kind": "run-manifest",
+      "level": "build-verified",
+      "date": "2026-09-15",
+      "path": "evidence/2026-09-15-t21-quickshare-transport/run-manifest.json",
+      "notes": "T21 Quick Share 传输闭环（headless）：SecureMessage AES-256-CBC+HMAC、D2D 严格序号、payload 分块与常数内存、接收会话的绑定/拒绝/预算/取消（T21-01..04）；发现与真机仍未做"
+    },
+    {
+      "id": "run-2026-09-15-t20-quickshare-core",
+      "kind": "run-manifest",
+      "level": "build-verified",
+      "date": "2026-09-15",
+      "path": "evidence/2026-09-15-t20-quickshare-core/run-manifest.json",
+      "notes": "T20 UKEY2 握手 + TCP framing + payload gate（T20-01..04；真实 P-256/SHA-512/HKDF；分片等价）；未与真机握手"
+    },
+    {
+      "id": "run-2026-09-15-t19-quickshare-gate",
+      "kind": "run-manifest",
+      "level": "source-reviewed",
+      "date": "2026-09-15",
+      "path": "evidence/2026-09-15-t19-quickshare-gate/run-manifest.json",
+      "notes": "T19 Quick Share wire/来源 gate（F-01..F-24 字段表 + 冲突具名裁决 + 语料计划；P-F02-2 关闭到 source-reviewed，P-F02-1/3 仍 blocked）"
+    },
+    {
+      "id": "run-2026-09-15-t5-demo-cli",
+      "kind": "run-manifest",
+      "level": "simulated",
+      "date": "2026-09-15",
+      "path": "evidence/2026-09-15-t5-demo-cli/run-manifest.json",
+      "notes": "T5 headless demo（发现/会话/sink/XMD1 数据面 CLI，D-01..D-07）：输出为真实 crate 执行结果，但 wire 自制、未连真机 → simulated"
+    },
+    {
+      "id": "run-2026-09-15-t32-airplay-control",
+      "kind": "run-manifest",
+      "level": "build-verified",
+      "date": "2026-09-15",
+      "path": "evidence/2026-09-15-t32-airplay-control/run-manifest.json",
+      "notes": "T32 AirPlay Rust discovery/control/session 核心（T32-01..04 严格 RTSP framing、认证前不建流、能力广告与实现一致、100 次快速断开资源回收）；keying 为 trait seam，默认不可用"
+    },
+    {
+      "id": "run-2026-09-15-t31-airplay-gate",
+      "kind": "run-manifest",
+      "level": "source-reviewed",
+      "date": "2026-09-15",
+      "path": "evidence/2026-09-15-t31-airplay-gate/run-manifest.json",
+      "notes": "T31 AirPlay 规范/来源/语料 gate（四份产出 + T31-01..03 纪律测试；字段级事实表每行带来源；FairPlay 不入实现）"
+    },
+    {
+      "id": "run-2026-09-15-t29-media-sinks",
+      "kind": "run-manifest",
+      "level": "build-verified",
+      "date": "2026-09-15",
+      "path": "evidence/2026-09-15-t29-media-sinks/run-manifest.json",
+      "notes": "T29 null/file sink（T29-01..03 + file 落盘/显式 resample）；native 窗口明确未实现、留手动"
+    },
+    {
+      "id": "run-2026-09-15-t28-media-forms",
+      "kind": "run-manifest",
+      "level": "build-verified",
+      "date": "2026-09-15",
+      "path": "evidence/2026-09-15-t28-media-forms/run-manifest.json",
+      "notes": "T28 媒体形态/时钟/XMD1 36 字节 frame（T28-01..04 + 时钟域/有界队列）；新 crate interop-media"
+    },
+    {
+      "id": "run-2026-09-15-t00-execution-trust-boundary",
+      "kind": "run-manifest",
+      "level": "source-reviewed",
+      "date": "2026-09-15",
+      "path": "evidence/2026-09-15-t00-execution-trust-boundary/run-manifest.json",
+      "notes": "ADR-003 执行与信任边界（用户 2026-09-15 采纳，accepted）+ decisions 台账同步 + ADR 纪律测试恢复（ADR-01..04）"
+    },
+    {
+      "id": "run-2026-09-15-t5-vertical-gates",
+      "kind": "run-manifest",
+      "level": "source-reviewed",
+      "date": "2026-09-15",
+      "path": "evidence/2026-09-15-t5-vertical-gates/run-manifest.json",
+      "notes": "T5 首个真机 vertical gate（AirPlay 优先，Quick Share 待 F02）+ 5 条 scope 请求；只做来源审查与计划"
+    },
+    {
+      "id": "run-2026-09-15-t4-seam-simulation",
+      "kind": "run-manifest",
+      "level": "simulated",
+      "date": "2026-09-15",
+      "path": "evidence/2026-09-15-t4-seam-simulation/run-manifest.json",
+      "notes": "T4 seam 模拟实证（文件面 offer→准入→原子落盘→事件投影 + 媒体面本地 spool/崩溃隔离）；**simulated**：fixture wire，非真机"
+    },
+    {
+      "id": "run-2026-09-15-t13-worker-supervisor",
+      "kind": "run-manifest",
+      "level": "build-verified",
+      "date": "2026-09-15",
+      "path": "evidence/2026-09-15-t13-worker-supervisor/run-manifest.json",
+      "notes": "T13 worker supervisor + 真实隔离 probe（T13-01..04 + hash pin/env 清洗）；真实子进程 mock-provider；本机 sandbox-exec 拒绝 canary（platform-sandbox 等级有证据）"
+    },
+    {
+      "id": "run-2026-09-15-t12-platform-probe",
+      "kind": "run-manifest",
+      "level": "build-verified",
+      "date": "2026-09-15",
+      "path": "evidence/2026-09-15-t12-platform-probe/run-manifest.json",
+      "notes": "T12 只读 platform probe + radio lease（T12-01..03 + 白名单/脱敏/诚实标注）；xinterop doctor CLI；research/platform-probes.md 为真机只读输出"
+    },
+    {
+      "id": "run-2026-09-15-t11-endpoint-registry",
+      "kind": "run-manifest",
+      "level": "build-verified",
+      "date": "2026-09-15",
+      "path": "evidence/2026-09-15-t11-endpoint-registry/run-manifest.json",
+      "notes": "T11 多发现源与 endpoint registry（T11-01..04 + 展示聚合不合并 + 观察形状校验 + 平台状态）；interop-platform 新 crate"
+    },
+    {
+      "id": "run-2026-09-15-t01-workspace",
+      "kind": "run-manifest",
+      "level": "build-verified",
+      "date": "2026-09-15",
+      "path": "evidence/2026-09-15-t01-workspace/run-manifest.json",
+      "notes": "impl/ workspace 骨架 + T01 卫生测试"
+    },
+    {
+      "id": "run-2026-09-15-t02-source-intake",
+      "kind": "run-manifest",
+      "level": "source-reviewed",
+      "date": "2026-09-15",
+      "path": "evidence/2026-09-15-t02-source-intake/run-manifest.json",
+      "notes": "file-core+airplay 19 项来源 intake 扫描与一致性测试"
+    },
+    {
+      "id": "run-2026-09-15-t03-xross-map",
+      "kind": "run-manifest",
+      "level": "source-reviewed",
+      "date": "2026-09-15",
+      "path": "evidence/2026-09-15-t03-xross-integration-map/run-manifest.json",
+      "notes": "xross-dev 集成映射（锚定 099b6c72）"
+    },
+    {
+      "id": "device-run-2026-09-15-airplay-poc",
+      "kind": "device-run",
+      "level": "device-verified",
+      "date": "2026-09-15",
+      "path": "docs/research/airplay-research.md",
+      "device": {
+        "sender": "iPad Pro 12.9 (iPad13,8), AirPlay/960.13.1, iPadOS（版本未记录完整 build）",
+        "receiver": "MacBook Pro, macOS 26.6 (25G5065a), arm64, 有线以太网"
+      },
+      "notes": "真机 POC：UxPlay 基线（视频✅ 音频❌）；shairplay-rust transient 直连（视频链路✅ 画质扭曲，音频❌，PIN 配对未实现）。日志 /tmp/shairplay-audit/player.log（重启即失，研究文档含摘录结论）。"
+    },
+    {
+      "id": "user-observed-uxplay-iphone-mirror",
+      "kind": "user-observation",
+      "level": "catalogued",
+      "date": "2026-09-15 前",
+      "path": "references/research/xross-interop-plan-2026-09-15/docs/00-decisions-and-scope.md",
+      "notes": "用户观察：本机 UxPlay 曾成功接收 iPhone 镜像并开窗。未固定版本 → user-observed/unpinned，不得替代可复现测试。"
+    },
+    {
+      "id": "src-r13-protocol",
+      "kind": "source-tree",
+      "level": "source-reviewed",
+      "date": "2026-09-15",
+      "path": "~/Dev/others/r13-protocol（commit 62bd3406，lock R13）",
+      "notes": "LocalSend 协议文档仓；无 LICENSE（restricted）：只作事实引用，逐条注明出处"
+    },
+    {
+      "id": "src-r14-localsend",
+      "kind": "source-tree",
+      "level": "source-reviewed",
+      "date": "2026-09-15",
+      "path": "~/Dev/others/r14-localsend（commit 230fb692，lock R14）",
+      "notes": "LocalSend app（Apache-2.0）；v2 行为参考"
+    },
+    {
+      "id": "src-xrossdev-localsend-adapter",
+      "kind": "source-tree",
+      "level": "source-reviewed",
+      "date": "2026-09-15",
+      "path": "xross-dev@099b6c72 crates/adapter/xross-adapter-localsend + vendors/localsend-rs@428981a",
+      "notes": "主仓 LocalSend adapter：端点路由/发现/TLS/同意语义的 source-reviewed 事实来源（T03 映射）"
+    },
+    {
+      "id": "src-shairplay-rust-audit",
+      "kind": "source-tree",
+      "level": "source-reviewed",
+      "date": "2026-09-15",
+      "path": "~/Dev/others/r02-shairplay-rust（commit 2fb72b3=v0.10.0，lock R02；本地分支 fix/pair-setup-pin）",
+      "notes": "完整供应链审计见 docs/research/airplay-research.md §2（Gate 1 已过）"
+    },
+    {
+      "id": "src-uxplay-lab-clone",
+      "kind": "source-tree",
+      "level": "source-reviewed",
+      "date": "2026-09-15",
+      "path": "~/Dev/others/r01-uxplay（commit d9791de，lock R01）；POC 用的用户自有 UxPlay clone 为 44024fe（2026-09-11，含 GHSA-479c-ww7g-wgp8 修复）",
+      "notes": "pair-setup-pin 参考实现在 lib/raop_handlers.h:275-430 + lib/srp.c"
+    },
+    {
+      "id": "src-r15-neardrop",
+      "kind": "source-tree",
+      "level": "catalogued",
+      "date": "2026-09-15",
+      "path": "~/Dev/others/r15-neardrop（commit 8f1fdc7d，lock R15）",
+      "notes": "T02 元数据扫描；深度 source-review 待 P-F02-2"
+    },
+    {
+      "id": "src-r16-bada",
+      "kind": "source-tree",
+      "level": "catalogued",
+      "date": "2026-09-15",
+      "path": "~/Dev/others/r16-bada（commit 9fba4ee6，lock R16；restricted：无根 LICENSE）",
+      "notes": "T02 元数据扫描"
+    },
+    {
+      "id": "src-r17-nearby",
+      "kind": "source-tree",
+      "level": "catalogued",
+      "date": "2026-09-15",
+      "path": "~/Dev/others/r17-nearby（commit 2ea517ea，lock R17）",
+      "notes": "T02 元数据扫描"
+    },
+    {
+      "id": "src-r19-rquickshare",
+      "kind": "source-tree",
+      "level": "catalogued",
+      "date": "2026-09-15",
+      "path": "~/Dev/others/r19-rquickshare（commit 378d8ae9，lock R19）",
+      "notes": "T02 元数据扫描"
+    },
+    {
+      "id": "page-r32-miraclecast",
+      "kind": "page-review",
+      "level": "catalogued",
+      "date": "2026-09-15",
+      "path": "references/research/xross-interop-plan-2026-09-15/docs/03-reference-projects.md#R32 albfan/miraclecast",
+      "notes": "设计包编目审查（page_review）：sink 参照；README 声明 source 未实现"
+    },
+    {
+      "id": "page-r33-gnome-network-displays",
+      "kind": "page-review",
+      "level": "catalogued",
+      "date": "2026-09-15",
+      "path": "references/research/xross-interop-plan-2026-09-15/docs/03-reference-projects.md#R33 GNOME/gnome-network-displays",
+      "notes": "设计包编目审查（page_review）：Linux source 参照"
+    },
+    {
+      "id": "page-r34-miracast-sink",
+      "kind": "page-review",
+      "level": "catalogued",
+      "date": "2026-09-15",
+      "path": "references/research/xross-interop-plan-2026-09-15/docs/03-reference-projects.md#R34 ivygroup/miracast-sink",
+      "notes": "设计包编目审查（page_review）：WFD RTSP 历史参照"
+    },
+    {
+      "id": "page-r37-castengine",
+      "kind": "page-review",
+      "level": "catalogued",
+      "date": "2026-09-15",
+      "path": "references/research/xross-interop-plan-2026-09-15/docs/03-reference-projects.md#R37 openharmony/castengine_wifi_display",
+      "notes": "设计包编目审查（page_review）：开放 WFD 组件；系统依赖边界"
+    },
+    {
+      "id": "page-s04-win-miracastreceiver",
+      "kind": "page-review",
+      "level": "catalogued",
+      "date": "2026-09-15",
+      "path": "references/research/xross-interop-plan-2026-09-15/docs/03-reference-projects.md#S04 Windows MiracastReceiver API",
+      "notes": "设计包编目审查（page_review）：系统 receiver 入口文档"
+    },
+    {
+      "id": "page-r42-openscreen",
+      "kind": "page-review",
+      "level": "catalogued",
+      "date": "2026-09-15",
+      "path": "references/research/xross-interop-plan-2026-09-15/docs/03-reference-projects.md#R42 chromium/openscreen",
+      "notes": "设计包编目审查（page_review）：libcast 公开实现"
+    },
+    {
+      "id": "page-r43-castreceiver",
+      "kind": "page-review",
+      "level": "catalogued",
+      "date": "2026-09-15",
+      "path": "references/research/xross-interop-plan-2026-09-15/docs/03-reference-projects.md#R43 googlecast/CastReceiver",
+      "notes": "设计包编目审查（page_review）：CAF receiver 语义"
+    },
+    {
+      "id": "page-r44-pychromecast",
+      "kind": "page-review",
+      "level": "catalogued",
+      "date": "2026-09-15",
+      "path": "references/research/xross-interop-plan-2026-09-15/docs/03-reference-projects.md#R44 pychromecast",
+      "notes": "设计包编目审查（page_review）：sender 行为对照"
+    },
+    {
+      "id": "page-r45-protocol",
+      "kind": "page-review",
+      "level": "catalogued",
+      "date": "2026-09-15",
+      "path": "references/research/xross-interop-plan-2026-09-15/docs/03-reference-projects.md#R45 cast-web/protocol",
+      "notes": "设计包编目审查（page_review）：CASTV2 交叉参考（restricted）"
+    },
+    {
+      "id": "page-r46-pupnp",
+      "kind": "page-review",
+      "level": "catalogued",
+      "date": "2026-09-15",
+      "path": "references/research/xross-interop-plan-2026-09-15/docs/03-reference-projects.md#R46 pupnp/pupnp",
+      "notes": "设计包编目审查（page_review）：SSDP/SOAP/GENA 能力"
+    },
+    {
+      "id": "page-r47-platinum",
+      "kind": "page-review",
+      "level": "catalogued",
+      "date": "2026-09-15",
+      "path": "references/research/xross-interop-plan-2026-09-15/docs/03-reference-projects.md#R47 plutinosoft/Platinum",
+      "notes": "设计包编目审查（page_review）：三角色结构（GPL/商业待核）"
+    },
+    {
+      "id": "page-r48-gerbera",
+      "kind": "page-review",
+      "level": "catalogued",
+      "date": "2026-09-15",
+      "path": "references/research/xross-interop-plan-2026-09-15/docs/03-reference-projects.md#R48 gerbera/gerbera",
+      "notes": "设计包编目审查（page_review）：DMS/TV profiles 对照"
+    },
+    {
+      "id": "page-r49-rygel",
+      "kind": "page-review",
+      "level": "catalogued",
+      "date": "2026-09-15",
+      "path": "references/research/xross-interop-plan-2026-09-15/docs/03-reference-projects.md#R49 GNOME/rygel",
+      "notes": "设计包编目审查（page_review）：DMR/DMS GNOME 实现"
+    },
+    {
+      "id": "page-s07-cast-getting-started",
+      "kind": "page-review",
+      "level": "catalogued",
+      "date": "2026-09-15",
+      "path": "references/research/xross-interop-plan-2026-09-15/docs/03-reference-projects.md#S07 Google Cast getting started",
+      "notes": "设计包编目审查（page_review）：sender/receiver 平台区别"
+    },
+    {
+      "id": "page-s08-registration",
+      "kind": "page-review",
+      "level": "catalogued",
+      "date": "2026-09-15",
+      "path": "references/research/xross-interop-plan-2026-09-15/docs/03-reference-projects.md#S08 Google Cast registration",
+      "notes": "设计包编目审查（page_review）：app ID/设备注册边界"
+    },
+    {
+      "id": "page-s09-web-receiver",
+      "kind": "page-review",
+      "level": "catalogued",
+      "date": "2026-09-15",
+      "path": "references/research/xross-interop-plan-2026-09-15/docs/03-reference-projects.md#S09 Google Cast Web Receiver",
+      "notes": "设计包编目审查（page_review）：CAF 运行条件"
+    },
+    {
+      "id": "run-2026-09-15-t37-wfd-control",
+      "kind": "run-manifest",
+      "level": "build-verified",
+      "date": "2026-09-15",
+      "path": "evidence/2026-09-15-t37-wfd-control/run-manifest.json",
+      "notes": "T37 WFD/Miracast 接收侧控制面与媒体协商（headless）：M1..M8/M13/M16 方向与顺序、wfd_video_formats/wfd_audio_codecs 描述符、子元素 id 0x00、RTP 记账与按本仓策略的关键帧请求（T37-01..04）；完整 WFD IE 因 OUI 未固化而拒绝构造（F-24），无 HDCP/无 TS 解复用/无解码"
+    }
+  ]
 }

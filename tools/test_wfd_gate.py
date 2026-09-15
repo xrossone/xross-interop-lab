@@ -42,6 +42,9 @@ FORBIDDEN_IN_IMPL = [
     r"\bsony\b",
 ]
 HDCP_DENIAL_MARKERS = ("不实现", "未实现", "拒绝", "unsupported", "not-implemented")
+# HDCP **密钥交换**的实现痕迹（F-22 只允许"解析取值 + 明确拒绝"）：
+# 出现这些词说明有人开始写握手/密钥逻辑，而不是在拒绝它。
+HDCP_IMPL_MARKERS = ("key", "aes", "cipher", "handshake", "derive", "km(", "rtx", "rx_pair")
 
 
 def section(text: str, heading: str) -> str:
@@ -174,10 +177,17 @@ class WfdGate(unittest.TestCase):
         ).lower()
         for pattern in FORBIDDEN_IN_IMPL:
             self.assertIsNone(re.search(pattern, code), f"实现里出现 blocked 材料：/{pattern}/")
-        # HDCP 只允许出现在“未实现/拒绝”的说明或错误分支里
+        # HDCP 允许出现在解析/拒绝路径里；一旦同行出现密钥/握手类词汇就是越界（F-22）。
         for line in code.splitlines():
-            if "hdcp" in line and not any(m in line for m in HDCP_DENIAL_MARKERS):
-                self.fail(f"实现里出现 HDCP 实现痕迹：{line.strip()!r}（F-22）")
+            if "hdcp" not in line:
+                continue
+            if any(m in line for m in HDCP_DENIAL_MARKERS):
+                continue
+            for marker in HDCP_IMPL_MARKERS:
+                if marker in line:
+                    self.fail(
+                        f"实现里出现 HDCP 密钥/握手痕迹（{marker}）：{line.strip()!r}（F-22）"
+                    )
 
 
 if __name__ == "__main__":

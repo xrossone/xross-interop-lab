@@ -41,6 +41,8 @@ P-M05-3（真实设备 codec 矩阵）blocked**：前者需要隔离 Linux 机�
 | F-27 | control | keep-alive 时序取值（**来自实现取值，不是规范常量**）：RTSP 会话超时 30 s、每 25 s 发一次 `GET_PARAMETER`；F-14 的 quirk 命中时禁用 | R33 `src/wfd/wfd-client.c:426,433`、`src/wfd/wfd-media-factory.c:544-548` | source-reviewed（本仓取同值并标注来源） | yes |
 | F-28 | payload | 媒体封装 = **MPEG-2 TS over RTP/UDP**：RTP 固定头 12 字节（版本位 `0x80`、`byte1` 低 7 位 = payload type **33**、M 位 `0x80`、随后 seq/ts/SSRC）；接收侧以 `rtpmp2tdepay ! tsdemux` 解复用 | R34 `native/wifi-display/source/Sender.cpp:295-315`；R32 `res/gstplayer:78`、`res/miracle-gst:78`；R33 `src/wfd/wfd-media-factory.c:461-470`（`rtpmp2tpay`，`ssrc=1`） | source-reviewed | yes |
 | F-29 | policy | 丢包后请求关键帧（M13）的**触发阈值与策略属本仓策略**：来源只证明该消息存在（F-10），不规定何时发 | 本仓策略（`impl/crates/proto-wfd/src/rtp.rs` 常量与测试）；消息事实见 F-10 | source-reviewed（策略由本仓定义） | yes |
+| F-31 | payload | 同一参数的两种拼写在来源里并存：R37 写 `wfd_3d_formats`，R33 写 `wfd_3d_video_formats`；R33 的可选表里还有 `wfd2_video_codecs`（R37 为 `wfd2_video_formats`）。**本仓不实现这些参数**，只登记分歧 | R37 `services/impl/wfd/wfd_session_def.h:66`；R33 `src/wfd/wfd-params.c:12-26` | source-reviewed（来源分歧，待 P-M05-2） | no |
+| F-32 | payload | `wfd_video_formats` 里 `profile`/`level` 两个字段的**读法裁决**：本仓按**位图**解释（两处来源支持——R37 的位序枚举；R33 的码率表按 1/2/4/8/16 这些位值索引）。把同一字节当"级别数字"（如 `0x02` 读成 4.2）在来源里没有依据，故不采用 | R37 `wfd_session_def.h:231-250`；R33 `src/wfd/wfd-video-codec.c:331-362`；待解释的字面量见 R34 `sink/WifiDisplaySink.cpp:515`（`02 02`） | source-reviewed（位图读法；解释仍待 P-M05-2 复核） | yes |
 | F-30 | compat | 真实设备 codec/时序矩阵（Samsung/Huawei/Windows+K → sink、TV 端 sink 行为）**未固化**；WFD IE 播发与 M0–M16 完整实测序列同样未固化 | P-M05-2/P-M05-3 未关闭 | **blocked**（impl 不准入） | **no** |
 
 ## B. 与本仓实现的关系（T37 headless 切片）
@@ -54,7 +56,8 @@ P-M05-3（真实设备 codec 矩阵）blocked**：前者需要隔离 Linux 机�
   3. **子元素层**：subelement id `0x00` 的编解码（F-23），**不含 IE 容器**（F-24 blocked）；
   4. **媒体边界**：RTP 固定头解析与序号/丢包记账（F-28），丢包按本仓策略触发 M13（F-29）；
      无 TS 解复用、无解码、无渲染。
-- **不实现**：F-24/F-25（WFD IE 容器与 P2P 组形成——不得臆造 OUI）、F-22 的 HDCP 握手（设备/厂商材料）、
+- **不实现**：F-24/F-25（WFD IE 容器与 P2P 组形成——不得臆造 OUI）、F-31 的厂商扩展参数、
+  F-22 的 HDCP 握手（设备/厂商材料）、
   F-30（真实设备矩阵）、UIBC 输入回传、任何平台 API 调用（不含 NetworkManager/wpa_supplicant/WinRT/P2P）。
 
 ## C. 能力分声明
