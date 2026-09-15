@@ -358,3 +358,33 @@ Quick Share ↔ Android）、抓包、可见性矩阵、native 窗口、Tauri GU
 - **诚实边界**：未与任何 Chromecast/Pixel/Chrome 互操作、无真机抓包；stock 判定来自 R42 行级事实
   （默认信任库）而非实测；R42 的 Google 根 CA DER 数组与 test/ 下私钥一律未取。
 - **测试面**：impl 222 → **234**（proto-cast +11、demo D-15）；clippy 0；lab 82。
+
+
+---
+
+## 补充 10（2026-09-15）：T22headless Quick Share 断开与确认帧（headless 切片）已落地
+
+**commit** `7e85bcd`（gate：F-34..F-40 + 语料 qs-025..030 + 纪律测试）。
+
+- **完成的正是字段表里"已登记未实现"的两帧**：`DisconnectionFrame`（外层 6/字段 7）与 `PAYLOAD_ACK`
+  （`packet_type=3`）。两处事实只有逐行读源码才能拿到：
+  1. **同一帧的两种合法字节**：R17 的 `ForDisconnection` 总是显式写两个 bool（`offline_frames.cc:563-574`），
+     NearDrop 发的是**一个字段都不设**的空正文（`NearbyConnection.swift:411-423`）——两者**字节不同**。
+     因此解码必须保留字段**存在性**：`Option<bool>` + `has_request()/has_ack()`，否则无法字节级还原任一侧。
+  2. **ack 的门槛比"收到就回"窄得多**：只在**末块**到达且该端点启用 ack 时发送，而启用条件里
+     **明确排除 BYTES 载荷**（`payload_manager.cc:968-978`）——协商类载荷**不发** ack；发送侧收到 ack 时，
+     未知 payload 与对本端 **incoming** payload 的 ack 都**忽略**（`payload_manager.cc:1417-1438`）。
+- **顺带修正了一处此前的表述**：F-31 曾说"超时数值来源里没有"。F-40 记录真相——keep-alive 参数是
+  **握手协商字段**（`ConnectionRequestFrame.keep_alive_interval_millis=8`、`keep_alive_timeout_millis=9`，
+  proto 里是 `optional int32` 且**没有默认值**）。机制有据、数值仍属本仓策略：本仓不实现连接握手，
+  故只做**校验 + 回退**（非法值拒绝、缺席回退并标注 `repo-policy`）。
+- **实现** `control.rs`：`DisconnectionFrame`（四种形态往返 + 三路决策 `CloseNow`/`MarkedAndNotified`/
+  `MarkedAndReply`，回帧固定 `(true,true)`）、`encode_payload_ack`/`decode_payload_ack`（`total_size=-1`
+  经通用解码路径呈现为 `u64::MAX`；带 chunk、非 -1、非 ack 类型都拒绝）、`should_send_payload_ack`
+  （BYTES 排除 + 只发末块）、`PayloadAckTracker`（三分支，幂等）、`KeepAlivePolicy::from_negotiation`。
+  `CONTROL(2)` 路径 → `unsupported-feature` 且理由指向官方的替代说明（F-39，不静默忽略）。
+- **诚实边界**：safe-to-disconnect 的**决策**已实现，**带宽升级路径**（channel 切换/`UPGRADE_*`）仍不实现；
+  真机的 ack 时机与是否走 safe 路径待 P-F02-2 对跑；本轮**未与任何 Android 设备互操作**。
+- **测试面**：impl 234 → **241**（proto-quickshare +6、demo D-16）；clippy 0；lab 85。
+  过程中 gate/测试自身也修了两处：d13 把"给明确错误码"写成了"给同一个错误码"（收紧为白名单），
+  run manifest 里字符串内的直引号导致 JSON 非法（改用「」）。

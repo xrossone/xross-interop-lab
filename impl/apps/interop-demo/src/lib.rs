@@ -786,6 +786,42 @@ pub fn render_human(r: &DemoReport, section: Option<&str>) -> String {
                 text(&p["peer_success_decision_default"]),
                 text(&p["peer_success_decision_opted_in"])
             ));
+            let dc = &q.control["disconnection"];
+            out.push_str(&format!(
+                "Disconnection（T22）: 四种字节形态往返={} 空正文≠显式 false={}；决策={}\n",
+                dc["frames"]
+                    .as_array()
+                    .map(|v| v.iter().all(|f| f["roundtrip"] == true))
+                    .unwrap_or(false),
+                dc["empty_differs_from_explicit_false"],
+                dc["actions"]
+                    .as_array()
+                    .map(|v| v.iter().filter_map(|a| a.as_str()).collect::<Vec<_>>().join("；"))
+                    .unwrap_or_default()
+            ));
+            let pa = &q.control["payload_ack"];
+            out.push_str(&format!(
+                "PAYLOAD_ACK（T22） : id={} total_size=-1={} 分类={}；BYTES 不发 ack={} 末块才发={}；三分支 标记/未知/本端收={}/{}/{}；CONTROL={}\n",
+                pa["ack_id"],
+                pa["total_size_is_indeterminate"],
+                pa["classified_as_ack"],
+                pa["gate"]["bytes_sent_ack"] == false,
+                pa["gate"]["file_last_chunk_ack"],
+                pa["branch_marked"],
+                pa["branch_unknown"],
+                pa["branch_incoming"],
+                text(&pa["control_path_refused"])
+            ));
+            let kn = &q.control["keepalive_negotiation"];
+            out.push_str(&format!(
+                "keep-alive 协商   : 缺席→{}（{} / {} ms）；协商值→{} {} ms（非法值 {}）\n",
+                text(&kn["source"]["default"]),
+                kn["default_interval_ms"],
+                kn["default_timeout_ms"],
+                text(&kn["source"]["negotiated"]),
+                kn["negotiated_interval_ms"],
+                text(&kn["invalid_pair_refused"])
+            ));
             for case in q.control["rejects"].as_array().into_iter().flatten() {
                 out.push_str(&format!(
                     "  - 控制帧负向 {:<24} {}\n",

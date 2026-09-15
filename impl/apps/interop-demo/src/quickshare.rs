@@ -6,10 +6,15 @@
 
 use crate::report::QuickShareReport;
 use proto_quickshare::control::{
-    decode_keepalive_offline, unwrap_bytes_payload, wrap_inner_as_bytes_payload, KeepAliveTracker,
+    classify_payload_frame, decode_keepalive_offline, decode_payload_ack, encode_payload_ack,
+    should_send_payload_ack, unwrap_bytes_payload, wrap_inner_as_bytes_payload, AckOutcome,
+    DisconnectAction, DisconnectionFrame, KeepAlivePolicy, KeepAliveSource, KeepAliveTracker,
     PairedKeyDecision, PairedKeyEvent, PairedKeyExchange, PairedKeyMaterial, PairedKeyResultFrame,
-    PairedKeyStatus, INNER_TYPE_PAIRED_KEY_ENCRYPTION, KEEPALIVE_INTERVAL_MS, KEEPALIVE_TIMEOUT_MS,
+    PairedKeyStatus, PayloadAckTracker, PayloadFrameClass, INNER_TYPE_PAIRED_KEY_ENCRYPTION,
+    KEEPALIVE_INTERVAL_MS, KEEPALIVE_TIMEOUT_MS,
 };
+use proto_quickshare::payload::{PacketType, PayloadKind};
+use serde_json::json;
 use proto_quickshare::framing::{encode_frame, DEFAULT_MAX_FRAME_BYTES, LENGTH_PREFIX_BYTES};
 use proto_quickshare::handshake::{
     ClientConfig, DiscoveryProvenance, HandshakeConfig, Ukey2Client, Ukey2Server,
@@ -732,6 +737,121 @@ fn run_control_chain(ok: &mut bool) -> serde_json::Value {
         *ok = false;
     }
 
+    // ---- DisconnectionFrame（F-34..F-36）：四种字节形态 + 三路决策 ----
+    let shapes = [
+        ("R17 (false,false)", DisconnectionFrame::new(Some(false), Some(false))),
+        ("NearDrop 空正文", DisconnectionFrame::empty()),
+        ("发起 (true,false)", DisconnectionFrame::new(Some(true), Some(false))),
+        ("应答 (true,true)", DisconnectionFrame::new(Some(true), Some(true))),
+    ];
+    let mut disconnection_rows: Vec<serde_json::Value> = Vec::new();
+    let mut presence_preserved = true;
+    let mut actions = Vec::new();
+    for (label, frame) in shapes {
+        let bytes = frame.encode_offline();
+        let decoded = match DisconnectionFrame::decode_offline(&bytes) {
+            Ok(d) => d,
+            Err(_) => {
+                *ok = false;
+                continue;
+            }
+        };
+        if decoded != frame {
+            *ok = false;
+        }
+        // 存在性：空正文解出两个 None，显式 false 解出 Some(false)。
+        if (label == "NearDrop 空正文") != (!decoded.has_request() && !decoded.has_ack()) {
+            presence_preserved = false;
+        }
+        disconnection_rows.push(json!({
+            "shape": label,
+            "request": decoded.request_safe_to_disconnect,
+            "ack": decoded.ack_safe_to_disconnect,
+            "roundtrip": decoded == frame,
+        }));
+        match frame.decision() {
+            DisconnectAction::CloseNow => actions.push(format!("{label} → 立即关闭")),
+            DisconnectAction::MarkedAndNotified => actions.push(format!("{label} → 标记+通知（不回帧）")),
+            DisconnectAction::MarkedAndReply(reply) => actions.push(format!(
+                "{label} → 标记+回帧({:?},{:?})",
+                reply.request_safe_to_disconnect, reply.ack_safe_to_disconnect
+            )),
+        }
+    }
+    let empty_vs_false_differ = DisconnectionFrame::empty().encode_offline()
+        != DisconnectionFrame::new(Some(false), Some(false)).encode_offline();
+    if !presence_preserved || !empty_vs_false_differ || actions.len() != 4 {
+        *ok = false;
+    }
+
+    // ---- PAYLOAD_ACK（F-37..F-39）：形状、门槛、三分支 ----
+    let ack_bytes = match encode_payload_ack(4242) {
+        Ok(b) => b,
+        Err(_) => return serde_json::Value::Null,
+    };
+    let ack_id = decode_payload_ack(&ack_bytes).unwrap_or(0);
+    let ack_is_ack = match proto_quickshare::payload::decode_payload_transfer_frame(&ack_bytes) {
+        Ok(f) => classify_payload_frame(&f) == Ok(PayloadFrameClass::Ack),
+        Err(_) => false,
+    };
+    let ack_total_size = proto_quickshare::payload::decode_payload_transfer_frame(&ack_bytes)
+        .ok()
+        .and_then(|f| f.header.map(|h| h.total_size));
+    let mut tracker = PayloadAckTracker::new();
+    tracker.register_outgoing(11);
+    tracker.register_incoming(12);
+    let branch_marked = tracker.on_ack(11) == AckOutcome::Marked;
+    let branch_unknown = tracker.on_ack(99) == AckOutcome::IgnoredUnknownPayload;
+    let branch_incoming = tracker.on_ack(12) == AckOutcome::IgnoredIncomingPayload;
+    let control_refused = match classify_payload_frame(&PayloadTransferFrame::control(PacketType::Control)) {
+        Ok(_) => {
+            *ok = false;
+            "accepted(unexpected)".to_string()
+        }
+        Err(e) => format!("{:?}", e.code),
+    };
+    let ack_gate = json!({
+        "bytes_sent_ack": should_send_payload_ack(PayloadKind::Bytes, true),
+        "file_last_chunk_ack": should_send_payload_ack(PayloadKind::File, true),
+        "file_mid_chunk_ack": should_send_payload_ack(PayloadKind::File, false),
+    });
+    if !(ack_id == 4242
+        && ack_is_ack
+        && ack_total_size == Some(u64::MAX)
+        && branch_marked
+        && branch_unknown
+        && branch_incoming
+        && control_refused == "UnsupportedFeature")
+    {
+        *ok = false;
+    }
+
+    // ---- keep-alive 协商字段（F-40）：合法值采纳、非法拒绝、缺席回退 ----
+    let policy_default = KeepAlivePolicy::from_negotiation(None, None);
+    let policy_negotiated = KeepAlivePolicy::from_negotiation(Some(15_000), Some(45_000));
+    let policy_bad = KeepAlivePolicy::from_negotiation(Some(10_000), Some(5_000))
+        .map(|_| "accepted(unexpected)".to_string())
+        .unwrap_or_else(|e| format!("{:?}", e.code));
+    let policy_source = match (&policy_default, &policy_negotiated) {
+        (Ok(d), Ok(n))
+            if d.source == KeepAliveSource::RepoPolicy
+                && n.source == KeepAliveSource::Negotiated =>
+        {
+            json!({"default": "repo-policy", "negotiated": "negotiated"})
+        }
+        _ => {
+            *ok = false;
+            serde_json::Value::Null
+        }
+    };
+    if policy_bad != "InvalidFrame" {
+        *ok = false;
+    }
+    let negotiated = policy_negotiated
+        .as_ref()
+        .map(|p| (p.interval_ms, p.timeout_ms))
+        .unwrap_or((0, 0));
+
     // 负向：层号混用（外层帧用内层编号 3）与 FILE 载荷冒充协商帧。
     let mut inner_numbered = Vec::new();
     let mut v1 = Vec::new();
@@ -786,9 +906,36 @@ fn run_control_chain(ok: &mut bool) -> serde_json::Value {
             "peer_success_decision_opted_in": format!("{success_decision_opted_in:?}"),
             "skips_confirmation_by_default": false,
         },
+        "disconnection": {
+            "frames": disconnection_rows,
+            "actions": actions,
+            "presence_preserved": presence_preserved,
+            "empty_differs_from_explicit_false": empty_vs_false_differ,
+            "note": "R17 显式写两个 bool，NearDrop 发空正文——两者字节不同（F-36）",
+        },
+        "payload_ack": {
+            "ack_id": ack_id,
+            "total_size_is_indeterminate": ack_total_size == Some(u64::MAX),
+            "classified_as_ack": ack_is_ack,
+            "gate": ack_gate,
+            "branch_marked": branch_marked,
+            "branch_unknown": branch_unknown,
+            "branch_incoming": branch_incoming,
+            "control_path_refused": control_refused,
+        },
+        "keepalive_negotiation": {
+            "source": policy_source,
+            "default_interval_ms": KEEPALIVE_INTERVAL_MS,
+            "default_timeout_ms": KEEPALIVE_TIMEOUT_MS,
+            "negotiated_interval_ms": negotiated.0,
+            "negotiated_timeout_ms": negotiated.1,
+            "invalid_pair_refused": policy_bad,
+        },
         "rejects": [
             {"case": "外层帧用内层编号 3", "outcome": layer_confusion},
             {"case": "FILE 载荷冒充协商帧", "outcome": file_carrier},
+            {"case": "CONTROL 包类型（已废弃路径）", "outcome": control_refused},
+            {"case": "协商 timeout < interval", "outcome": policy_bad},
         ],
     })
 }

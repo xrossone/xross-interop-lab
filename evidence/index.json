@@ -422,6 +422,14 @@
       "date": "2026-09-15",
       "path": "evidence/2026-09-15-t45-cast-receiver-gate/run-manifest.json",
       "notes": "T45 Cast receiver 可行性 gate（headless）：认证在**消息层**（sender 恒定跳过 TLS 校验、把 AuthResponse 证书链走信任库；默认只信厂商根）⇒ 桌面 receiver 可达边界 = 可被发现 + CONNECT/CONNECTED + 心跳 + 状态记账 + LAUNCH 白名单，**stock sender 连上本机 receiver 判 blocked**（F-34/F-35）；实现只有 test-root 显式门禁下的自配对闭环，报告标注 stock_compatible=false；TXT 六键与 8009/8010 两个端口取值分别引用（T45-01..03）"
+    },
+    {
+      "id": "run-2026-09-15-t22h-quickshare-disconnect-ack",
+      "kind": "run-manifest",
+      "level": "build-verified",
+      "date": "2026-09-15",
+      "path": "evidence/2026-09-15-t22h-quickshare-disconnect-ack/run-manifest.json",
+      "notes": "T22headless Quick Share 帧层（headless）：DisconnectionFrame（外层 6/字段 7，**保留字段存在性**——R17 显式写两个 bool 而 NearDrop 发空正文，字节不同）与 safe-to-disconnect 三路决策；PAYLOAD_ACK（只带 header{id, total_size=-1}；**BYTES 载荷不发 ack**、只发末块；未知与本端 incoming 的 ack 一律忽略）；已废弃 CONTROL 路径明确拒绝；keep-alive 参数其实是握手协商字段（proto 无默认值）→ 只做校验与回退并标注来源（T22h-01..04）"
     }
   ]
 }

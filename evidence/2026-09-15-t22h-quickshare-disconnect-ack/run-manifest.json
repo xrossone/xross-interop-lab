@@ -1,0 +1,84 @@
+{
+  "schema_version": 1,
+  "run_id": "2026-09-15-t22h-quickshare-disconnect-ack",
+  "task": "T22headless · Quick Share DisconnectionFrame（safe-to-disconnect）与 PAYLOAD_ACK（headless 帧层）",
+  "kind": "manual",
+  "evidence_level": "build-verified",
+  "is_test_evidence": true,
+  "synthetic": false,
+  "base_commit": "7e85bcd（T22headless gate：F-34..F-40 + 语料 qs-025..030 + 纪律测试）",
+  "case_ids": [
+    "T22h-01",
+    "T22h-02",
+    "T22h-03",
+    "T22h-04"
+  ],
+  "result": "pass",
+  "commands": [
+    {
+      "seq": 1,
+      "purpose": "事实固化：从 R17（官方 proto + 参考实现）与 R15（NearDrop）取行级事实",
+      "command": "sed -n / grep -n on references/external/r17-nearby/**/offline_wire_formats.proto, offline_frames.cc, payload_manager.cc, endpoint_manager.cc; r15-neardrop NearbyShare/NearbyConnection.swift",
+      "exit_code": 0,
+      "result": "pass：F-34..F-40 全部有行级出处。两处关键发现超出预期——① PAYLOAD_ACK 的启用条件**明确排除 BYTES** 载荷（`payload_manager.cc:968-978`），即协商类载荷不发 ack；② R17 的 `ForDisconnection` 总是显式写两个 bool，而 NearDrop 发**空正文** DisconnectionFrame（`NearbyConnection.swift:411-423`）→ 同一帧有两种合法字节形态，解码必须保留字段**存在性**"
+    },
+    {
+      "seq": 2,
+      "purpose": "red：验收套件首次编译",
+      "command": "cargo test --manifest-path impl/Cargo.toml -p proto-quickshare --test quickshare_disconnect_ack",
+      "exit_code": 101,
+      "result": "fail：5 处编译错误（API 尚未实现）。另有**两处是测试自己的笔误**：Rust 字符串里嵌套双引号、以及 `usize + u64` 截断表达式——修掉后才进入真实红"
+    },
+    {
+      "seq": 3,
+      "purpose": "green：帧层实现 + 验收",
+      "command": "cargo test --manifest-path impl/Cargo.toml -p proto-quickshare --test quickshare_disconnect_ack",
+      "exit_code": 0,
+      "result": "pass：6 tests（四种帧形态往返与存在性、三路决策、ack 形状与分类、CONTROL 拒绝、ack 门槛与三分支、协商校验与回退）"
+    },
+    {
+      "seq": 4,
+      "purpose": "实现期修正：字面量里的嵌套引号（编译不过）与借用冲突（`policy_negotiated` 被 move）",
+      "command": "cargo build --manifest-path impl/Cargo.toml -p interop-demo",
+      "exit_code": 0,
+      "result": "pass：嵌套引号改用「」（仓库既有惯例）；`match` 改借引用后再取字段。均为实现期笔误，非设计变更"
+    },
+    {
+      "seq": 5,
+      "purpose": "demo 接入：`qshare` 控制帧块新增 DisconnectionFrame / PAYLOAD_ACK / keep-alive 协商",
+      "command": "cargo test --manifest-path impl/Cargo.toml -p interop-demo --test demo_cli",
+      "exit_code": 0,
+      "result": "pass：16 tests（新增 D-16）。过程中 D-13 失败——它断言控制帧负向**全部**是 `InvalidFrame`，而新增的两条负向（CONTROL 路径、协商值非法）分别是 `UnsupportedFeature`/`InvalidFrame`。D-13 的断言过窄（把「给明确错误码」写成了「给同一个错误码」）→ 收紧为白名单匹配，意图不变"
+    },
+    {
+      "seq": 6,
+      "purpose": "全量回归 + 静态检查 + lab 纪律",
+      "command": "cargo test --manifest-path impl/Cargo.toml --workspace; cargo clippy --manifest-path impl/Cargo.toml --workspace --all-targets; python3 -m unittest discover -s tools",
+      "exit_code": 0,
+      "result": "pass：impl 234 → **241** tests 全绿；clippy 0 warnings；lab 85 tests OK"
+    }
+  ],
+  "acceptance_mapping": {
+    "T22h-01": "DisconnectionFrame 的四种子节形态都能往返且**互不折叠**：R17 风格 `(false,false)`（两个字段显式写出）、NearDrop 空正文（两个字段都缺席）、发起 `(true,false)`、应答 `(true,true)`。字段用 `Option<bool>` 表达并以 `has_request()/has_ack()` 暴露存在性；断言空正文与显式 false 的**字节不同**（F-36）。负例：外层类型不是 6、版本不是 V1、字节截断分别 `unsupported-feature`/`version-unsupported`/报错",
+    "T22h-02": "safe-to-disconnect 三路接收规则（F-35）：request 缺席或为 false → `CloseNow`（立即关闭）；`(true,true)` → `MarkedAndNotified`（标记并通知停止等待，**不回帧**）；`(true,false)` → `MarkedAndReply`，回帧形状固定为 `(true,true)` 且该回帧本身可编码、可回读、仍走外层 6/字段 7。`request=true, ack 缺席` 按 ack=false 处理（来源只检查 request）",
+    "T22h-03": "PAYLOAD_ACK 形状与分类（F-37/F-39）：`packet_type=PAYLOAD_ACK(3)`、只带 `payload_header{id, total_size=-1}`（protobuf int64 二补数，经通用解码路径呈现为 u64::MAX）、**不得带 chunk**；`decode_payload_ack` 对 DATA 帧、带 chunk、total_size 非 -1 三种情形分别 `invalid-frame`；分类入口同时排出 `Data`/`Ack`，`CONTROL(2)` → `unsupported-feature` 且理由指向官方的替代说明（F-39：不静默忽略）",
+    "T22h-04": "ack 门槛与发送侧三分支（F-38）：`should_send_payload_ack` 只在**末块**且载荷类型**不是 BYTES** 时为真（协商类载荷不发 ack）；`PayloadAckTracker` 对未知 payload id → `IgnoredUnknownPayload`、对本端 incoming → `IgnoredIncomingPayload`、对本端 outgoing → `Marked`（幂等）。keep-alive 协商（F-40）：两个字段都缺席 → 本仓策略（10 s/30 s，来源标注 `repo-policy`）；给出合法值 → 采纳并标注 `negotiated`；非正值、超 int32、`timeout <= interval` → `invalid-frame`"
+  },
+  "extra_coverage": {
+    "two_layer_discipline": "DisconnectionFrame 与 PAYLOAD_ACK 都属**外层**（DISCONNECTION(6)/字段 7；PAYLOAD_TRANSFER(3) 内的 packet_type），与内层编号互不混用——沿用 F-30 的分层裁决",
+    "keepalive_correction": "F-40 修正了 F-31 的表述：keep-alive 参数在参考实现里是**握手协商字段**（`keep_alive_interval_millis=8`/`keep_alive_timeout_millis=9`，proto 无默认值），不是「来源没提数值」；本仓不实现连接握手，故只做校验 + 回退并如实标注来源",
+    "no_bandwidth_upgrade": "safe-to-disconnect 的**决策**已实现，但带宽升级路径（channel 切换/`UPGRADE_*` 事件）仍不实现——能力表按此分列"
+  },
+  "artifacts": [
+    {"path": "impl/crates/proto-quickshare/src/control.rs", "note": "DisconnectionFrame / PAYLOAD_ACK / 协商校验（T22headless 主体）"},
+    {"path": "impl/crates/proto-quickshare/tests/quickshare_disconnect_ack.rs", "note": "6 例验收"},
+    {"path": "specs-reviewed/f02-quickshare-lan.md", "note": "F-34..F-40 字段行 + 能力表 4 行 + F-31 表述修正"},
+    {"path": "evidence/quickshare/corpus-plan.json", "note": "qs-025..qs-030（全自制）"},
+    {"path": "tools/test_quickshare_gate.py", "note": "85 例（T22headless 新增 3 例）"},
+    {"path": "impl/apps/interop-demo/src/quickshare.rs", "note": "qshare 段的 disconnection/payload_ack/keepalive_negotiation 三块"},
+    {"path": "impl/apps/interop-demo/tests/demo_cli.rs", "note": "D-16（并收紧 D-13 的过窄断言）"}
+  ],
+  "credentials_redacted": true,
+  "license_route_approved": false,
+  "notes": "evidence_level=build-verified：全部本机自动化（帧层与状态机）。**未与任何 Android 设备互操作**、无抓包；safe-to-disconnect 与 ack 的真机时机仍待 P-F02-2 的对跑。R17/R15 只做行级事实引用，未复制表达、未链接第三方代码"
+}

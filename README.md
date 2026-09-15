@@ -177,6 +177,19 @@ tools/                          # 仓库检查脚本与测试（python3 -m unitt
   demo 新增 `wfd` 段（`xinterop-demo wfd`，见 D-11）。测试逼出四处实现缺陷（M3 查询正文是**裸参数名**、
   M13 正文是裸 `wfd_idr_request`、keep-alive 基准、M13/M16 应用控制 URI），详见 run manifest 的 red→green 记录。
 
+- **T22headless Quick Share 断开与确认帧（headless 切片）**：`specs-reviewed/f02` 增 F-34..F-40（R17 官方 proto
+  + 参考实现 + NearDrop 行级来源）——`DisconnectionFrame`（外层 `DISCONNECTION(6)`/字段 7，`request_safe_to_disconnect=1`、
+  `ack_safe_to_disconnect=2`）与 `PAYLOAD_ACK`（`packet_type=3`，只带 `payload_header{id,total_size=-1}`）。
+  三处关键事实：① **同一帧在参考实现里有两种合法字节形态**——R17 的构造器总是显式写两个 bool（false 也写），
+  NearDrop 发的是**空正文**，两者字节不同 ⇒ 解码必须保留字段存在性（本仓用 `Option<bool>` + `has_request()/has_ack()`）；
+  ② `PAYLOAD_ACK` 的启用条件**明确排除 BYTES 载荷**（协商类载荷不发 ack），且只有末块才发；发送侧对未知 payload
+  与对本端 incoming payload 的 ack 一律**忽略**；③ keep-alive 参数其实是**握手协商字段**（`keep_alive_interval_millis=8`/
+  `keep_alive_timeout_millis=9`，proto 无默认值）——**修正了此前"来源只说 a while 没数值"的表述**，本仓不实现连接
+  握手，故只做校验 + 回退并如实标注来源。另：已废弃的 `ControlMessage.PAYLOAD_RECEIVED_ACK` 路径收到即**明确拒绝**
+  （不静默忽略）。实现见 `crates/proto-quickshare/src/control.rs`；demo `qshare` 段新增三块（D-16）。
+  证据：[evidence/2026-09-15-t22h-quickshare-disconnect-ack](evidence/2026-09-15-t22h-quickshare-disconnect-ack/run-manifest.json)。
+  safe-to-disconnect 的**带宽升级路径本身仍不实现**（只做成帧与决策）。
+
 - **T45 Cast receiver 可行性 gate（headless 切片）**：`specs-reviewed/m08` 增 F-26..F-35（全部 R42
   行级来源）——**认证在消息层，不在 TLS**（sender 恒定跳过 TLS 证书校验，真正的检查是把 `AuthResponse`
   的证书链走到信任库；默认只信厂商根，不可信链 → `kCastV2CertNotSignedByTrustedCa=66`）；sender 不出示

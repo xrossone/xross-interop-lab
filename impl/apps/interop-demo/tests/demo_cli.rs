@@ -510,11 +510,16 @@ fn d13_quickshare_control_frames() {
     assert_eq!(p["peer_success_decision_opted_in"], "SkipConfirmation");
     assert_eq!(p["skips_confirmation_by_default"], false);
 
-    // 控制帧负向：层号混用与 FILE 载荷冒充都必须被拒。
+    // 控制帧负向：层号混用、FILE 载荷冒充、已废弃 CONTROL 路径、非法协商值都必须被拒。
     let rejects = c["rejects"].as_array().expect("rejects");
-    assert!(rejects.len() >= 2);
+    assert!(rejects.len() >= 4, "负向覆盖不足：{}", rejects.len());
     for case in rejects {
-        assert_eq!(case["outcome"], "InvalidFrame", "负向未拒绝：{case}");
+        let outcome = case["outcome"].as_str().unwrap_or("");
+        assert_ne!(outcome, "accepted(unexpected)", "负向被接受：{case}");
+        assert!(
+            matches!(outcome, "InvalidFrame" | "UnsupportedFeature"),
+            "未知错误码 {outcome}（{case}）"
+        );
     }
 
     // 人类输出同样给出这些结论。
@@ -674,4 +679,80 @@ fn d15_cast_receiver_boundary() {
     assert!(text.contains("T45 receiver"), "{text}");
     assert!(text.contains("stock 兼容=false"), "{text}");
     assert!(text.contains("screen_capability=false"), "{text}");
+}
+
+/// D-16：Quick Share DisconnectionFrame 与 PAYLOAD_ACK（T22headless）——帧形态、门槛与三分支。
+#[test]
+fn d16_quickshare_disconnection_and_payload_ack() {
+    let (code, v) = run_json(&["qshare", "--json"]);
+    assert_eq!(code, 0);
+    let c = &v["quickshare"]["control"];
+
+    // DisconnectionFrame：四种字节形态都能往返，且**空正文 ≠ 显式 false**（F-36）。
+    let dc = &c["disconnection"];
+    let frames = dc["frames"].as_array().expect("frames");
+    assert_eq!(frames.len(), 4);
+    for f in frames {
+        assert_eq!(f["roundtrip"], true, "往返失败：{f}");
+    }
+    assert_eq!(dc["empty_differs_from_explicit_false"], true);
+    assert_eq!(dc["presence_preserved"], true, "字段存在性必须保留");
+    // 空正文那条两个字段都是 null（缺席），显式 false 那条是 false。
+    let empty = frames.iter().find(|f| f["shape"] == "NearDrop 空正文").expect("空正文");
+    assert_eq!(empty["request"], Value::Null);
+    assert_eq!(empty["ack"], Value::Null);
+    let explicit = frames.iter().find(|f| f["shape"] == "R17 (false,false)").expect("显式");
+    assert_eq!(explicit["request"], false);
+    // 三路决策各自出现，且只有 (true,false) 回帧。
+    let actions = dc["actions"]
+        .as_array()
+        .expect("actions")
+        .iter()
+        .filter_map(|a| a.as_str())
+        .collect::<Vec<_>>()
+        .join("|");
+    assert!(actions.contains("立即关闭"), "{actions}");
+    assert!(actions.contains("标记+回帧(Some(true),Some(true))"), "{actions}");
+    assert!(actions.contains("标记+通知（不回帧）"), "{actions}");
+
+    // PAYLOAD_ACK：形状（total_size=-1）、分类、门槛（BYTES 不 ack、只发末块）、三分支。
+    let pa = &c["payload_ack"];
+    assert_eq!(pa["ack_id"], 4242);
+    assert_eq!(pa["total_size_is_indeterminate"], true);
+    assert_eq!(pa["classified_as_ack"], true);
+    assert_eq!(pa["gate"]["bytes_sent_ack"], false, "BYTES 载荷不发 ack（F-38）");
+    assert_eq!(pa["gate"]["file_last_chunk_ack"], true);
+    assert_eq!(pa["gate"]["file_mid_chunk_ack"], false);
+    assert_eq!(pa["branch_marked"], true);
+    assert_eq!(pa["branch_unknown"], true, "未知 payload 的 ack 只忽略");
+    assert_eq!(pa["branch_incoming"], true, "本端 incoming 的 ack 忽略");
+    assert_eq!(pa["control_path_refused"], "UnsupportedFeature", "已废弃 CONTROL 路径明确拒绝");
+
+    // keep-alive 协商（F-40）：缺席回退本仓策略、合法值采纳、非法组合拒绝。
+    let kn = &c["keepalive_negotiation"];
+    assert_eq!(kn["source"]["default"], "repo-policy");
+    assert_eq!(kn["source"]["negotiated"], "negotiated");
+    assert_eq!(kn["default_interval_ms"], 10000);
+    assert_eq!(kn["default_timeout_ms"], 30000);
+    assert_eq!(kn["negotiated_interval_ms"], 15000);
+    assert_eq!(kn["negotiated_timeout_ms"], 45000);
+    assert_eq!(kn["invalid_pair_refused"], "InvalidFrame", "timeout < interval 必须拒绝");
+
+    // 负向集包含新增的两条，且无一被接受。
+    let rejects = c["rejects"].as_array().expect("rejects");
+    assert!(rejects.len() >= 4, "负向覆盖不足：{}", rejects.len());
+    let cases = rejects.iter().filter_map(|r| r["case"].as_str()).collect::<Vec<_>>().join("|");
+    assert!(cases.contains("CONTROL 包类型"), "{cases}");
+    assert!(cases.contains("协商 timeout < interval"), "{cases}");
+    for case in rejects {
+        assert_ne!(case["outcome"], "accepted(unexpected)", "负向被接受：{case}");
+    }
+
+    // 人类输出复述同一批结论。
+    let out = Command::new(bin()).arg("qshare").output().expect("可执行");
+    assert_eq!(out.status.code(), Some(0));
+    let text = String::from_utf8_lossy(&out.stdout);
+    assert!(text.contains("Disconnection（T22）"), "{text}");
+    assert!(text.contains("PAYLOAD_ACK（T22）"), "{text}");
+    assert!(text.contains("keep-alive 协商"), "{text}");
 }
