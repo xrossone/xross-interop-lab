@@ -41,6 +41,8 @@ pub struct CastReport {
     pub envelope: serde_json::Value,
     pub namespaces: serde_json::Value,
     pub session: serde_json::Value,
+    /// receiver 侧控制面与可达边界（T45）。
+    pub receiver: serde_json::Value,
     pub discovery: serde_json::Value,
     pub rejects: Vec<serde_json::Value>,
     pub blocked: Vec<String>,

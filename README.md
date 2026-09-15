@@ -177,6 +177,20 @@ tools/                          # 仓库检查脚本与测试（python3 -m unitt
   demo 新增 `wfd` 段（`xinterop-demo wfd`，见 D-11）。测试逼出四处实现缺陷（M3 查询正文是**裸参数名**、
   M13 正文是裸 `wfd_idr_request`、keep-alive 基准、M13/M16 应用控制 URI），详见 run manifest 的 red→green 记录。
 
+- **T45 Cast receiver 可行性 gate（headless 切片）**：`specs-reviewed/m08` 增 F-26..F-35（全部 R42
+  行级来源）——**认证在消息层，不在 TLS**（sender 恒定跳过 TLS 证书校验，真正的检查是把 `AuthResponse`
+  的证书链走到信任库；默认只信厂商根，不可信链 → `kCastV2CertNotSignedByTrustedCa=66`）；sender 不出示
+  证书、receiver 出示 TLS 证书 + `AuthResponse`；参考实现的 test-root 路径（`--generate-credentials`
+  自签根，3 天寿命）与 receiver 侧消息流（CONNECTED 仅在 sender 给了协议版本时回、LAUNCH 未知 app id →
+  `kItemNotFound`、进程内 app 注册、TXT `id`/`ve`/`ca`/`st`/`fn`/`md`、参考 receiver 用 8010 而真实设备
+  8009）；`research/cast/receiver-gate.md` 给出判定：**stock sender 连上本机 receiver = blocked**，
+  可自动化的是"可被发现 + 控制面 + LAUNCH 白名单 + test-root 自配对闭环"。实现
+  `crates/proto-cast/src/receiver.rs`：生产闸门 `VendorTrustRequired` **恒拒绝且拒绝后不留半开会话**、
+  演示闸门 `TestRootTrust` 只在对方**显式**信任同一测试根时放行、**不内置任何 app id**、
+  CLOSE 释放全部记账；demo 的 `cast` 段新增 receiver 子块（D-15）。
+  证据：[evidence/2026-09-15-t45-cast-receiver-gate](evidence/2026-09-15-t45-cast-receiver-gate/run-manifest.json)。
+  gate 机器纪律在本 task 里第二次挡住越界：生产闸门原名 `VendorDeviceAuth` 被禁词检查抓到 → 改名。
+
 - **T34 AirPlay 音频 profile 与配对登记（headless 切片）**：`specs-reviewed/m01` 增 T34 字段表
   （行级来源：UxPlay@d9791de / shairplay-rust@2fb72b3）——AP1 实时音频的请求键与响应形状、
   `ct` 四值表（1=PCM、2=ALAC spf=352、4=AAC-LC spf=1024、8=AAC-ELD spf=480）、采样率 44100
@@ -230,7 +244,7 @@ tools/                          # 仓库检查脚本与测试（python3 -m unitt
 T22（Quick Share 发送闭环，需 QR/可发现路径）、Quick Share 发现源
 （待 P-F02-1/2/3 关闭与 S3 抓包批准）、T42 的媒体字节服务与 native player 接入（T24/host gateway）、
 T38/T39（WFD 真机序列与 IE 播发、平台入口 probe，需 P-M05-1/2/3）、T44（Cast 实时 streaming，在 T43 之后）、
-T45（Cast receiver 可行性 gate）、xross-dev 侧 bridge 窗口（S4）、
+xross-dev 侧 bridge 窗口（S4）、
 provider 放行（S5）；native 窗口 sink 与 Tauri demo 壳留桌面会话。
 阶段 3 的 goal prompt 见 [docs/goal-phase-3.md](docs/goal-phase-3.md)，执行结果见
 [evidence/2026-09-15-phase-3-final-report.md](evidence/2026-09-15-phase-3-final-report.md)；阶段 2 见

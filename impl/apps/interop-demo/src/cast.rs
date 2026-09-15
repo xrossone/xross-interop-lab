@@ -38,10 +38,18 @@ fn failed_report() -> CastReport {
         envelope: json!({}),
         namespaces: json!({}),
         session: json!({}),
+        receiver: json!({}),
         discovery: json!({}),
         rejects: Vec::new(),
         blocked: Vec::new(),
     }
+}
+
+/// 统一把 `Result` 折成错误码字符串（被接受 = 负向失败）。
+fn code_of<T>(result: Result<T, interop_contract::error::Error>) -> String {
+    result
+        .map(|_| "accepted(unexpected)".to_string())
+        .unwrap_or_else(|e| format!("{:?}", e.code))
 }
 
 pub fn cast_scenario() -> (CastReport, bool) {
@@ -50,11 +58,6 @@ pub fn cast_scenario() -> (CastReport, bool) {
     let mut negative = |label: &str, code: String| {
         rejects.push(json!({ "case": label, "outcome": code }));
     };
-    fn code_of<T>(result: Result<T, interop_contract::error::Error>) -> String {
-        result
-            .map(|_| "accepted(unexpected)".to_string())
-            .unwrap_or_else(|e| format!("{:?}", e.code))
-    }
 
     // ---- 信封：字段号往返 + 上限 + 分块 ----
     let ping = CastPayload::Ping
@@ -432,12 +435,16 @@ pub fn cast_scenario() -> (CastReport, bool) {
     negative("生产闸门下的 CONNECT", gate_closed.clone());
     negative("生产闸门下的 LOAD", code_of(blocked_controller.load(DEMO_MEDIA_URL, DEMO_CONTENT_TYPE, None, 0)));
 
+    // ---- receiver 侧（T45）：产品路径恒拒绝；test-root 演示闭环单独记账 ----
+    let receiver = run_receiver_path(&mut ok);
+
     let report = CastReport {
         evidence_level: crate::report::EVIDENCE_LEVEL,
         wire: crate::report::WIRE,
         envelope,
         namespaces,
         session,
+        receiver,
         discovery: json!({
             "service_type": proto_cast::SERVICE_TYPE,
             "port": DEFAULT_PORT,
@@ -453,6 +460,8 @@ pub fn cast_scenario() -> (CastReport, bool) {
             "媒体字节服务与实时 streaming（F-25 / T44）".into(),
             "CASTV2 分块（F-05：参考实现也没有实现路径，收到即拒绝）".into(),
             "TXT 字段矩阵与各代设备差异（P-M08-3）".into(),
+            "stock sender 连上本机 receiver（F-28/F-33）：认证在消息层、默认 sender 只信厂商根；重评条件 = P-M08-1 + P-M08-4（Chrome 开发者证书参数）".into(),
+            "CAF / 托管 receiver app（F-32：来源未固化 → 不得声称可行；重评条件 = P-M08-2）".into(),
         ],
     };
     (report, ok)
@@ -520,4 +529,115 @@ fn demo_session() -> Controller {
     );
     let _ = controller.on_message(&media_status, 1_050);
     controller
+}
+
+/// receiver 侧路径（T45）：把"产品恒拒绝"与"test-root 自配对闭环"分别跑出来。
+///
+/// 这里证明的是：**门禁与状态机按字段表工作**，不是"能接 stock sender"。
+fn run_receiver_path(ok: &mut bool) -> serde_json::Value {
+    use proto_cast::receiver::{
+        LaunchOutcome, ReceiverInfo, ReceiverSession, ReceiverState, KNOWN_TXT_KEYS,
+        PORT_REAL_DEVICE, PORT_REFERENCE_RECEIVER, SERVICE_TYPE, STATUS_BUSY_JOIN, STATUS_IDLE,
+    };
+
+    // 1) 产品路径：即便"对端信任我们"也拒绝（材料边界），且不留半开会话。
+    let mut vendor = ReceiverSession::new();
+    vendor.note_sender_trust(true);
+    let vendor_refusal = code_of(vendor.on_connect(Some(3)));
+    let vendor_state = format!("{:?}", vendor.state());
+    let vendor_senders = vendor.accounting().connected_senders;
+    if vendor_refusal != "VendorGated" || vendor_senders != 0 {
+        *ok = false;
+    }
+
+    // 2) 演示路径：对方不信任测试根 → 拒绝；显式信任 → 闭环（CONNECT→LAUNCH→状态→CLOSE）。
+    const DEMO_APP: &str = "DEMOAPP";
+    let mut demo = ReceiverSession::test_root_for_demo(vec![DEMO_APP.to_string()]);
+    let untrusted = code_of(demo.on_connect(Some(3)));
+    demo.note_sender_trust(true);
+    let connected = matches!(demo.on_connect(Some(3)), Ok(Some(_)));
+    let no_version_reply = matches!(demo.on_connect(None), Ok(None));
+    let launched = matches!(demo.on_launch(DEMO_APP), Ok(LaunchOutcome::Launched { .. }));
+    let status = match demo.status() {
+        proto_cast::namespaces::CastPayload::ReceiverStatus(s) => json!({
+            "app_id": s.app_id(),
+            "transport_id": s.transport_id(),
+            "session_id": s.session_id(),
+        }),
+        _ => {
+            *ok = false;
+            serde_json::Value::Null
+        }
+    };
+    let refused_launch = match demo.on_launch("NOT-CONFIGURED") {
+        Ok(LaunchOutcome::Refused { code, .. }) => format!("{code:?}"),
+        Ok(other) => {
+            *ok = false;
+            format!("accepted(unexpected): {other:?}")
+        }
+        Err(e) => {
+            *ok = false;
+            format!("{:?}", e.code)
+        }
+    };
+    let pong = demo.on_ping().is_ok();
+    let info_busy = ReceiverInfo::from_state(&demo, "abcd1234", "客厅", "xross-demo");
+    let txt = info_busy.to_txt();
+    let txt_roundtrip = ReceiverInfo::from_txt(&txt).ok() == Some(info_busy.clone());
+    let unknown_key_refused = code_of(ReceiverInfo::from_txt(
+        &txt.iter()
+            .cloned()
+            .chain(std::iter::once(("rs".to_string(), "1".to_string())))
+            .collect::<Vec<_>>(),
+    ));
+    demo.on_close();
+    let closed_released = !demo.accounting().holding_app && demo.state() == ReceiverState::Closed;
+    if untrusted != "VendorGated"
+        || !connected
+        || !no_version_reply
+        || !launched
+        || refused_launch != "DestinationUnavailable"
+        || !pong
+        || !txt_roundtrip
+        || unknown_key_refused != "InvalidFrame"
+        || !closed_released
+        || vendor_state != "Idle"
+    {
+        *ok = false;
+    }
+    if !(info_busy.status == STATUS_BUSY_JOIN
+        && ReceiverInfo::from_state(&ReceiverSession::new(), "x", "y", "z").status == STATUS_IDLE)
+    {
+        *ok = false;
+    }
+
+    json!({
+        "vendor_path": {
+            "gate": vendor.gate_name(),
+            "even_if_peer_trusts_us": vendor_refusal,
+            "state_after_refusal": vendor_state,
+            "senders_admitted": vendor_senders,
+        },
+        "test_root_path": {
+            "gate": demo.gate_name(),
+            "refused_when_peer_does_not_trust_test_root": untrusted,
+            "connected": connected,
+            "connected_only_with_protocol_version": no_version_reply,
+            "launched": launched,
+            "status": status,
+            "refused_unconfigured_app": refused_launch,
+            "pong": pong,
+            "closed_released_app": closed_released,
+            "stock_compatible": false,
+            "note": "test-root 仅用于本仓自配对闭环；stock sender 默认不信任它（F-28/F-34）",
+        },
+        "txt": {
+            "service_type": SERVICE_TYPE,
+            "keys": KNOWN_TXT_KEYS,
+            "roundtrip": txt_roundtrip,
+            "unknown_key_refused": unknown_key_refused,
+            "port_real_device": PORT_REAL_DEVICE,
+            "port_reference_receiver": PORT_REFERENCE_RECEIVER,
+        },
+    })
 }

@@ -24,6 +24,7 @@ pub mod castv2;
 pub mod controller;
 pub mod discovery;
 pub mod namespaces;
+pub mod receiver;
 
 pub use castv2::{
     CastMessage, Payload, PayloadType, HEADER_BYTES, MAX_BODY_BYTES, PROTOCOL_VERSIONS,

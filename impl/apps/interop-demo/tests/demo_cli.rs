@@ -620,3 +620,58 @@ fn d14_airplay_audio_profiles_and_pair_store() {
     assert!(text.contains("vendor-gated"), "{text}");
     assert!(text.contains("spf 无（来源未给，不编造）"), "{text}");
 }
+
+/// D-15：Cast receiver 可达边界（T45）——产品路径恒拒绝、test-root 闭环、TXT 键与端口取值。
+#[test]
+fn d15_cast_receiver_boundary() {
+    let (code, v) = run_json(&["cast", "--json"]);
+    assert_eq!(code, 0);
+    let rv = &v["cast"]["receiver"];
+
+    // 产品路径：即便对端信任我们也拒绝，且不留半开会话。
+    assert_eq!(rv["vendor_path"]["gate"], "vendor-required");
+    assert_eq!(rv["vendor_path"]["even_if_peer_trusts_us"], "VendorGated");
+    assert_eq!(rv["vendor_path"]["state_after_refusal"], "Idle", "拒绝后不得留下会话");
+    assert_eq!(rv["vendor_path"]["senders_admitted"], 0);
+
+    // test-root 闭环：只在对方显式信任同一测试根时成立，且**不是** stock 兼容。
+    assert_eq!(rv["test_root_path"]["gate"], "test-root");
+    assert_eq!(
+        rv["test_root_path"]["refused_when_peer_does_not_trust_test_root"],
+        "VendorGated"
+    );
+    assert_eq!(rv["test_root_path"]["connected"], true);
+    assert_eq!(rv["test_root_path"]["connected_only_with_protocol_version"], true);
+    assert_eq!(rv["test_root_path"]["launched"], true);
+    assert_eq!(rv["test_root_path"]["refused_unconfigured_app"], "DestinationUnavailable");
+    assert_eq!(rv["test_root_path"]["pong"], true);
+    assert_eq!(rv["test_root_path"]["closed_released_app"], true, "关闭后必须释放 app");
+    assert_eq!(rv["test_root_path"]["stock_compatible"], false, "T45-01：不得写成 stock 兼容");
+
+    // TXT：6 个来源登记的键、往返、未登记键拒绝；两个端口取值分别引用。
+    let txt = &rv["txt"];
+    assert_eq!(txt["service_type"], "_googlecast._tcp");
+    assert_eq!(txt["keys"].as_array().expect("keys").len(), 6);
+    assert_eq!(txt["roundtrip"], true);
+    assert_eq!(txt["unknown_key_refused"], "InvalidFrame");
+    assert_eq!(txt["port_real_device"], 8009);
+    assert_eq!(txt["port_reference_receiver"], 8010);
+
+    // blocked 清单必须写明 stock 路径与 CAF 的边界。
+    let blocked = v["cast"]["blocked"].as_array().expect("blocked");
+    let joined = blocked
+        .iter()
+        .filter_map(|b| b.as_str())
+        .collect::<Vec<_>>()
+        .join("|");
+    assert!(joined.contains("stock sender"), "{joined}");
+    assert!(joined.contains("CAF"), "{joined}");
+
+    // 人类输出复述同一批结论（并保留 T43 的立场）。
+    let out = Command::new(bin()).arg("cast").output().expect("可执行");
+    assert_eq!(out.status.code(), Some(0));
+    let text = String::from_utf8_lossy(&out.stdout);
+    assert!(text.contains("T45 receiver"), "{text}");
+    assert!(text.contains("stock 兼容=false"), "{text}");
+    assert!(text.contains("screen_capability=false"), "{text}");
+}

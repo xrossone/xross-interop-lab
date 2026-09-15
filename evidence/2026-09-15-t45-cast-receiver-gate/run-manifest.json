@@ -1,0 +1,85 @@
+{
+  "schema_version": 1,
+  "run_id": "2026-09-15-t45-cast-receiver-gate",
+  "task": "T45 · Google Cast receiver 可行性 gate（headless 部分：可达边界 + 控制面 + test-root 闭环）",
+  "kind": "manual",
+  "evidence_level": "build-verified",
+  "is_test_evidence": true,
+  "synthetic": false,
+  "base_commit": "ab573fd（T45 gate：F-26..F-35 事实行 + 语料 cast-018..023 + 纪律测试）",
+  "case_ids": [
+    "T45-01",
+    "T45-02",
+    "T45-03"
+  ],
+  "result": "pass",
+  "commands": [
+    {
+      "seq": 1,
+      "purpose": "gate：先写事实行与纪律测试（实现尚未落地时 T45 实现检查 skip）",
+      "command": "python3 -m unittest discover -s tools -t tools",
+      "exit_code": 0,
+      "result": "pass：lab 77 → 82（T45 新增 5 例）。过程中 gate 抓出三处问题并修正：① 能力表的 blocked 行缺重评条件（补 P-M08-1/P-M08-2，并新增 P-M08-4）；② 结论行（F-34）与实现准入混在同一行 → 拆成 F-34（blocked / 不准入）与 F-35（test-root 演示路径 / 准入）；③ 我自己新写的断言要求 F-29 出现『拒绝』字样，但该行描述的是 test-root 路径 → 改成检查『不得冒充厂商信任』"
+    },
+    {
+      "seq": 2,
+      "purpose": "red：receiver 模块首次编译",
+      "command": "cargo test --manifest-path impl/Cargo.toml -p proto-cast",
+      "exit_code": 101,
+      "result": "fail：两处编译错误——① `SENDER_PLATFORM_ID`/`RECEIVER_PLATFORM_ID` 在 `castv2` 而非 `namespaces`；② `ApplicationStatus.namespaces` 是 `Vec<String>` 不是 `Option`。另有 `ReceiverSession` 因持有 `Box<dyn SenderTrustGate>` 无法 derive Debug → 手写 Debug（打印闸门名与记账）"
+    },
+    {
+      "seq": 3,
+      "purpose": "gate 抓出**实现越界**：闸门类型名里带了被禁词",
+      "command": "python3 -m unittest discover -s tools -t tools",
+      "exit_code": 1,
+      "result": "fail：`实现里出现越界材料：/deviceauth/`。原因是我把生产闸门命名为 `VendorDeviceAuth`——T43 gate 早已禁止实现里出现 DeviceAuth 握手痕迹（F-18）。改名（`VendorTrustRequired`/`TestRootTrust`/`SenderTrustGate`/`TrustDecision`）后转绿：**这是机器纪律第二次挡住把『不实现的东西』写进代码命名**"
+    },
+    {
+      "seq": 4,
+      "purpose": "green：T45 crate 验收 + 静态检查",
+      "command": "cargo test --manifest-path impl/Cargo.toml -p proto-cast; cargo clippy -p proto-cast --all-targets",
+      "exit_code": 0,
+      "result": "pass：proto-cast 12 + 6（新文件 cast_receiver.rs）tests：产品闸门恒拒绝且不留半开会话、test-root 仅在对方显式信任时放行、LAUNCH 只认配置过的 app id、TXT 构造/解析与未登记键拒绝、CLOSE 释放 app 且不再应答。clippy 0（含 map_identity / unnecessary_mut / Debug 三处修正）"
+    },
+    {
+      "seq": 5,
+      "purpose": "demo：cast 段新增 receiver 子块 + D-15",
+      "command": "cargo test --manifest-path impl/Cargo.toml -p interop-demo --test demo_cli",
+      "exit_code": 0,
+      "result": "pass：15 tests。JSON 与人类输出同时给出：产品路径 `gate=vendor-required` / 即便对端信任我们仍 `VendorGated` / 放行数 0 / 状态回 Idle；test-root 闭环（连接、拉起、拒绝未配置 app、关闭释放）且 `stock_compatible=false`；TXT 6 键往返、端口 8009（真机）与 8010（参考 receiver）分别列出"
+    },
+    {
+      "seq": 6,
+      "purpose": "全量回归 + 静态检查 + lab 纪律",
+      "command": "cargo test --manifest-path impl/Cargo.toml --workspace; cargo clippy --manifest-path impl/Cargo.toml --workspace --all-targets; python3 -m unittest discover -s tools",
+      "exit_code": 0,
+      "result": "pass：impl 222 → **234** tests 全绿；clippy 0 warnings；lab 82 tests OK"
+    }
+  ],
+  "acceptance_mapping": {
+    "T45-01": "自有 test-root 被信任但 stock 不认可 → **stock receiver = blocked**。实现侧：生产闸门 `VendorTrustRequired` 恒拒绝（连『对端信任我们』也不放行），拒绝后状态仍是 `Idle`、`connected_senders=0`、`statuses_sent=0`——**不留半开会话**；拒绝理由写明『不获取、不伪造该材料』。依据 F-26..F-28/F-33：认证在消息层、默认 sender 只信厂商根、receiver 不校验 sender ⇒ 能否被连上由 sender 的信任库决定",
+    "T45-02": "只能被 discover、不能 launch → **不记为 cast 成功**。实现侧：TXT 可构造（`id`/`ve`/`ca`/`st`/`fn`/`md`）且在无 app 时 `st=0`（idle）、有 app 时 `st=1`；LAUNCH 未配置的 app id → `DestinationUnavailable` 并记账 `refused_launches`，状态仍停在 `Connected`、`holding_app=false`（demo 里同一结论以 JSON 暴露）",
+    "T45-03": "认证/授权路径不明 → **停止产品集成、保留合法 demo**。实现侧：产品路径与演示路径**分成两个具名构造**（`ReceiverSession::new()` = vendor-required；`ReceiverSession::test_root_for_demo()` = test-root），演示闸门只在对方**显式**信任同一测试根时放行，报告里 `stock_compatible=false`、闸门名带 `test-root`；实现内不含任何证书/密钥材料（gate 机器检查 `certificate`/`private key`/`client_auth` 与已知 app id 字面量）"
+  },
+  "extra_coverage": {
+    "connect_semantics": "CONNECTED 仅在 sender 提供了协议版本时回复（来源行为，F-30）；平台 ID `sender-0`/`receiver-0` 为来源取值",
+    "launch_bookkeeping": "LAUNCH 成功后 `RECEIVER_STATUS` 带 transportId/sessionId；未连接时的 LAUNCH/心跳一律 `invalid-frame`",
+    "close": "CLOSE 后回到 `Closed`、释放 app、不再应答心跳、不再接受 LAUNCH",
+    "txt_bounds": "`st` 超出来源取值 0/1、数字键非整数、缺 `id`、出现未登记键（`rs`/`bs`/`nf`/`ic`/`cd`/`rm`）全部 `invalid-frame`",
+    "ports": "8009（真实设备）与 8010（参考实现独立 receiver）两个来源取值分别引用，不合并"
+  },
+  "artifacts": [
+    {"path": "impl/crates/proto-cast/src/receiver.rs", "note": "receiver 侧控制面 + 信任闸门 + TXT 形状"},
+    {"path": "impl/crates/proto-cast/tests/cast_receiver.rs", "note": "6 例验收（T45-01..03 + CONNECT/TXT/CLOSE）"},
+    {"path": "specs-reviewed/m08-cast-media-control.md", "note": "F-26..F-35 事实行 + 能力表（receiver/stock sender/CAF）"},
+    {"path": "research/cast/receiver-gate.md", "note": "可行性判定与三个 case 的依据、实现硬约束、未关闭 probe"},
+    {"path": "evidence/cast/corpus-plan.json", "note": "cast-018..023（全自制）"},
+    {"path": "tools/test_cast_gate.py", "note": "82 例（T45 新增 5 例）"},
+    {"path": "impl/apps/interop-demo/src/cast.rs", "note": "cast 段的 receiver 子块"},
+    {"path": "impl/apps/interop-demo/tests/demo_cli.rs", "note": "D-15"}
+  ],
+  "credentials_redacted": true,
+  "license_route_approved": false,
+  "notes": "evidence_level=build-verified：只证明本仓的门禁与状态机按字段表工作。**未与任何 Chromecast/Pixel/Chrome 互操作**，也没有真机抓包；stock 路径的判定来自 R42 的行级事实（默认信任库），不是实测。R42 的 Google 根 CA DER 数组与 test/ 下的私钥文件一律未取、未引用"
+}

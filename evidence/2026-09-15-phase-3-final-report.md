@@ -329,3 +329,32 @@ Quick Share ↔ Android）、抓包、可见性矩阵、native 窗口、Tauri GU
   不取两仓的 FairPlay 表/RSA 私钥/默认 PIN 常量；**未与任何 Apple 设备互操作**，
   `ct`/`spf`/真机 `audioFormat` 取值仍待 P-M01-2 的抓包固化。
 - **测试面**：impl 209 → **222**（proto-airplay 32 + demo D-14）；clippy 0；lab 77。
+
+
+---
+
+## 补充 9（2026-09-15）：T45 Google Cast receiver 可行性 gate（headless 切片）已落地
+
+**commit** `ab573fd`（gate：F-26..F-35 + 语料 cast-018..023 + 纪律测试）。
+
+- **判定（先给答案）**：桌面 Cast receiver **部分可行、stock 路径 blocked**。可自动化的是
+  "可被发现 + CONNECT/CONNECTED + 心跳 + RECEIVER_STATUS 记账 + LAUNCH 白名单"；
+  让厂商默认信任的 sender 连上来做不到——依据 F-26..F-33：**认证在消息层**（sender 恒定跳过 TLS 证书
+  校验，真正的检查是把 `AuthResponse` 的证书链走到**它自己的信任库**），默认只信厂商根，而拿到厂商签发的
+  设备凭据材料不在本仓允许范围（不获取、不伪造）。
+- **唯一可闭环的路径**：调用方**显式信任我们的 test-root**（参考实现自己的 `--generate-credentials` +
+  `--developer-certificate` 就是这个用法）——这是"我们自己的 sender/receiver 对跑"，**不等于** stock 兼容，
+  demo 与报告里都以 `stock_compatible=false` 标注。
+- **实现** `crates/proto-cast/src/receiver.rs`：生产闸门 `VendorTrustRequired` 恒拒绝（连"对端信任我们"
+  也不放行）且**拒绝后状态仍是 Idle、不放行任何 sender、不发任何状态**；演示闸门 `TestRootTrust` 只在
+  对方显式信任同一测试根时放行；CONNECTED **仅在 sender 给了协议版本时回**；LAUNCH 只认调用方配置过的
+  app id（未配置 → `DestinationUnavailable`，**不内置任何 id**）；CLOSE 回到 Closed 并释放 app；
+  TXT 六个来源键的构造/解析（未登记键、`st` 超范围、缺 `id` 一律拒绝）。端口的两个来源取值
+  （真实设备 8009 / 参考 receiver 8010）分别引用、不合并。
+- **gate 抓出的问题**：① 能力表 blocked 行缺重评条件（补 P-M08-1/P-M08-2 + 新增 P-M08-4：Chrome
+  开发者证书参数在用户机器上的实际行为）；② 结论行与实现准入混写 → 拆成 F-34（blocked / 不准入）与
+  F-35（test-root 路径 / 准入）；③ **实现越界**：生产闸门原名 `VendorDeviceAuth` 撞上 T43 的
+  "不得出现 DeviceAuth 痕迹"检查 → 改名（机器纪律第二次挡住把"不实现的东西"写进代码命名）。
+- **诚实边界**：未与任何 Chromecast/Pixel/Chrome 互操作、无真机抓包；stock 判定来自 R42 行级事实
+  （默认信任库）而非实测；R42 的 Google 根 CA DER 数组与 test/ 下私钥一律未取。
+- **测试面**：impl 222 → **234**（proto-cast +11、demo D-15）；clippy 0；lab 82。

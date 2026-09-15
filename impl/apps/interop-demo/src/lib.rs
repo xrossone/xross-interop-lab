@@ -372,6 +372,34 @@ pub fn render_human(r: &DemoReport, section: Option<&str>) -> String {
             c.discovery["multicast"],
             c.discovery["parsed"].as_str().unwrap_or("")
         ));
+        let rv = &c.receiver;
+        if !rv.is_null() {
+            out.push_str(&format!(
+                "T45 receiver      : 产品路径 gate={} 即便对端信任我们={} 状态={} 放行数={}\n",
+                text(&rv["vendor_path"]["gate"]),
+                text(&rv["vendor_path"]["even_if_peer_trusts_us"]),
+                text(&rv["vendor_path"]["state_after_refusal"]),
+                rv["vendor_path"]["senders_admitted"]
+            ));
+            out.push_str(&format!(
+                "  test-root 闭环  : gate={} 对方不信任测试根时={} 连接={} 拉起={} 拒绝未配置 app={} stock 兼容={}\n",
+                text(&rv["test_root_path"]["gate"]),
+                text(&rv["test_root_path"]["refused_when_peer_does_not_trust_test_root"]),
+                rv["test_root_path"]["connected"],
+                rv["test_root_path"]["launched"],
+                text(&rv["test_root_path"]["refused_unconfigured_app"]),
+                rv["test_root_path"]["stock_compatible"]
+            ));
+            out.push_str(&format!(
+                "  TXT（不组播）   : {} 键={} 往返={} 未登记键被拒={}；端口 真机={} 参考 receiver={}\n",
+                text(&rv["txt"]["service_type"]),
+                rv["txt"]["keys"],
+                rv["txt"]["roundtrip"],
+                text(&rv["txt"]["unknown_key_refused"]),
+                rv["txt"]["port_real_device"],
+                rv["txt"]["port_reference_receiver"]
+            ));
+        }
         out.push_str("负向              :\n");
         for case in &c.rejects {
             out.push_str(&format!(

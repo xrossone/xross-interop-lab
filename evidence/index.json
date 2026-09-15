@@ -414,6 +414,14 @@
       "date": "2026-09-15",
       "path": "evidence/2026-09-15-t34-airplay-audio-store/run-manifest.json",
       "notes": "T34 AirPlay 音频 profile 与配对登记（headless）：AP1 ct 四值表（1/2/4/8，PCM 无 spf、不编造）与 44.1kHz 来源取值；AP2 的**两套编号**（打包 audioFormat 0x00040000..0x00200000 与 RTP SSRC 魔数）互不回退；流类型 96/103/110/120/130 中 103/120/130 明确不实现并带原因；配对**登记层**（不是认证层：结论只有 Unknown / KnownButUnverified，bit 9 时机，容量与遗忘为本仓策略）；/fp-setup 恒 vendor-gated、握手不实现（T34-01..04）"
+    },
+    {
+      "id": "run-2026-09-15-t45-cast-receiver-gate",
+      "kind": "run-manifest",
+      "level": "build-verified",
+      "date": "2026-09-15",
+      "path": "evidence/2026-09-15-t45-cast-receiver-gate/run-manifest.json",
+      "notes": "T45 Cast receiver 可行性 gate（headless）：认证在**消息层**（sender 恒定跳过 TLS 校验、把 AuthResponse 证书链走信任库；默认只信厂商根）⇒ 桌面 receiver 可达边界 = 可被发现 + CONNECT/CONNECTED + 心跳 + 状态记账 + LAUNCH 白名单，**stock sender 连上本机 receiver 判 blocked**（F-34/F-35）；实现只有 test-root 显式门禁下的自配对闭环，报告标注 stock_compatible=false；TXT 六键与 8009/8010 两个端口取值分别引用（T45-01..03）"
     }
   ]
 }
