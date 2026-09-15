@@ -1,0 +1,89 @@
+{
+ "schema_version": 1,
+ "run_id": "2026-09-15-t12-platform-probe",
+ "task": "T12 · 实现只读 platform probe 和无线 lease 模型",
+ "kind": "manual",
+ "evidence_level": "build-verified",
+ "is_test_evidence": true,
+ "synthetic": false,
+ "base_commit": "efdcecb（T11 提交）",
+ "case_ids": [
+  "T12-01",
+  "T12-02",
+  "T12-03"
+ ],
+ "result": "pass",
+ "commands": [
+  {
+   "seq": 1,
+   "purpose": "red：probe/radio 模块未实现",
+   "command": "cargo test --manifest-path impl/Cargo.toml -p interop-platform",
+   "exit_code": 101,
+   "result": "fail（E0432：unresolved import interop_platform::probe / ::radio，预期 red）"
+  },
+  {
+   "seq": 2,
+   "purpose": "green：T12 验收套件",
+   "command": "cargo test --manifest-path impl/Cargo.toml -p interop-platform",
+   "exit_code": 0,
+   "result": "pass：7 tests（T12-01..03 + 白名单只读 + 真机 probe 观察 + 解析脱敏 + 未验证字段显式标注）"
+  },
+  {
+   "seq": 3,
+   "purpose": "真实只读 probe（本机，供 research/platform-probes.md）",
+   "command": "cargo run -p interop-cli --bin xinterop -- doctor --json",
+   "exit_code": 0,
+   "result": "pass：os=macos/arch=aarch64；/sbin/ifconfig -l exit=0，观察到 29 个接口（仅名字）；wifi_p2p/wifi_display=unavailable（无公开 API）；media_outputs=not-run；permissions=unavailable"
+  },
+  {
+   "seq": 4,
+   "purpose": "CLI 参数错误路径",
+   "command": "cargo run -p interop-cli --bin xinterop --",
+   "exit_code": 2,
+   "result": "pass：打印用法并退出 2（未知子命令同样 2）"
+  },
+  {
+   "seq": 5,
+   "purpose": "全 workspace 回归 + 静态检查",
+   "command": "cargo test --manifest-path impl/Cargo.toml --workspace; cargo clippy --manifest-path impl/Cargo.toml --workspace --all-targets",
+   "exit_code": 0,
+   "result": "pass：60 tests 全绿（53 → 60）；clippy 0 warnings"
+  }
+ ],
+ "acceptance_mapping": {
+  "T12-01": "P2P 能力为 api-unavailable 时 WifiDirect 请求 → hardware-unavailable，且驱动器调用记录为空（零网络变更）、不留 lease；共享只读 Wi-Fi lease 正常授予且同样零写入",
+  "T12-02": "已有活跃 lease 时独占请求 → busy（不静默抢占）；走审批时 Pending 期间零网络变更、用户拒绝 → denied 仍零变更、批准后恰好一次 apply 且 rollback 随 lease 保存；release 恰好一次 rollback",
+  "T12-03": "worker_exit 回收该 subject 的 Granted lease（→reclaimed 并执行已批准 rollback 一次）、Pending 作废为 denied、其他 subject 的 lease 不受影响"
+ },
+ "extra_coverage": {
+  "probe_allowlist": "白名单仅含只读命令（程序与参数均无写操作/提权动词、无 shell）；每条附只读用途说明",
+  "probe_redaction": "解析层只保留接口名：macOS ifconfig、Linux ip -o link、Windows netsh 三种输出里的 MAC/地址/状态全部丢弃（测试用含 MAC 的样例断言）",
+  "honesty_fields": "未验证能力必须显式 not-run/unavailable 且带原因；media_outputs 在 T29 之前不得声称可用"
+ },
+ "artifacts": [
+  {
+   "path": "impl/crates/interop-platform/src/probe.rs"
+  },
+  {
+   "path": "impl/crates/interop-platform/src/radio.rs"
+  },
+  {
+   "path": "impl/crates/interop-platform/tests/radio.rs"
+  },
+  {
+   "path": "impl/apps/interop-cli/Cargo.toml"
+  },
+  {
+   "path": "impl/apps/interop-cli/src/main.rs"
+  },
+  {
+   "path": "research/platform-probes.md"
+  },
+  {
+   "path": "impl/README.md"
+  }
+ ],
+ "credentials_redacted": true,
+ "license_route_approved": false,
+ "notes": "probe 为只读设计（白名单 + 固定参数 + 不经 shell + 只保留接口名）；本 run 未执行任何网关/提权/第三方脚本。Linux/Windows 字段为 not-run（无目标机），不代填。radio arbiter 自身不做任何网络操作：唯一出口是注入的 RadioDriver，只在用户批准后调用。新依赖仅 serde/serde_json（已在阶段 1 的依赖记录中，无新第三方来源）。"
+}

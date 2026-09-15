@@ -10,6 +10,7 @@ members = [
     "crates/interop-testkit",
     "adapters/standalone-host",
     "apps/interopd",
+    "apps/interop-cli",
 ]
 
 [workspace.package]

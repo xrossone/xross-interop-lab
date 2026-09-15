@@ -22,6 +22,7 @@
 | `crates/interop-testkit` | fake clock、确定性分片/重排、fixture hash 登记、run manifest 分级、脱敏检查 | T14 |
 | `adapters/standalone-host` | standalone 显式 policy（profile 默认关闭、60s TTL、只签发 Entry scope） | T07 |
 | `apps/interopd` | headless daemon 骨架：UDS 0600 + 帧循环（Windows pipe 载体后续） | T09 |
+| `apps/interop-cli`（bin `xinterop`） | 诊断 CLI：`xinterop doctor [--json]` 输出只读平台报告 | T12 |
 
 `interop-runtime` 另含 **endpoint registry + 路由**（T11）：去重键含来源与 identity claim，
 同名/同 IP/同地址都不合并；地址候选带 TTL 与接口，接口断开即失效；用户 alias 只影响
@@ -29,7 +30,7 @@
 平台状态（拒绝而非降级）。
 
 后续按任务需要创建（docs/04 §2：不一次创建所有空 crate）：
-`apps/interop-cli`（T12 的 `doctor --json` 载体）、`impl/workers/` 与 `impl/policies/worker-profiles.json`（T13）。
+`impl/workers/` 与 `impl/policies/worker-profiles.json`（T13）。
 
 ## 依赖分层（T01-01）
 

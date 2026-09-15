@@ -12,6 +12,14 @@
    "notes": "ADR-003 执行与信任边界（用户 2026-09-15 采纳，accepted）+ decisions 台账同步 + ADR 纪律测试恢复（ADR-01..04）"
   },
   {
+   "id": "run-2026-09-15-t12-platform-probe",
+   "kind": "run-manifest",
+   "level": "build-verified",
+   "date": "2026-09-15",
+   "path": "evidence/2026-09-15-t12-platform-probe/run-manifest.json",
+   "notes": "T12 只读 platform probe + radio lease（T12-01..03 + 白名单/脱敏/诚实标注）；xinterop doctor CLI；research/platform-probes.md 为真机只读输出"
+  },
+  {
    "id": "run-2026-09-15-t11-endpoint-registry",
    "kind": "run-manifest",
    "level": "build-verified",

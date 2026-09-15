@@ -9,3 +9,4 @@ publish.workspace = true
 # 当前只做 fake 发现源（真 mDNS/SSDP 接入属阶段 3）；平台 probe 只读（T12）。
 [dependencies]
 interop-contract = { path = "../interop-contract" }
+serde = { version = "1", features = ["derive"] }

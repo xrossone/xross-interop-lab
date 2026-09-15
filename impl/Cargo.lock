@@ -57,6 +57,14 @@ dependencies = [
 ]
 
 [[package]]
+name = "interop-cli"
+version = "0.1.0"
+dependencies = [
+ "interop-platform",
+ "serde_json",
+]
+
+[[package]]
 name = "interop-contract"
 version = "0.1.0"
 dependencies = [
@@ -86,6 +94,7 @@ name = "interop-platform"
 version = "0.1.0"
 dependencies = [
  "interop-contract",
+ "serde",
 ]
 
 [[package]]

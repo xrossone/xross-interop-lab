@@ -1,0 +1,16 @@
+[package]
+name = "interop-cli"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+publish.workspace = true
+
+# 诊断 CLI（T12 起）：`xinterop doctor [--json]` 输出只读平台报告。
+# 只依赖平台 probe；不做任何网络/系统写操作。
+[[bin]]
+name = "xinterop"
+path = "src/main.rs"
+
+[dependencies]
+interop-platform = { path = "../../crates/interop-platform" }
+serde_json = "1"
