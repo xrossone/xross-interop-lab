@@ -7,6 +7,7 @@
 //! 见 F-02/F-03），区分它们靠的是"谁发的"。因此分类函数要求调用方给出 sender 角色，
 //! 而不是从报文里推断——推断会把两个来源的事实混成一个。
 
+use crate::preview;
 use interop_contract::error::{Error, ErrorCode};
 
 /// 头块上限（本仓策略；WFD 控制消息不该接近这个量级）。
@@ -15,6 +16,21 @@ pub const MAX_HEADER_BYTES: usize = 8 * 1024;
 pub const MAX_BODY_BYTES: usize = 64 * 1024;
 /// 单条消息头数量上限（本仓策略）。
 pub const MAX_HEADERS: usize = 48;
+
+/// `GET_PARAMETER`/`SET_PARAMETER` 正文的行数上限（**本仓策略值**）。
+///
+/// WFD 的参数集是固定的小列表（F-04/F-05 的名字都是有常量名的那些），上限远高于任何
+/// 真实对端所需，只用来给"先收集后校验"封顶：没有它，1 MiB 的定形正文能换来十几 MiB 的
+/// `String` 表（对抗性扫描抓到的第二个"收集先于校验"）。
+pub const MAX_PARAMETER_LINES: usize = 64;
+
+/// 参数名/取值里不得出现控制字符（含 NUL）：名字是 token，控制字符不属于任何 token。
+fn reject_control_chars(what: &str, text: &str) -> Result<(), Error> {
+    if text.bytes().any(|b| b < 0x20 || b == 0x7f) {
+        return Err(invalid(format!("{what}含控制字符：{text:?}")));
+    }
+    Ok(())
+}
 
 /// RTSP 方法名（F-02..F-11）。
 pub const METHOD_OPTIONS: &str = "OPTIONS";
@@ -195,7 +211,7 @@ fn parse_head(buf: &[u8]) -> Result<(String, Headers, usize), Error> {
         }
         let (name, value) = line
             .split_once(':')
-            .ok_or_else(|| invalid(format!("头行缺少冒号：{line:?}")))?;
+            .ok_or_else(|| invalid(format!("头行缺少冒号：{}", preview(line))))?;
         headers.push((name.trim().to_string(), value.trim().to_string()));
     }
     Ok((start_line, headers, header_end + 4))
@@ -212,7 +228,7 @@ fn take_body<'a>(buf: &'a [u8], offset: usize, headers: &Headers) -> Result<(&'a
             let n: u64 = value
                 .trim()
                 .parse()
-                .map_err(|_| invalid(format!("Content-Length 非法：{value:?}")))?;
+                .map_err(|_| invalid(format!("Content-Length 非法：{}", preview(value))))?;
             declared = Some(n);
         }
     }
@@ -429,15 +445,23 @@ pub fn parse_parameter_names(body: &str) -> Result<Vec<String>, Error> {
         if line.is_empty() {
             continue;
         }
+        if out.len() >= MAX_PARAMETER_LINES {
+            return Err(Error::new(
+                ErrorCode::ResourceLimit,
+                format!("查询行超过本仓上限 {MAX_PARAMETER_LINES} 行（策略值）"),
+            ));
+        }
         let name = line.strip_suffix(':').unwrap_or(line).trim();
         if name.is_empty() {
             return Err(invalid("查询行缺少参数名"));
         }
         if name.contains(':') {
             return Err(invalid(format!(
-                "查询行不应带取值（GET_PARAMETER 只列参数名）：{line:?}"
+                "查询行不应带取值（GET_PARAMETER 只列参数名）：{}",
+                preview(line)
             )));
         }
+        reject_control_chars("参数名", name)?;
         out.push(name.to_string());
     }
     Ok(out)
@@ -451,10 +475,20 @@ pub fn parse_parameter_body(body: &str) -> Result<Vec<(String, String)>, Error> 
         if line.is_empty() {
             continue;
         }
+        if out.len() >= MAX_PARAMETER_LINES {
+            return Err(Error::new(
+                ErrorCode::ResourceLimit,
+                format!("参数行超过本仓上限 {MAX_PARAMETER_LINES} 行（策略值）"),
+            ));
+        }
         let (name, value) = line
             .split_once(':')
-            .ok_or_else(|| invalid(format!("参数行缺少冒号：{line:?}")))?;
-        out.push((name.trim().to_string(), value.trim().to_string()));
+            .ok_or_else(|| invalid(format!("参数行缺少冒号：{}", preview(line))))?;
+        let (name, value) = (name.trim(), value.trim());
+        // 取值里的空格是合法的（描述符列表用空格分段），控制字符不是。
+        reject_control_chars("参数名", name)?;
+        reject_control_chars("参数取值", value)?;
+        out.push((name.to_string(), value.to_string()));
     }
     Ok(out)
 }
@@ -499,7 +533,8 @@ pub fn classify(req: &Request, sender: Role) -> Result<WfdMessage, Error> {
                     .unwrap_or("");
                 if value != METHOD_SETUP {
                     return Err(invalid(format!(
-                        "wfd_trigger_method 只认 {METHOD_SETUP:?}（F-06），收到 {value:?}"
+                        "wfd_trigger_method 只认 {METHOD_SETUP:?}（F-06），收到 {}",
+                        preview(value)
                     )));
                 }
                 Ok(WfdMessage::M5TriggerSetup)

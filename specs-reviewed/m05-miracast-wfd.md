@@ -43,6 +43,7 @@ P-M05-3（真实设备 codec 矩阵）blocked**：前者需要隔离 Linux 机�
 | F-29 | policy | 丢包后请求关键帧（M13）的**触发阈值与策略属本仓策略**：来源只证明该消息存在（F-10），不规定何时发 | 本仓策略（`impl/crates/proto-wfd/src/rtp.rs` 常量与测试）；消息事实见 F-10 | source-reviewed（策略由本仓定义） | yes |
 | F-31 | payload | 同一参数的两种拼写在来源里并存：R37 写 `wfd_3d_formats`，R33 写 `wfd_3d_video_formats`；R33 的可选表里还有 `wfd2_video_codecs`（R37 为 `wfd2_video_formats`）。**本仓不实现这些参数**，只登记分歧 | R37 `services/impl/wfd/wfd_session_def.h:66`；R33 `src/wfd/wfd-params.c:12-26` | source-reviewed（来源分歧，待 P-M05-2） | no |
 | F-32 | payload | `wfd_video_formats` 里 `profile`/`level` 两个字段的**读法裁决**：本仓按**位图**解释（两处来源支持——R37 的位序枚举；R33 的码率表按 1/2/4/8/16 这些位值索引）。把同一字节当"级别数字"（如 `0x02` 读成 4.2）在来源里没有依据，故不采用 | R37 `wfd_session_def.h:231-250`；R33 `src/wfd/wfd-video-codec.c:331-362`；待解释的字面量见 R34 `sink/WifiDisplaySink.cpp:515`（`02 02`） | source-reviewed（位图读法；解释仍待 P-M05-2 复核） | yes |
+| F-33 | policy | 解析器对**未限长输入**的三个处置都是**本仓策略值**（不是协议常量）：参数行数上限 `MAX_PARAMETER_LINES = 64`、视频描述符收集上限 `MAX_VIDEO_DESCRIPTOR_TOKENS = 32`、错误消息回显截断 128 字节。依据是 F-04/F-05 的参数集是固定小列表；超出即拒绝或截断，判定与 F-13/F-17/F-20 的字段规则一字未改 | 本仓策略（T46；字段形状见 F-04/F-05/F-13/F-17/F-20） | source-reviewed（策略由本仓定义） | yes |
 | F-30 | compat | 真实设备 codec/时序矩阵（Samsung/Huawei/Windows+K → sink、TV 端 sink 行为）**未固化**；WFD IE 播发与 M0–M16 完整实测序列同样未固化 | P-M05-2/P-M05-3 未关闭 | **blocked**（impl 不准入） | **no** |
 
 ## B. 与本仓实现的关系（T37 headless 切片）

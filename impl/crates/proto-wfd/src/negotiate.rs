@@ -6,7 +6,7 @@
 use crate::messages::{
     PARAM_AUDIO_CODECS, PARAM_CLIENT_RTP_PORTS, PARAM_PRESENTATION_URL, PARAM_VIDEO_FORMATS,
 };
-use crate::RTP_PORT_FALLBACK;
+use crate::{preview, RTP_PORT_FALLBACK};
 use interop_contract::error::{Error, ErrorCode};
 
 fn invalid(msg: impl Into<String>) -> Error {
@@ -18,7 +18,8 @@ fn unsupported(msg: impl Into<String>) -> Error {
 }
 
 fn hex_u8(token: &str, what: &str) -> Result<u8, Error> {
-    u8::from_str_radix(token, 16).map_err(|_| invalid(format!("{what} 不是合法十六进制字节：{token:?}")))
+    u8::from_str_radix(token, 16)
+        .map_err(|_| invalid(format!("{what} 不是合法十六进制字节：{}", preview(token))))
 }
 
 // ---------------------------------------------------------------- 分辨率表（F-19）
@@ -145,6 +146,10 @@ pub struct VideoFormatDescriptor {
     pub max_height: Option<u16>,
 }
 
+/// 视频描述符允许被收集的 token 上限（**本仓策略值**）：F-17 的字段是 9..13 段。
+/// 存在的唯一理由是给"先收集后校验"封顶，不改变任何接受/拒绝判定。
+pub const MAX_VIDEO_DESCRIPTOR_TOKENS: usize = 32;
+
 impl VideoFormatDescriptor {
     /// `slice_params` 的位布局（F-17：R33 `wfd-video-codec.c:281-287`）。
     pub fn max_slice_num(&self) -> u32 {
@@ -178,7 +183,12 @@ impl VideoFormatDescriptor {
             } else {
                 u16::from_str_radix(token, 16)
                     .map(Some)
-                    .map_err(|_| invalid(format!("{what} 既不是 none 也不是合法十六进制：{token:?}")))
+                    .map_err(|_| {
+                        invalid(format!(
+                            "{what} 既不是 none 也不是合法十六进制：{}",
+                            preview(token)
+                        ))
+                    })
             }
         };
         Ok(Self {
@@ -280,7 +290,12 @@ impl VideoFormatSet {
             if descriptor.is_empty() {
                 return Err(invalid("空的视频描述符（列表里有连续逗号）"));
             }
-            let tokens: Vec<&str> = descriptor.split_whitespace().collect();
+            // 收集上限是**本仓策略值**：F-17 的字段是 9..13 段，多出的段与今天一样被忽略，
+            // 但"先全量收集再校验"会让 1 MiB 输入换来十几 MiB 的 token 表（分帧/长度纪律同理）。
+            let tokens: Vec<&str> = descriptor
+                .split_whitespace()
+                .take(MAX_VIDEO_DESCRIPTOR_TOKENS)
+                .collect();
             formats.push(VideoFormatDescriptor::parse(&tokens)?);
         }
         Ok(Self {
@@ -367,10 +382,12 @@ impl AudioCodecDescriptor {
     }
 
     fn parse(descriptor: &str) -> Result<Self, Error> {
-        let tokens: Vec<&str> = descriptor.split_whitespace().collect();
+        // take(4)：判定"恰好 3 段"只需要看到第 4 段，不必把整串切成 token 表。
+        let tokens: Vec<&str> = descriptor.split_whitespace().take(4).collect();
         if tokens.len() != 3 {
             return Err(invalid(format!(
-                "音频描述符需要恰好三段 `CODEC MODES LATENCY`（F-20）：{descriptor:?}"
+                "音频描述符需要恰好三段 `CODEC MODES LATENCY`（F-20）：{}",
+                preview(descriptor)
             )));
         }
         Ok(Self {
@@ -446,10 +463,12 @@ pub struct RtpPorts {
 
 impl RtpPorts {
     pub fn parse(value: &str) -> Result<Self, Error> {
-        let tokens: Vec<&str> = value.split_whitespace().collect();
+        // take(5)：判定"恰好 4 段"只需要看到第 5 段（同上：不先全量收集）。
+        let tokens: Vec<&str> = value.split_whitespace().take(5).collect();
         if tokens.len() != 4 {
             return Err(invalid(format!(
-                "wfd_client_rtp_ports 形状应为 `RTP/AVP/UDP;unicast <p0> <p1> mode=play`（F-13）：{value:?}"
+                "wfd_client_rtp_ports 形状应为 `RTP/AVP/UDP;unicast <p0> <p1> mode=play`（F-13）：{}",
+                preview(value)
             )));
         }
         if tokens[0] != "RTP/AVP/UDP;unicast" {
@@ -679,7 +698,8 @@ impl ContentProtection {
             }
         }
         Err(invalid(format!(
-            "未知的 wfd_content_protection 取值 {value:?}（F-22 只固定 none 与 HDCP2.0/2.1 前缀）"
+            "未知的 wfd_content_protection 取值 {}（F-22 只固定 none 与 HDCP2.0/2.1 前缀）",
+            preview(value)
         )))
     }
 

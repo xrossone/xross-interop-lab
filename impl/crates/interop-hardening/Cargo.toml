@@ -1,0 +1,23 @@
+[package]
+name = "interop-hardening"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+publish.workspace = true
+
+# 只承载测试的 crate（无运行时产物、不被打包进任何 app）。
+# 存在的理由有两个，且只有把全部解码器放进**同一个测试二进制**才能做到：
+#   1. 计数分配器：要测量"分配量是否被输入的声明长度牵着走"，必须独占进程的 global allocator；
+#   2. 语料 digest：一处汇总所有目标的 (seed, label, digest)，直接抄进 evidence。
+# 依赖全部是 dev-dependencies，因此本 crate 不进任何运行时的依赖图。
+[dependencies]
+
+[dev-dependencies]
+interop-contract = { path = "../interop-contract" }
+interop-ipc = { path = "../interop-ipc" }
+interop-testkit = { path = "../interop-testkit" }
+proto-airplay = { path = "../proto-airplay" }
+proto-cast = { path = "../proto-cast" }
+proto-quickshare = { path = "../proto-quickshare" }
+proto-upnp = { path = "../proto-upnp" }
+proto-wfd = { path = "../proto-wfd" }

@@ -1,0 +1,11 @@
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.03s
+     Running tests/allocation_budget.rs (target/debug/deps/allocation_budget-fb2ca932421ce38e)
+对抗性输入 10896 个（含长度炸弹），覆盖 48 个解码入口；全部满足峰值分配上限
+对抗性输入下峰值分配最多的三个入口：
+  ipc/frame/read_frame: 262203 字节（输入 29 字节）
+  upnp/soap/parse_raw: 3042 字节（输入 295 字节）
+  wfd/negotiate/content_protection: 2642 字节（输入 118 字节）
+形状化大输入（14 种，按各入口的调用方上限截断）下峰值分配最多的三个入口：
+  upnp/xml/parse_document ← xml-siblings（65536 B）: 2698861 字节
+  upnp/soap/parse_raw ← xml-siblings（65536 B）: 2698861 字节
+  wfd/negotiate/transport ← varint-continuation（65536 B）: 655412 字节

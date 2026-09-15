@@ -22,6 +22,22 @@
 #![forbid(unsafe_code)]
 #![allow(clippy::result_large_err)]
 
+/// 错误消息里回显输入时用的**截断预览**（本仓策略：最多 128 字节）。
+///
+/// 回显的字节是不可信的：把整行/整段塞进 `format!` 会让"1 MiB 的正文"变成"若干 MiB 的
+/// 错误消息"（对抗性扫描抓到的第二类放大）。这里只保留开头，并注明被截掉多少字节。
+pub(crate) fn preview(value: &str) -> String {
+    const MAX: usize = 128;
+    if value.len() <= MAX {
+        return format!("{value:?}");
+    }
+    let mut end = MAX;
+    while end > 0 && !value.is_char_boundary(end) {
+        end -= 1;
+    }
+    format!("{:?}…(+{}B)", &value[..end], value.len() - end)
+}
+
 pub mod ie;
 pub mod messages;
 pub mod negotiate;

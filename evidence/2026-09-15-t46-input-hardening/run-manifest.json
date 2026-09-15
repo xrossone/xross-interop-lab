@@ -1,0 +1,62 @@
+{
+ "schema_version": 1,
+ "run_id": "2026-09-15-t46-input-hardening",
+ "task": "T46 · 不可信输入加固：全部吃线上字节的解析入口的确定性对抗性扫描 + 分配预算（headless）",
+ "kind": "manual",
+ "evidence_level": "build-verified",
+ "is_test_evidence": true,
+ "synthetic": true,
+ "case_ids": [
+  "T46-01",
+  "T46-02",
+  "T46-03",
+  "T46-04",
+  "T46-05"
+ ],
+ "result": "pass",
+ "commands": [
+  {
+   "seq": 1,
+   "purpose": "扫描器：testkit 增 adversarial（确定性生成器 + 扫描 + digest），零依赖",
+   "command": "cargo test --manifest-path impl/Cargo.toml -p interop-testkit",
+   "exit_code": 0,
+   "result": "pass。生成器复用既有 xorshift64*（peer.rs）；语料四类形状 + 长度炸弹 + 形状化大输入；不引第三方模糊器（gate 机器检查）"
+  },
+  {
+   "seq": 2,
+   "purpose": "契约扫描：48 个入口 × 227 用例（greens 无违规）+ 基线必须被自己的解码器接受",
+   "command": "cargo test --manifest-path impl/Cargo.toml -p interop-hardening --test decode_campaign -- --nocapture",
+   "exit_code": 0,
+   "result": "pass：10896 个对抗性用例，48 个解码入口，violations=0。基线健全性断言自身抓出我 5 处语料基线写错（next_protocol 取值、CastMessage 正文/整帧混用、wfd_audio_codecs 与 RtpPorts/Transport 字面量、MediaForm::from_wire 取值）——全部是测试数据错，不是实现错"
+  },
+  {
+   "seq": 3,
+   "purpose": "分配预算：计数 GlobalAlloc（峰值存活）+ 逐个输入断言",
+   "command": "cargo test --manifest-path impl/Cargo.toml -p interop-hardening --test allocation_budget -- --nocapture",
+   "exit_code": 0,
+   "result": "pass：全部输入满足峰值分配上限。指标先从「累计分配」改成「峰值存活」——累计会把任何几何增长的缓冲（Vec/String 2 倍扩容）算成放大，而那不是缺陷"
+  },
+  {
+   "seq": 4,
+   "purpose": "red→green：扫描抓到两处真实缺陷，先确认失败再修",
+   "command": "cargo test --manifest-path impl/Cargo.toml -p interop-hardening --test allocation_budget",
+   "exit_code": 0,
+   "result": "red（修前）→ green（修后）。见 notes 的两条记录；两处都是「先全量收集/回显，再校验」这一类，不是协议语义错"
+  },
+  {
+   "seq": 5,
+   "purpose": "全量回归 + 静态检查 + lab 纪律",
+   "command": "cargo test --manifest-path impl/Cargo.toml --workspace; cargo clippy --manifest-path impl/Cargo.toml --workspace --all-targets; python3 -m unittest discover -s tools -t tools",
+   "exit_code": 0,
+   "result": "pass：impl 261 → **273** tests 全绿（新增 1 testkit 模块 + 12 例扫描/分配用例）；clippy 0 warnings；lab 92 → 100 tests OK（T46 gate 8 例）"
+  }
+ ],
+ "artifacts": [
+  "evidence/input-hardening-corpus/corpus-plan.json",
+  "evidence/2026-09-15-t46-input-hardening/decode-scan.txt",
+  "evidence/2026-09-15-t46-input-hardening/allocation-budget.txt"
+ ],
+ "credentials_redacted": true,
+ "license_route_approved": false,
+ "notes": "red→green 记录（两处真实缺陷，均由扫描发现、修后由同一断言守住）：\n\n1. **wfd/negotiate/rtp_ports（以及同族的 video/audio 描述符）**：`value.split_whitespace().collect()` **先全量收集再判段数**。1 MiB 的「合法 token 串」输入换来 13.1 MB 峰值分配（上限 4.45 MB）。red 证据：`wfd/negotiate/rtp_ports: 1 MiB 输入导致 13106960 字节分配（上限 4456448）`。green 修法：判定「恰好 N 段」只需要看到第 N+1 段 —— `take(4)`（音频描述符）/`take(5)`（RTP 端口），视频描述符按**本仓策略上界** `MAX_VIDEO_DESCRIPTOR_TOKENS = 32` 截断（F-17 的字段是 9..13 段，多出的段与今天一样被忽略，接受/拒绝判定一字未改）。\n\n2. **wfd/messages/parse_parameter_names / parse_parameter_body**：行数无上限收集，且**错误消息把整行回显**进 `format!`。1 MiB 的 NUL/LF 定形正文换来 14.2 MB 峰值分配（500k 个 `String`）。red 证据：`wfd/messages/parse_parameter_names: 1 MiB「protobuf-empty-fields」输入导致 14155776 字节峰值分配（上限 4456448）`。green 修法：① 行数上限 `MAX_PARAMETER_LINES = 64`（**本仓策略值**，WFD 参数集是固定小列表，超出返回 resource-limit）；② 参数名/取值不得含控制字符（NUL 不是任何 token 的一部分）；③ `crate::preview()` 截断预览（128 字节 + 被截字节数）替换错误消息里对未限长输入的整段回显。\n\n**已知且明确不做的**：错误消息回显输入这一形态在其他解析器里仍然存在（RTSP/SSDP/SOAP/CASTV2/Quick Share 的错误里会带上肇事的短字段），本切片只截断了实测会放大的两处（整行回显）。它们的放大上限由调用方正文上限决定（如 WFD 64 KiB），所以是有界的；要不要全仓统一截断，等一次专门的错误消息纪律切片再说。\n\n**扫描的边界（不许越界声明）**：这里证明的是「任意字节不 panic、消费记账不越界、分配不被声明长度牵着走、未实现的入口一个都不接受」，**不是**「协议实现正确」，更不是互操作证据。协议语义仍由各 profile 的 gate 字段行与语料负责。"
+}

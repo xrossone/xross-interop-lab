@@ -24,8 +24,9 @@ impl/                           # 实现 workspace（plans/01 代码路径映射
   crates/interop-runtime/       # HostPorts + fake host（T07）；
                                 # 会话注册表/事件/取消（T10）
   crates/interop-ipc/           # 本地控制面：长度前缀 JSON-RPC + hello 认证
-  crates/interop-testkit/       # fake clock/确定性分片/fixture 登记/run manifest
+  crates/interop-testkit/       # fake clock/确定性分片/fixture 登记/run manifest/对抗性输入扫描（T46）
   crates/interop-media/         # 媒体形态/三时钟域/format tracker/有界帧队列 + null/file sink（T28/T29）
+  crates/interop-hardening/     # 只放测试：48 个线上解析入口的对抗性扫描 + 分配预算（无运行时依赖，T46）
   crates/proto-airplay/         # AirPlay legacy 控制链：严格 RTSP/能力门禁/Bonjour 类型/keying seam（T32）
   crates/proto-quickshare/      # Quick Share/UKEY2：TCP framing/握手状态机/payload gate（T19/T20）
   adapters/standalone-host/     # standalone 显式 policy + 最小权限 host
@@ -133,11 +134,11 @@ tools/                          # 仓库检查脚本与测试（python3 -m unitt
   显式 resample、XMD1 往返与负向、UKEY2 握手与分片等价；输出恒带 `evidence_level=simulated` + blocked +
   待用户手动清单（见 [evidence/2026-09-15-t5-demo-cli](evidence/2026-09-15-t5-demo-cli/demo-report.txt)）。
 - **验证**（阶段 3 收尾时）：`cargo test --manifest-path impl/Cargo.toml --workspace` **113 tests 全绿**；
-  clippy 0 warnings；`python3 -m unittest discover -s tools` **39 tests OK**（阶段 4 首批后为
-  **199 tests / lab 68 tests**，见下）。每 task 的 run manifest 见
+  clippy 0 warnings；`python3 -m unittest discover -s tools` **39 tests OK**（阶段 4 后为
+  **273 tests / lab 100 tests**，见下）。每 task 的 run manifest 见
   [evidence/index.json](evidence/index.json)。
 
-**阶段 4 首批（2026-09-15 稍后追加，六项已完成）**
+**阶段 4（2026-09-15 稍后追加；协议切片全部完成，另加一次输入加固）**
 
 - **T21 Quick Share 传输闭环（headless 部分）**：`crates/proto-quickshare` 新增
   `secure_message`（D2D 密钥链 + SecureMessage AES-256-CBC/HMAC-SHA256 + 严格 +1 序号，跳号/重放即
@@ -274,6 +275,27 @@ tools/                          # 仓库检查脚本与测试（python3 -m unitt
   GENA 只做校验与拒绝、不建立回调连接。证据：
   [evidence/2026-09-15-t42-dlna-renderer](evidence/2026-09-15-t42-dlna-renderer/run-manifest.json)；
   demo 的 `dlna` 段新增 renderer 子块（D-10 扩展）。
+
+- **T46 不可信输入加固（headless，2026-09-15 追加）**：所有吃线上字节的解析入口现在有**确定性对抗性扫描**。
+  `interop-testkit::adversarial`（零依赖：复用既有 xorshift64\* + FNV-1a 派生 seed，固定 seed ⇒ 固定字节集，
+  逐入口记 sha256 digest）＋ **测试专用 crate** `interop-hardening`（`[dependencies]` 为空，只做扫描，
+  也正因为要独占进程的 `GlobalAlloc` 才单列一个 crate）。48 个入口 × 227 用例 = **10896 个自撰输入**，
+  断言四件事：任意字节不 panic（dev profile 的算术溢出检查会抓长度+偏移回绕）、`Ok` 时消费长度落在 `(0, len]`、
+  **基线帧必须被自己的解码器接受**（编码器/解码器脱节先炸）、未实现的入口**一个都不接受**
+  （`ALWAYS_REJECTS`：WFD IE 容器=OUI 不存在、AirPlay 配对端点=交换不实现）。
+  分配预算用进程内计数分配器逐输入测量**峰值存活**（不是累计——累计会把 `Vec`/`String` 的 2 倍扩容算成放大），
+  上限 = `max(64 KiB, 8×输入, 流式声明上限, 结构预算)`；大输入按**调用方上限**截断（AirPlay 正文 256 KiB、
+  WFD 正文 64 KiB、IP1 帧 256 KiB、SSDP 报文 8 KiB…），炸弹极值停在 16 MiB（4 GiB 的失败模式是进程 abort，
+  抓不住也不该抓）。扫描抓出**两处真实缺陷**（red→green 记录在 run manifest）：① WFD 协商参数
+  「先全量收集再判段数」——1 MiB 合法 token 串换来 13.1 MB 分配，修法 `take(4)`/`take(5)` 与
+  `MAX_VIDEO_DESCRIPTOR_TOKENS = 32`（接受/拒绝判定一字未改）；② 参数正文解析「行数无上限 + 错误消息整行回显」
+  ——1 MiB 定形正文换来 14.2 MB，修法 `MAX_PARAMETER_LINES = 64`（**本仓策略值**，已登记为 m05 F-33）、
+  控制字符拒绝、`preview()` 128 字节截断。**不作越界声明**：这些断言证明的是"不崩、记账不越界、
+  分配不被声明长度牵着走、未实现的入口不接受"，不是协议正确性，更不是互操作证据。
+  `tools/test_hardening_gate.py` 把覆盖关系变成机器检查（每个线上解析入口要么有用例标签、要么在**带理由**的
+  排除名单里且名单不得过期；无第三方模糊器依赖；`unsafe` 只许计数分配器那一处）。
+  证据：[evidence/2026-09-15-t46-input-hardening](evidence/2026-09-15-t46-input-hardening/run-manifest.json)、
+  语料计划 [evidence/input-hardening-corpus](evidence/input-hardening-corpus/corpus-plan.json)。
 
 **未开始 / 待批准**：T30（UxPlay provider 闭环，需 scope S1/S2）、T33（AirPlay 音视频接收真机）、
 T22（Quick Share 发送闭环，需 QR/可发现路径）、Quick Share 发现源

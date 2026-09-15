@@ -278,6 +278,20 @@ dependencies = [
 ]
 
 [[package]]
+name = "interop-hardening"
+version = "0.1.0"
+dependencies = [
+ "interop-contract",
+ "interop-ipc",
+ "interop-testkit",
+ "proto-airplay",
+ "proto-cast",
+ "proto-quickshare",
+ "proto-upnp",
+ "proto-wfd",
+]
+
+[[package]]
 name = "interop-ipc"
 version = "0.1.0"
 dependencies = [
