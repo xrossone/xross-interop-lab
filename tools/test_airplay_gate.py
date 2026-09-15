@@ -311,6 +311,16 @@ class AirPlayGate(unittest.TestCase):
                 source and source not in {"-", "—", "来源"},
                 f"字段行缺少来源：{cells}",
             )
+            # 抓包来源是独立类别：必须给出**存在的** evidence 路径（观测可以入表，但不构成实现依据）
+            capture_path = None
+            if "抓包" in source:
+                m = re.search(r"(evidence/[A-Za-z0-9._\-/]+)", source)
+                self.assertIsNotNone(m, f"抓包来源必须给出 evidence 路径：{source!r}")
+                capture_path = m.group(1).rstrip("/")
+                self.assertTrue(
+                    (LAB / capture_path).exists(),
+                    f"抓包来源引用的证据路径不存在：{capture_path}",
+                )
             is_known_source = (
                 "实测" in source
                 or "UxPlay@" in source
@@ -318,10 +328,11 @@ class AirPlayGate(unittest.TestCase):
                 or "待固化" in source
                 or "decisions/" in source
                 or "计划" in source
+                or capture_path is not None
             )
             self.assertTrue(
                 is_known_source,
-                f"来源必须可复查（实测/UxPlay@/shairplay-rust@/待固化/decisions/计划）：{source}",
+                f"来源必须可复查（实测/UxPlay@/shairplay-rust@/待固化/decisions/计划/抓包+evidence 路径）：{source}",
             )
             checked += 1
         self.assertGreaterEqual(checked, 12, "字段级事实表至少覆盖 12 行")

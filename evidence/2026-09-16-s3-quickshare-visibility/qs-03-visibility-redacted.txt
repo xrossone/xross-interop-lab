@@ -1,0 +1,131 @@
+# 脱敏摘录（858 包 / 245.557 s）
+原文 sha256: ade3170ac897fc282ef97b64e957c44d82f04c734482b017e08609f23ae986b7
+
+## 流
+- udp <ip-1>:5353 → <ip-2>:5353 561 包 / 160920 字节 [0.0s..245.35s] mdns
+- udp <ip-3>:5353 → <ip-2>:5353 85 包 / 19563 字节 [5.325s..199.373s] mdns
+- udp <ip-4>:5353 → <ip-5>:5353 85 包 / 21263 字节 [5.325s..199.373s] mdns
+- udp <ip-6>:5353 → <ip-2>:5353 21 包 / 5170 字节 [7.863s..245.495s] mdns
+- udp <ip-7>:5353 → <ip-5>:5353 21 包 / 5590 字节 [7.863s..245.495s] mdns
+- udp <ip-8>:5353 → <ip-2>:5353 17 包 / 4214 字节 [7.884s..245.557s] mdns
+- udp <ip-9>:5353 → <ip-5>:5353 17 包 / 4554 字节 [7.884s..245.557s] mdns
+- udp <ip-10>:5353 → <ip-2>:5353 19 包 / 2617 字节 [17.919s..235.929s] mdns
+- udp <ip-11>:5353 → <ip-2>:5353 6 包 / 1707 字节 [39.014s..155.347s] mdns
+- udp <ip-12>:5353 → <ip-5>:5353 6 包 / 1827 字节 [39.014s..155.347s] mdns
+- udp <ip-13>:5353 → <ip-2>:5353 8 包 / 2820 字节 [39.014s..168.858s] mdns
+- udp <ip-14>:5353 → <ip-5>:5353 8 包 / 2980 字节 [39.016s..168.858s] mdns
+- udp <ip-15>:5353 → <ip-5>:5353 3 包 / 1029 字节 [107.212s..155.341s] mdns
+- udp <ip-16>:5353 → <ip-5>:5353 1 包 / 107 字节 [185.343s..185.343s] mdns
+
+## mDNS 服务
+- _xross1._udp.local port=9559 实例数=1 广播者=['<ip-1>'] [0.0s..245.35s]
+  实例 <instance-1>: 首字符='d' 长度=52 [0.0s..245.35s]
+- _FC9F5ED42C8A._tcp.local port=53601 实例数=6 广播者=['<ip-3>', '<ip-4>'] [5.325s..176.129s]
+  实例 <instance-3>: 首字符='I' 长度=14 [5.325s..56.627s]
+  实例 <instance-15>: 首字符='I' 长度=14 [52.633s..67.791s]
+  实例 <instance-17>: 首字符='I' 长度=14 [108.646s..121.344s]
+  实例 <instance-18>: 首字符='I' 长度=14 [117.657s..123.186s]
+  实例 <instance-19>: 首字符='I' 长度=14 [122.675s..130.667s]
+  实例 <instance-29>: 首字符='I' 长度=14 [167.423s..176.129s]
+  TXT 键: f, n, IPv4
+  TXT 常量: f=5200
+  TXT 已脱敏: n <text len=23>
+  TXT 已脱敏: IPv4 <ip len=13>
+  n 位域序列 @6.041s: bitfield=32 解码长度=17 无名字段
+- _asquic._udp.local port=52468 实例数=1 广播者=['<ip-6>', '<ip-7>', '<ip-8>', '<ip-9>'] [7.863s..245.557s]
+  实例 <instance-7>: 首字符='C' 长度=36 [7.863s..245.557s]
+  TXT 键: 
+- _nearbypresence._tcp.local port=38691 实例数=1 广播者=['<ip-3>', '<ip-4>'] [13.415s..141.209s]
+  实例 <instance-9>: 首字符='n' 长度=56 [13.415s..141.209s]
+  TXT 键: bp
+  TXT 已脱敏: bp <long-text len=99>
+- _companion-link._tcp.local port=49239 实例数=3 广播者=['<ip-11>', '<ip-12>', '<ip-13>', '<ip-14>', '<ip-10>', '<ip-15>', '<ip-6>', '<ip-7>', '<ip-8>', '<ip-9>'] [39.014s..155.343s]
+  实例 <instance-10>: 首字符='H' 长度=13 [39.014s..155.348s]
+  实例 <instance-16>: 首字符='H' 长度=22 [107.212s..155.341s]
+  实例 <instance-21>: 首字符='M' 长度=11 [155.297s..155.343s]
+  TXT 键: rpMac, rpHN, rpFl, rpHA, rpVr, rpAD, rpHI, rpBA
+  TXT 常量: rpMac=0
+  TXT 常量: rpFl=0x10000
+  TXT 已脱敏: rpHN <text len=12>
+  TXT 已脱敏: rpHA <text len=12>
+  TXT 已脱敏: rpVr <text len=5>
+  TXT 已脱敏: rpAD <text len=12>
+  TXT 已脱敏: rpHI <text len=12>
+  TXT 已脱敏: rpBA <mac len=17>
+- _remotepairing._tcp.local port=None 实例数=2 广播者=['<ip-13>', '<ip-14>'] [40.038s..168.858s]
+  实例 <instance-13>: 首字符='7' 长度=36 [40.038s..168.858s]
+  实例 <instance-14>: 首字符='B' 长度=36 [40.038s..168.858s]
+- _device-info._tcp.local port=None 实例数=2 广播者=['<ip-6>', '<ip-7>', '<ip-10>', '<ip-15>', '<ip-8>', '<ip-9>'] [155.297s..155.343s]
+  实例 <instance-21>: 首字符='M' 长度=11 [155.297s..155.343s]
+  实例 <instance-16>: 首字符='H' 长度=22 [107.212s..155.341s]
+  TXT 键: model, osxvers, icolor
+  TXT 常量: osxvers=25
+  TXT 常量: icolor=9
+  TXT 已脱敏: model <text len=7>
+- _airplay._tcp.local port=None 实例数=2 广播者=['<ip-6>', '<ip-7>', '<ip-8>', '<ip-9>', '<ip-11>', '<ip-12>', '<ip-13>', '<ip-14>'] [155.297s..155.348s]
+  实例 <instance-21>: 首字符='M' 长度=11 [155.297s..155.343s]
+  实例 <instance-10>: 首字符='H' 长度=13 [39.014s..155.348s]
+  TXT 键: act, acl, deviceid, fex, features, rsf, flags, gid, igl, gcgl, model, at, protovers, pi, psi, pk, srcvers
+  TXT 常量: act=2
+  TXT 常量: acl=0
+  TXT 常量: features=0x4A7FCFD5,0x38174FDE
+  TXT 常量: rsf=0x8
+  TXT 常量: flags=0x204
+  TXT 常量: igl=0
+  TXT 常量: gcgl=0
+  TXT 常量: at=4
+  TXT 已脱敏: deviceid <mac len=17>
+  TXT 已脱敏: fex <text len=16>
+  TXT 已脱敏: gid <uuid len=36>
+  TXT 已脱敏: model <text len=8>
+  TXT 已脱敏: protovers <text len=3>
+  TXT 已脱敏: pi <uuid len=36>
+  TXT 已脱敏: psi <uuid len=36>
+  TXT 已脱敏: pk <hex-blob len=64>
+  TXT 已脱敏: srcvers <text len=8>
+
+## mDNS 查询
+- _xross1._udp.local type=12 ×278（询问者：<ip-1>×278）
+- _FC9F5ED42C8A._tcp.local type=255 ×24（询问者：<ip-3>×12, <ip-4>×12）
+- _asquic._udp.local type=255 ×30（询问者：<ip-6>×9, <ip-7>×9, <ip-8>×6, <ip-9>×6）
+- _nearbypresence._tcp.local type=255 ×6（询问者：<ip-3>×3, <ip-4>×3）
+- _googlecast._tcp.local type=12 ×16（询问者：<ip-10>×16）
+- _233637DE._sub._googlecast._tcp.local type=12 ×16（询问者：<ip-10>×16）
+- _remotepairing._tcp.local type=12 ×4（询问者：<ip-13>×2, <ip-14>×2）
+- _remotepairing._tcp.local type=16 ×18（询问者：<ip-13>×9, <ip-14>×9）
+- _quickshare._tcp.local type=12 ×26（询问者：<ip-3>×13, <ip-4>×13）
+- _FC9F5ED42C8A._tcp.local type=12 ×30（询问者：<ip-3>×15, <ip-4>×15）
+- _sub._apple-mobdev2._tcp.local type=12 ×4（询问者：<ip-11>×1, <ip-12>×1, <ip-13>×1, <ip-14>×1）
+- _continuity._tcp.local type=12 ×4（询问者：<ip-11>×1, <ip-12>×1, <ip-13>×1, <ip-14>×1）
+- _airplay._tcp.local type=16 ×8（询问者：<ip-11>×3, <ip-12>×3, <ip-13>×1, <ip-14>×1）
+- _test.local type=65 ×4（询问者：<ip-11>×1, <ip-12>×1, <ip-13>×1, <ip-14>×1）
+- _test.local type=28 ×4（询问者：<ip-11>×1, <ip-12>×1, <ip-13>×1, <ip-14>×1）
+- _test.local type=1 ×4（询问者：<ip-11>×1, <ip-12>×1, <ip-13>×1, <ip-14>×1）
+- _dns-sd._udp.local type=12 ×2（询问者：<ip-13>×1, <ip-14>×1）
+- _apple-mobdev._tcp.local type=12 ×2（询问者：<ip-13>×1, <ip-14>×1）
+- _apple-pairable._tcp.local type=12 ×2（询问者：<ip-13>×1, <ip-14>×1）
+- _airport._tcp.local type=12 ×2（询问者：<ip-13>×1, <ip-14>×1）
+- _uscan._tcp.local type=12 ×2（询问者：<ip-13>×1, <ip-14>×1）
+- _ptp._tcp.local type=12 ×2（询问者：<ip-13>×1, <ip-14>×1）
+- _pdl-datastream._tcp.local type=12 ×2（询问者：<ip-13>×1, <ip-14>×1）
+- _ipp._tcp.local type=12 ×3（询问者：<ip-13>×1, <ip-14>×1, <ip-16>×1）
+- _scanner._tcp.local type=12 ×2（询问者：<ip-13>×1, <ip-14>×1）
+- _printer._tcp.local type=12 ×2（询问者：<ip-13>×1, <ip-14>×1）
+- _ippusb._tcp.local type=12 ×2（询问者：<ip-13>×1, <ip-14>×1）
+- _ipps._tcp.local type=12 ×3（询问者：<ip-13>×1, <ip-14>×1, <ip-16>×1）
+- _uscans._tcp.local type=12 ×2（询问者：<ip-13>×1, <ip-14>×1）
+- _rdlink._tcp.local type=12 ×2（询问者：<ip-13>×1, <ip-14>×1）
+- _companion-link._tcp.local type=12 ×2（询问者：<ip-13>×1, <ip-14>×1）
+- _hap._tcp.local type=12 ×2（询问者：<ip-13>×1, <ip-14>×1）
+- _hap._udp.local type=12 ×2（询问者：<ip-13>×1, <ip-14>×1）
+- _remotepairing-manual-pairing._tcp.local type=12 ×2（询问者：<ip-13>×1, <ip-14>×1）
+- _afpovertcp._tcp.local type=12 ×2（询问者：<ip-13>×1, <ip-14>×1）
+- _adisk._tcp.local type=12 ×2（询问者：<ip-13>×1, <ip-14>×1）
+
+## 脱敏统计
+- text_pseudonyms: 5
+- ip_pseudonyms: 16
+- instance_pseudonyms: 30
+- redacted_txt_values: 19
+- skipped_frames: 0
+- non_ip_frames: 0

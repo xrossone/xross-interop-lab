@@ -470,6 +470,14 @@
    "date": "2026-09-16",
    "path": "evidence/2026-09-16-s3-quickshare-discovery/run-manifest.json",
    "notes": "S3 首次抓包（ Quick Share 发现，用户设备 + Mac）。**已确认**：服务类型 `_FC9F5ED42C8A._tcp` 与 f02 F-01/F-03 逐字一致（F-03 的 SHA256(\"NearbySharing\") 当场自证）；实例名 14 字符 base64url 且首字符恒为 I ⇔ 10 字节且以 0x23 开头（F-01 布局）；TXT `n` 解出 17 字节 = 1 位域 + 16 字节识别材料。**待考**：位域 0x32 的两种读法各自与一条观测冲突（MSB 先说不可见但用户开着所有人；LSB 先说可见但 F-02 称可见时带设备名而实测没有）、TXT 键 f/IPv4 为 F-02 未登记项 → 决定性实验＝三种可见性档位各抓一次。发现能力仍 blocked（F-41/F-42）。"
+  },
+  {
+   "id": "run-2026-09-16-s3-quickshare-visibility",
+   "kind": "run-manifest",
+   "level": "manual",
+   "date": "2026-09-16",
+   "path": "evidence/2026-09-16-s3-quickshare-visibility/run-manifest.json",
+   "notes": "S3 抓包 #2（三档可见性差分）。**关键读数**：`n` 位域在 245.6 s 内恒为 0x32（17 字节、无名字段），端口/TXT 键亦不变 ⇒ **可见性档位未改变 mDNS 广播字节**（与 F-42 预期不符）；广播呈突发（6 窗口，间隔 35–70 s 静默），每突发换新实例名。结论停在「档位时序待用户确认」。副产物：库存 Apple 接收端 `_airplay._tcp` TXT（features=0x4A7FCFD5,0x38174FDE 等，已登记为 m01 对照行）与同设备的 `_nearbypresence._tcp`（端口 38691，TXT `bp`）。"
   }
  ]
 }

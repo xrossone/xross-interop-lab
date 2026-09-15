@@ -1,0 +1,1280 @@
+{
+ "meta": {
+  "source_sha256": "ade3170ac897fc282ef97b64e957c44d82f04c734482b017e08609f23ae986b7",
+  "source_bytes": 248113,
+  "linktype": 1,
+  "packet_count": 858,
+  "first_ts": 1789497563.571749,
+  "last_ts": 1789497809.128317,
+  "duration_s": 245.557,
+  "redactor": "tools/capture_redact.py"
+ },
+ "flows": [
+  {
+   "proto": "udp",
+   "src": "<ip-1>",
+   "sport": 5353,
+   "dst": "<ip-2>",
+   "dport": 5353,
+   "family": "v4",
+   "packets": 561,
+   "bytes": 160920,
+   "protocol_hint": "mdns",
+   "first_ts_rel": 0.0,
+   "last_ts_rel": 245.35
+  },
+  {
+   "proto": "udp",
+   "src": "<ip-3>",
+   "sport": 5353,
+   "dst": "<ip-2>",
+   "dport": 5353,
+   "family": "v4",
+   "packets": 85,
+   "bytes": 19563,
+   "protocol_hint": "mdns",
+   "first_ts_rel": 5.325,
+   "last_ts_rel": 199.373
+  },
+  {
+   "proto": "udp",
+   "src": "<ip-4>",
+   "sport": 5353,
+   "dst": "<ip-5>",
+   "dport": 5353,
+   "family": "v6",
+   "packets": 85,
+   "bytes": 21263,
+   "protocol_hint": "mdns",
+   "first_ts_rel": 5.325,
+   "last_ts_rel": 199.373
+  },
+  {
+   "proto": "udp",
+   "src": "<ip-6>",
+   "sport": 5353,
+   "dst": "<ip-2>",
+   "dport": 5353,
+   "family": "v4",
+   "packets": 21,
+   "bytes": 5170,
+   "protocol_hint": "mdns",
+   "first_ts_rel": 7.863,
+   "last_ts_rel": 245.495
+  },
+  {
+   "proto": "udp",
+   "src": "<ip-7>",
+   "sport": 5353,
+   "dst": "<ip-5>",
+   "dport": 5353,
+   "family": "v6",
+   "packets": 21,
+   "bytes": 5590,
+   "protocol_hint": "mdns",
+   "first_ts_rel": 7.863,
+   "last_ts_rel": 245.495
+  },
+  {
+   "proto": "udp",
+   "src": "<ip-8>",
+   "sport": 5353,
+   "dst": "<ip-2>",
+   "dport": 5353,
+   "family": "v4",
+   "packets": 17,
+   "bytes": 4214,
+   "protocol_hint": "mdns",
+   "first_ts_rel": 7.884,
+   "last_ts_rel": 245.557
+  },
+  {
+   "proto": "udp",
+   "src": "<ip-9>",
+   "sport": 5353,
+   "dst": "<ip-5>",
+   "dport": 5353,
+   "family": "v6",
+   "packets": 17,
+   "bytes": 4554,
+   "protocol_hint": "mdns",
+   "first_ts_rel": 7.884,
+   "last_ts_rel": 245.557
+  },
+  {
+   "proto": "udp",
+   "src": "<ip-10>",
+   "sport": 5353,
+   "dst": "<ip-2>",
+   "dport": 5353,
+   "family": "v4",
+   "packets": 19,
+   "bytes": 2617,
+   "protocol_hint": "mdns",
+   "first_ts_rel": 17.919,
+   "last_ts_rel": 235.929
+  },
+  {
+   "proto": "udp",
+   "src": "<ip-11>",
+   "sport": 5353,
+   "dst": "<ip-2>",
+   "dport": 5353,
+   "family": "v4",
+   "packets": 6,
+   "bytes": 1707,
+   "protocol_hint": "mdns",
+   "first_ts_rel": 39.014,
+   "last_ts_rel": 155.347
+  },
+  {
+   "proto": "udp",
+   "src": "<ip-12>",
+   "sport": 5353,
+   "dst": "<ip-5>",
+   "dport": 5353,
+   "family": "v6",
+   "packets": 6,
+   "bytes": 1827,
+   "protocol_hint": "mdns",
+   "first_ts_rel": 39.014,
+   "last_ts_rel": 155.347
+  },
+  {
+   "proto": "udp",
+   "src": "<ip-13>",
+   "sport": 5353,
+   "dst": "<ip-2>",
+   "dport": 5353,
+   "family": "v4",
+   "packets": 8,
+   "bytes": 2820,
+   "protocol_hint": "mdns",
+   "first_ts_rel": 39.014,
+   "last_ts_rel": 168.858
+  },
+  {
+   "proto": "udp",
+   "src": "<ip-14>",
+   "sport": 5353,
+   "dst": "<ip-5>",
+   "dport": 5353,
+   "family": "v6",
+   "packets": 8,
+   "bytes": 2980,
+   "protocol_hint": "mdns",
+   "first_ts_rel": 39.016,
+   "last_ts_rel": 168.858
+  },
+  {
+   "proto": "udp",
+   "src": "<ip-15>",
+   "sport": 5353,
+   "dst": "<ip-5>",
+   "dport": 5353,
+   "family": "v6",
+   "packets": 3,
+   "bytes": 1029,
+   "protocol_hint": "mdns",
+   "first_ts_rel": 107.212,
+   "last_ts_rel": 155.341
+  },
+  {
+   "proto": "udp",
+   "src": "<ip-16>",
+   "sport": 5353,
+   "dst": "<ip-5>",
+   "dport": 5353,
+   "family": "v6",
+   "packets": 1,
+   "bytes": 107,
+   "protocol_hint": "mdns",
+   "first_ts_rel": 185.343,
+   "last_ts_rel": 185.343
+  }
+ ],
+ "mdns": {
+  "questions": [
+   {
+    "name": "_xross1._udp.local",
+    "type": 12,
+    "count": 278,
+    "askers": [
+     {
+      "pseudonym": "<ip-1>",
+      "count": 278
+     }
+    ]
+   },
+   {
+    "name": "_FC9F5ED42C8A._tcp.local",
+    "type": 255,
+    "count": 24,
+    "askers": [
+     {
+      "pseudonym": "<ip-3>",
+      "count": 12
+     },
+     {
+      "pseudonym": "<ip-4>",
+      "count": 12
+     }
+    ]
+   },
+   {
+    "name": "_asquic._udp.local",
+    "type": 255,
+    "count": 30,
+    "askers": [
+     {
+      "pseudonym": "<ip-6>",
+      "count": 9
+     },
+     {
+      "pseudonym": "<ip-7>",
+      "count": 9
+     },
+     {
+      "pseudonym": "<ip-8>",
+      "count": 6
+     },
+     {
+      "pseudonym": "<ip-9>",
+      "count": 6
+     }
+    ]
+   },
+   {
+    "name": "_nearbypresence._tcp.local",
+    "type": 255,
+    "count": 6,
+    "askers": [
+     {
+      "pseudonym": "<ip-3>",
+      "count": 3
+     },
+     {
+      "pseudonym": "<ip-4>",
+      "count": 3
+     }
+    ]
+   },
+   {
+    "name": "_googlecast._tcp.local",
+    "type": 12,
+    "count": 16,
+    "askers": [
+     {
+      "pseudonym": "<ip-10>",
+      "count": 16
+     }
+    ]
+   },
+   {
+    "name": "_233637DE._sub._googlecast._tcp.local",
+    "type": 12,
+    "count": 16,
+    "askers": [
+     {
+      "pseudonym": "<ip-10>",
+      "count": 16
+     }
+    ]
+   },
+   {
+    "name": "_remotepairing._tcp.local",
+    "type": 12,
+    "count": 4,
+    "askers": [
+     {
+      "pseudonym": "<ip-13>",
+      "count": 2
+     },
+     {
+      "pseudonym": "<ip-14>",
+      "count": 2
+     }
+    ]
+   },
+   {
+    "name": "_remotepairing._tcp.local",
+    "type": 16,
+    "count": 18,
+    "askers": [
+     {
+      "pseudonym": "<ip-13>",
+      "count": 9
+     },
+     {
+      "pseudonym": "<ip-14>",
+      "count": 9
+     }
+    ]
+   },
+   {
+    "name": "_quickshare._tcp.local",
+    "type": 12,
+    "count": 26,
+    "askers": [
+     {
+      "pseudonym": "<ip-3>",
+      "count": 13
+     },
+     {
+      "pseudonym": "<ip-4>",
+      "count": 13
+     }
+    ]
+   },
+   {
+    "name": "_FC9F5ED42C8A._tcp.local",
+    "type": 12,
+    "count": 30,
+    "askers": [
+     {
+      "pseudonym": "<ip-3>",
+      "count": 15
+     },
+     {
+      "pseudonym": "<ip-4>",
+      "count": 15
+     }
+    ]
+   },
+   {
+    "name": "_sub._apple-mobdev2._tcp.local",
+    "type": 12,
+    "count": 4,
+    "askers": [
+     {
+      "pseudonym": "<ip-11>",
+      "count": 1
+     },
+     {
+      "pseudonym": "<ip-12>",
+      "count": 1
+     },
+     {
+      "pseudonym": "<ip-13>",
+      "count": 1
+     },
+     {
+      "pseudonym": "<ip-14>",
+      "count": 1
+     }
+    ]
+   },
+   {
+    "name": "_continuity._tcp.local",
+    "type": 12,
+    "count": 4,
+    "askers": [
+     {
+      "pseudonym": "<ip-11>",
+      "count": 1
+     },
+     {
+      "pseudonym": "<ip-12>",
+      "count": 1
+     },
+     {
+      "pseudonym": "<ip-13>",
+      "count": 1
+     },
+     {
+      "pseudonym": "<ip-14>",
+      "count": 1
+     }
+    ]
+   },
+   {
+    "name": "_airplay._tcp.local",
+    "type": 16,
+    "count": 8,
+    "askers": [
+     {
+      "pseudonym": "<ip-11>",
+      "count": 3
+     },
+     {
+      "pseudonym": "<ip-12>",
+      "count": 3
+     },
+     {
+      "pseudonym": "<ip-13>",
+      "count": 1
+     },
+     {
+      "pseudonym": "<ip-14>",
+      "count": 1
+     }
+    ]
+   },
+   {
+    "name": "_test.local",
+    "type": 65,
+    "count": 4,
+    "askers": [
+     {
+      "pseudonym": "<ip-11>",
+      "count": 1
+     },
+     {
+      "pseudonym": "<ip-12>",
+      "count": 1
+     },
+     {
+      "pseudonym": "<ip-13>",
+      "count": 1
+     },
+     {
+      "pseudonym": "<ip-14>",
+      "count": 1
+     }
+    ]
+   },
+   {
+    "name": "_test.local",
+    "type": 28,
+    "count": 4,
+    "askers": [
+     {
+      "pseudonym": "<ip-11>",
+      "count": 1
+     },
+     {
+      "pseudonym": "<ip-12>",
+      "count": 1
+     },
+     {
+      "pseudonym": "<ip-13>",
+      "count": 1
+     },
+     {
+      "pseudonym": "<ip-14>",
+      "count": 1
+     }
+    ]
+   },
+   {
+    "name": "_test.local",
+    "type": 1,
+    "count": 4,
+    "askers": [
+     {
+      "pseudonym": "<ip-11>",
+      "count": 1
+     },
+     {
+      "pseudonym": "<ip-12>",
+      "count": 1
+     },
+     {
+      "pseudonym": "<ip-13>",
+      "count": 1
+     },
+     {
+      "pseudonym": "<ip-14>",
+      "count": 1
+     }
+    ]
+   },
+   {
+    "name": "_dns-sd._udp.local",
+    "type": 12,
+    "count": 2,
+    "askers": [
+     {
+      "pseudonym": "<ip-13>",
+      "count": 1
+     },
+     {
+      "pseudonym": "<ip-14>",
+      "count": 1
+     }
+    ]
+   },
+   {
+    "name": "_apple-mobdev._tcp.local",
+    "type": 12,
+    "count": 2,
+    "askers": [
+     {
+      "pseudonym": "<ip-13>",
+      "count": 1
+     },
+     {
+      "pseudonym": "<ip-14>",
+      "count": 1
+     }
+    ]
+   },
+   {
+    "name": "_apple-pairable._tcp.local",
+    "type": 12,
+    "count": 2,
+    "askers": [
+     {
+      "pseudonym": "<ip-13>",
+      "count": 1
+     },
+     {
+      "pseudonym": "<ip-14>",
+      "count": 1
+     }
+    ]
+   },
+   {
+    "name": "_airport._tcp.local",
+    "type": 12,
+    "count": 2,
+    "askers": [
+     {
+      "pseudonym": "<ip-13>",
+      "count": 1
+     },
+     {
+      "pseudonym": "<ip-14>",
+      "count": 1
+     }
+    ]
+   },
+   {
+    "name": "_uscan._tcp.local",
+    "type": 12,
+    "count": 2,
+    "askers": [
+     {
+      "pseudonym": "<ip-13>",
+      "count": 1
+     },
+     {
+      "pseudonym": "<ip-14>",
+      "count": 1
+     }
+    ]
+   },
+   {
+    "name": "_ptp._tcp.local",
+    "type": 12,
+    "count": 2,
+    "askers": [
+     {
+      "pseudonym": "<ip-13>",
+      "count": 1
+     },
+     {
+      "pseudonym": "<ip-14>",
+      "count": 1
+     }
+    ]
+   },
+   {
+    "name": "_pdl-datastream._tcp.local",
+    "type": 12,
+    "count": 2,
+    "askers": [
+     {
+      "pseudonym": "<ip-13>",
+      "count": 1
+     },
+     {
+      "pseudonym": "<ip-14>",
+      "count": 1
+     }
+    ]
+   },
+   {
+    "name": "_ipp._tcp.local",
+    "type": 12,
+    "count": 3,
+    "askers": [
+     {
+      "pseudonym": "<ip-13>",
+      "count": 1
+     },
+     {
+      "pseudonym": "<ip-14>",
+      "count": 1
+     },
+     {
+      "pseudonym": "<ip-16>",
+      "count": 1
+     }
+    ]
+   },
+   {
+    "name": "_scanner._tcp.local",
+    "type": 12,
+    "count": 2,
+    "askers": [
+     {
+      "pseudonym": "<ip-13>",
+      "count": 1
+     },
+     {
+      "pseudonym": "<ip-14>",
+      "count": 1
+     }
+    ]
+   },
+   {
+    "name": "_printer._tcp.local",
+    "type": 12,
+    "count": 2,
+    "askers": [
+     {
+      "pseudonym": "<ip-13>",
+      "count": 1
+     },
+     {
+      "pseudonym": "<ip-14>",
+      "count": 1
+     }
+    ]
+   },
+   {
+    "name": "_ippusb._tcp.local",
+    "type": 12,
+    "count": 2,
+    "askers": [
+     {
+      "pseudonym": "<ip-13>",
+      "count": 1
+     },
+     {
+      "pseudonym": "<ip-14>",
+      "count": 1
+     }
+    ]
+   },
+   {
+    "name": "_ipps._tcp.local",
+    "type": 12,
+    "count": 3,
+    "askers": [
+     {
+      "pseudonym": "<ip-13>",
+      "count": 1
+     },
+     {
+      "pseudonym": "<ip-14>",
+      "count": 1
+     },
+     {
+      "pseudonym": "<ip-16>",
+      "count": 1
+     }
+    ]
+   },
+   {
+    "name": "_uscans._tcp.local",
+    "type": 12,
+    "count": 2,
+    "askers": [
+     {
+      "pseudonym": "<ip-13>",
+      "count": 1
+     },
+     {
+      "pseudonym": "<ip-14>",
+      "count": 1
+     }
+    ]
+   },
+   {
+    "name": "_rdlink._tcp.local",
+    "type": 12,
+    "count": 2,
+    "askers": [
+     {
+      "pseudonym": "<ip-13>",
+      "count": 1
+     },
+     {
+      "pseudonym": "<ip-14>",
+      "count": 1
+     }
+    ]
+   },
+   {
+    "name": "_companion-link._tcp.local",
+    "type": 12,
+    "count": 2,
+    "askers": [
+     {
+      "pseudonym": "<ip-13>",
+      "count": 1
+     },
+     {
+      "pseudonym": "<ip-14>",
+      "count": 1
+     }
+    ]
+   },
+   {
+    "name": "_hap._tcp.local",
+    "type": 12,
+    "count": 2,
+    "askers": [
+     {
+      "pseudonym": "<ip-13>",
+      "count": 1
+     },
+     {
+      "pseudonym": "<ip-14>",
+      "count": 1
+     }
+    ]
+   },
+   {
+    "name": "_hap._udp.local",
+    "type": 12,
+    "count": 2,
+    "askers": [
+     {
+      "pseudonym": "<ip-13>",
+      "count": 1
+     },
+     {
+      "pseudonym": "<ip-14>",
+      "count": 1
+     }
+    ]
+   },
+   {
+    "name": "_remotepairing-manual-pairing._tcp.local",
+    "type": 12,
+    "count": 2,
+    "askers": [
+     {
+      "pseudonym": "<ip-13>",
+      "count": 1
+     },
+     {
+      "pseudonym": "<ip-14>",
+      "count": 1
+     }
+    ]
+   },
+   {
+    "name": "_afpovertcp._tcp.local",
+    "type": 12,
+    "count": 2,
+    "askers": [
+     {
+      "pseudonym": "<ip-13>",
+      "count": 1
+     },
+     {
+      "pseudonym": "<ip-14>",
+      "count": 1
+     }
+    ]
+   },
+   {
+    "name": "_adisk._tcp.local",
+    "type": 12,
+    "count": 2,
+    "askers": [
+     {
+      "pseudonym": "<ip-13>",
+      "count": 1
+     },
+     {
+      "pseudonym": "<ip-14>",
+      "count": 1
+     }
+    ]
+   }
+  ],
+  "services": [
+   {
+    "service_type": "_xross1._udp.local",
+    "instances": [
+     "<instance-1>"
+    ],
+    "advertisers": [
+     "<ip-1>"
+    ],
+    "advertiser": "<ip-1>",
+    "port": 9559,
+    "target": "<name-1>",
+    "txt_keys": [],
+    "txt_constants": {},
+    "txt_redacted": {},
+    "first_ts": 0.0,
+    "last_ts": 245.35,
+    "instance_windows": [
+     {
+      "pseudonym": "<instance-1>",
+      "name_len": 52,
+      "first_char": "d",
+      "first_ts": 0.0,
+      "last_ts": 245.35
+     }
+    ]
+   },
+   {
+    "service_type": "_FC9F5ED42C8A._tcp.local",
+    "instances": [
+     "<instance-3>",
+     "<instance-15>",
+     "<instance-17>",
+     "<instance-18>",
+     "<instance-19>",
+     "<instance-29>"
+    ],
+    "advertisers": [
+     "<ip-3>",
+     "<ip-4>"
+    ],
+    "advertiser": "<ip-3>",
+    "port": 53601,
+    "target": "<name-2>",
+    "txt_keys": [
+     "f",
+     "n",
+     "IPv4"
+    ],
+    "txt_constants": {
+     "f": "5200"
+    },
+    "txt_redacted": {
+     "n": {
+      "class": "text",
+      "len": 23,
+      "structure": {
+       "declared_form": "base64url（F-02）",
+       "decoded": true,
+       "decoded_len": 17,
+       "bitfield_hex": "32",
+       "identity_bytes": 16,
+       "name_len_byte": null,
+       "name_bytes_present": 0,
+       "trailing_bytes": 0
+      }
+     },
+     "IPv4": {
+      "class": "ip",
+      "len": 13,
+      "matches_advertiser": true,
+      "matches_any_observed": true
+     }
+    },
+    "first_ts": 5.325,
+    "last_ts": 176.129,
+    "n_series": [
+     {
+      "ts": 6.041,
+      "bitfield_hex": "32",
+      "decoded_len": 17,
+      "name_len_byte": null
+     }
+    ],
+    "instance_windows": [
+     {
+      "pseudonym": "<instance-3>",
+      "name_len": 14,
+      "first_char": "I",
+      "first_ts": 5.325,
+      "last_ts": 56.627
+     },
+     {
+      "pseudonym": "<instance-15>",
+      "name_len": 14,
+      "first_char": "I",
+      "first_ts": 52.633,
+      "last_ts": 67.791
+     },
+     {
+      "pseudonym": "<instance-17>",
+      "name_len": 14,
+      "first_char": "I",
+      "first_ts": 108.646,
+      "last_ts": 121.344
+     },
+     {
+      "pseudonym": "<instance-18>",
+      "name_len": 14,
+      "first_char": "I",
+      "first_ts": 117.657,
+      "last_ts": 123.186
+     },
+     {
+      "pseudonym": "<instance-19>",
+      "name_len": 14,
+      "first_char": "I",
+      "first_ts": 122.675,
+      "last_ts": 130.667
+     },
+     {
+      "pseudonym": "<instance-29>",
+      "name_len": 14,
+      "first_char": "I",
+      "first_ts": 167.423,
+      "last_ts": 176.129
+     }
+    ]
+   },
+   {
+    "service_type": "_asquic._udp.local",
+    "instances": [
+     "<instance-7>"
+    ],
+    "advertisers": [
+     "<ip-6>",
+     "<ip-7>",
+     "<ip-8>",
+     "<ip-9>"
+    ],
+    "advertiser": "<ip-6>",
+    "port": 52468,
+    "target": "<name-3>",
+    "txt_keys": [
+     ""
+    ],
+    "txt_constants": {},
+    "txt_redacted": {},
+    "first_ts": 7.863,
+    "last_ts": 245.557,
+    "instance_windows": [
+     {
+      "pseudonym": "<instance-7>",
+      "name_len": 36,
+      "first_char": "C",
+      "first_ts": 7.863,
+      "last_ts": 245.557
+     }
+    ]
+   },
+   {
+    "service_type": "_nearbypresence._tcp.local",
+    "instances": [
+     "<instance-9>"
+    ],
+    "advertisers": [
+     "<ip-3>",
+     "<ip-4>"
+    ],
+    "advertiser": "<ip-3>",
+    "port": 38691,
+    "target": "<name-2>",
+    "txt_keys": [
+     "bp"
+    ],
+    "txt_constants": {},
+    "txt_redacted": {
+     "bp": {
+      "class": "long-text",
+      "len": 99
+     }
+    },
+    "first_ts": 13.415,
+    "last_ts": 141.209,
+    "instance_windows": [
+     {
+      "pseudonym": "<instance-9>",
+      "name_len": 56,
+      "first_char": "n",
+      "first_ts": 13.415,
+      "last_ts": 141.209
+     }
+    ]
+   },
+   {
+    "service_type": "_companion-link._tcp.local",
+    "instances": [
+     "<instance-10>",
+     "<instance-16>",
+     "<instance-21>"
+    ],
+    "advertisers": [
+     "<ip-11>",
+     "<ip-12>",
+     "<ip-13>",
+     "<ip-14>",
+     "<ip-10>",
+     "<ip-15>",
+     "<ip-6>",
+     "<ip-7>",
+     "<ip-8>",
+     "<ip-9>"
+    ],
+    "advertiser": "<ip-11>",
+    "port": 49239,
+    "target": "<name-4>",
+    "txt_keys": [
+     "rpMac",
+     "rpHN",
+     "rpFl",
+     "rpHA",
+     "rpVr",
+     "rpAD",
+     "rpHI",
+     "rpBA"
+    ],
+    "txt_constants": {
+     "rpMac": "0",
+     "rpFl": "0x10000"
+    },
+    "txt_redacted": {
+     "rpHN": {
+      "class": "text",
+      "len": 12
+     },
+     "rpHA": {
+      "class": "text",
+      "len": 12
+     },
+     "rpVr": {
+      "class": "text",
+      "len": 5
+     },
+     "rpAD": {
+      "class": "text",
+      "len": 12
+     },
+     "rpHI": {
+      "class": "text",
+      "len": 12
+     },
+     "rpBA": {
+      "class": "mac",
+      "len": 17,
+      "matches_advertiser": false,
+      "matches_any_observed": false
+     }
+    },
+    "first_ts": 39.014,
+    "last_ts": 155.343,
+    "instance_windows": [
+     {
+      "pseudonym": "<instance-10>",
+      "name_len": 13,
+      "first_char": "H",
+      "first_ts": 39.014,
+      "last_ts": 155.348
+     },
+     {
+      "pseudonym": "<instance-16>",
+      "name_len": 22,
+      "first_char": "H",
+      "first_ts": 107.212,
+      "last_ts": 155.341
+     },
+     {
+      "pseudonym": "<instance-21>",
+      "name_len": 11,
+      "first_char": "M",
+      "first_ts": 155.297,
+      "last_ts": 155.343
+     }
+    ]
+   },
+   {
+    "service_type": "_remotepairing._tcp.local",
+    "instances": [
+     "<instance-13>",
+     "<instance-14>"
+    ],
+    "advertisers": [
+     "<ip-13>",
+     "<ip-14>"
+    ],
+    "advertiser": "<ip-13>",
+    "port": null,
+    "target": null,
+    "txt_keys": [],
+    "txt_constants": {},
+    "txt_redacted": {},
+    "first_ts": 40.038,
+    "last_ts": 168.858,
+    "instance_windows": [
+     {
+      "pseudonym": "<instance-13>",
+      "name_len": 36,
+      "first_char": "7",
+      "first_ts": 40.038,
+      "last_ts": 168.858
+     },
+     {
+      "pseudonym": "<instance-14>",
+      "name_len": 36,
+      "first_char": "B",
+      "first_ts": 40.038,
+      "last_ts": 168.858
+     }
+    ]
+   },
+   {
+    "service_type": "_device-info._tcp.local",
+    "instances": [
+     "<instance-21>",
+     "<instance-16>"
+    ],
+    "advertisers": [
+     "<ip-6>",
+     "<ip-7>",
+     "<ip-10>",
+     "<ip-15>",
+     "<ip-8>",
+     "<ip-9>"
+    ],
+    "advertiser": "<ip-6>",
+    "port": null,
+    "target": null,
+    "txt_keys": [
+     "model",
+     "osxvers",
+     "icolor"
+    ],
+    "txt_constants": {
+     "osxvers": "25",
+     "icolor": "9"
+    },
+    "txt_redacted": {
+     "model": {
+      "class": "text",
+      "len": 7
+     }
+    },
+    "first_ts": 155.297,
+    "last_ts": 155.343,
+    "instance_windows": [
+     {
+      "pseudonym": "<instance-21>",
+      "name_len": 11,
+      "first_char": "M",
+      "first_ts": 155.297,
+      "last_ts": 155.343
+     },
+     {
+      "pseudonym": "<instance-16>",
+      "name_len": 22,
+      "first_char": "H",
+      "first_ts": 107.212,
+      "last_ts": 155.341
+     }
+    ]
+   },
+   {
+    "service_type": "_airplay._tcp.local",
+    "instances": [
+     "<instance-21>",
+     "<instance-10>"
+    ],
+    "advertisers": [
+     "<ip-6>",
+     "<ip-7>",
+     "<ip-8>",
+     "<ip-9>",
+     "<ip-11>",
+     "<ip-12>",
+     "<ip-13>",
+     "<ip-14>"
+    ],
+    "advertiser": "<ip-6>",
+    "port": null,
+    "target": null,
+    "txt_keys": [
+     "act",
+     "acl",
+     "deviceid",
+     "fex",
+     "features",
+     "rsf",
+     "flags",
+     "gid",
+     "igl",
+     "gcgl",
+     "model",
+     "at",
+     "protovers",
+     "pi",
+     "psi",
+     "pk",
+     "srcvers"
+    ],
+    "txt_constants": {
+     "act": "2",
+     "acl": "0",
+     "features": "0x4A7FCFD5,0x38174FDE",
+     "rsf": "0x8",
+     "flags": "0x204",
+     "igl": "0",
+     "gcgl": "0",
+     "at": "4"
+    },
+    "txt_redacted": {
+     "deviceid": {
+      "class": "mac",
+      "len": 17,
+      "matches_advertiser": false,
+      "matches_any_observed": false
+     },
+     "fex": {
+      "class": "text",
+      "len": 16
+     },
+     "gid": {
+      "class": "uuid",
+      "len": 36
+     },
+     "model": {
+      "class": "text",
+      "len": 8
+     },
+     "protovers": {
+      "class": "text",
+      "len": 3
+     },
+     "pi": {
+      "class": "uuid",
+      "len": 36
+     },
+     "psi": {
+      "class": "uuid",
+      "len": 36
+     },
+     "pk": {
+      "class": "hex-blob",
+      "len": 64
+     },
+     "srcvers": {
+      "class": "text",
+      "len": 8
+     }
+    },
+    "first_ts": 155.297,
+    "last_ts": 155.348,
+    "instance_windows": [
+     {
+      "pseudonym": "<instance-21>",
+      "name_len": 11,
+      "first_char": "M",
+      "first_ts": 155.297,
+      "last_ts": 155.343
+     },
+     {
+      "pseudonym": "<instance-10>",
+      "name_len": 13,
+      "first_char": "H",
+      "first_ts": 39.014,
+      "last_ts": 155.348
+     }
+    ]
+   }
+  ]
+ },
+ "ssdp": [],
+ "tcp_payload_previews": [],
+ "redaction": {
+  "text_pseudonyms": 5,
+  "ip_pseudonyms": 16,
+  "instance_pseudonyms": 30,
+  "redacted_txt_values": 19,
+  "skipped_frames": 0,
+  "non_ip_frames": 0
+ }
+}

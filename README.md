@@ -309,6 +309,10 @@ tools/                          # 仓库检查脚本与测试（python3 -m unitt
 base64url 且首字符恒为 `I`（⇔ F-01 的 10 字节 `0x23` 前缀布局）、TXT `n` 解出 17 字节 = 1 位域 + 16 字节识别材料；
 **两处待考**（F-42）：位域 `0x32` 的两种读法各自与一条观测冲突、TXT 键 `f`/`IPv4` 未登记 → 决定性实验＝三种可见性
 档位各抓一次。**发现能力仍 blocked**（观测本身不准入实现，gate 机器检查）。
+**第二次抓包（2026-09-16，三档可见性差分）**：[evidence/2026-09-16-s3-quickshare-visibility](evidence/2026-09-16-s3-quickshare-visibility/run-manifest.json)
+——`n` 位域在 245.6 s 内**恒为 `0x32`、无名字段**，端口与 TXT 键亦不变 ⇒ **可见性档位没有改变 mDNS 广播字节**（F-43）；
+广播本身呈**突发**（6 个窗口、间隔 35–70 s 静默），每个突发换新实例名。顺手拿到**库存 Apple 接收端**的
+`_airplay._tcp` TXT（`features=0x4A7FCFD5,0x38174FDE` 等，登记为 m01 对照行）。
 
 **未开始 / 待批准**：T30（UxPlay provider 闭环，需 scope S1/S2）、T33（AirPlay 音视频接收真机）、
 T22（Quick Share 发送闭环，需 QR/可发现路径）、Quick Share 发现源

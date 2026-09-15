@@ -75,6 +75,7 @@ RTSP/plist/帧头长度字段全部先检查后分配；绝对 deadline；认证
 | mDNS 服务类型 | `_airplay._tcp` + `_raop._tcp` 同时广播 | 实测 2026-09-15（dns-sd） |
 | 模式选择 | TXT 特性位决定 transient/PIN；transient 广播 UxPlay 兼容 legacy 位 | shairplay-rust@2fb72b3:src/net/features.rs |
 | 控制面端口 | RTSP **5001** | 实测 2026-09-15 |
+| 库存接收端 TXT（抓包） | 一台 macOS 接收端广播的 `_airplay._tcp` TXT：`features=0x4A7FCFD5,0x38174FDE`、`flags=0x204`、`rsf=0x8`、`acl=0`、`at=4`、`act=2`、`igl=0`、`gcgl=0`；键集合 act/acl/deviceid/fex/features/rsf/flags/gid/igl/gcgl/model/at/protovers/pi/psi/pk/srcvers；配套 `_device-info` 报 `osxvers=25`/`icolor=9`。**接收端取值，用作本仓广播策略的对照物**（不改策略；发送端 `audioFormat`/`ct` 仍需 iPhone→Apple TV 那条线） | 抓包 2026-09-16（evidence/2026-09-16-s3-quickshare-visibility/） |
 | 连接模型 | **iPad 每个 RTSP 请求换新 TCP 连接**（/info、pair-* 全不同源端口）→ 配对/SRP 状态必须跨连接存活 | 实测 2026-09-15 |
 
 ### 配对（PIN 三步，binary plist；非 HomeKit TLV）

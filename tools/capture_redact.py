@@ -283,12 +283,28 @@ def probe_endpoint_info(value: str) -> dict:
     return info
 
 
+def is_mac_literal(value: str) -> bool:
+    """`AA:BB:CC:DD:EE:FF` 形状（AirPlay 的 deviceid 是 MAC，不是 IP）。"""
+    parts = value.strip().split(":")
+    return len(parts) == 6 and all(len(x) == 2 and all(c in "0123456789abcdefABCDEF" for c in x) for x in parts)
+
+
 def is_ip_literal(value: str) -> bool:
     v = value.strip()
+    if is_mac_literal(v):
+        return False
     parts = v.split(".")
     if len(parts) == 4 and all(p.isdigit() and 0 <= int(p) <= 255 for p in parts):
         return True
-    return bool(v) and all(c in "0123456789abcdefABCDEF:" for c in v) and v.count(":") >= 2
+    # IPv6：≥3 组、每组 1..4 位十六进制，允许 `::` 压缩（MAC 已被上面排除）
+    if v.count(":") < 2:
+        return False
+    if "::" in v and v.count("::") > 1:
+        return False
+    groups = [g for g in v.split(":") if g]
+    if len(groups) < 2:
+        return False
+    return all(1 <= len(g) <= 4 and all(c in "0123456789abcdefABCDEF" for c in g) for g in groups)
 
 
 def is_uuid(value: str) -> bool:
@@ -397,14 +413,33 @@ class Redactor:
                             svc["txt_constants"][k] = v
                         else:
                             # 地址字面量单独归类：形状留下，"是否等于广播者自己的地址"留下
-                            cls = "ip" if is_ip_literal(v) else value_class(v)
+                            cls = (
+                                "mac"
+                                if is_mac_literal(v)
+                                else "ip"
+                                if is_ip_literal(v)
+                                else value_class(v)
+                            )
                             info = {"class": cls, "len": len(v)}
-                            if cls == "ip":
+                            if cls in ("ip", "mac"):
                                 # 原文只在内存里用于比较（双栈设备不能用"本包源地址"判）
                                 svc.setdefault("txt_ip_values", {})[k] = v
                             elif k == "n":
                                 # F-02 声明 `n` 是 base64(endpoint info)：只读结构，不读内容
                                 info["structure"] = probe_endpoint_info(v)
+                                probe = info["structure"]
+                                series = svc.setdefault("n_series", [])
+                                entry = {
+                                    "ts": None,  # 摘要时填相对时刻
+                                    "bitfield_hex": probe.get("bitfield_hex"),
+                                    "decoded_len": probe.get("decoded_len"),
+                                    "name_len_byte": probe.get("name_len_byte"),
+                                }
+                                if not series or any(
+                                    series[-1][k2] != entry[k2] for k2 in entry if k2 != "ts"
+                                ):
+                                    entry["ts"] = ts
+                                    series.append(entry)
                             svc["txt_redacted"][k] = info
                     else:
                         svc["txt_keys"][item] = True
@@ -499,6 +534,10 @@ class Redactor:
                 svc["txt_redacted"][k]["matches_advertiser"] = v in advertiser_addrs
                 svc["txt_redacted"][k]["matches_any_observed"] = v in observed
             svc["first_ts"] = round(svc["first_ts"] - meta["first_ts"], 3)
+            if "n_series" in svc:
+                svc["n_series"] = [
+                    {**e, "ts": round(e["ts"] - meta["first_ts"], 3)} for e in svc["n_series"]
+                ]
             svc["last_ts"] = round(svc["last_ts"] - meta["first_ts"], 3)
             svc["instance_windows"] = [
                 {
@@ -682,6 +721,12 @@ def render_text(summary: dict) -> str:
             out.append(f"  TXT 常量: {k}={v}")
         for k, meta_v in svc["txt_redacted"].items():
             out.append(f"  TXT 已脱敏: {k} <{meta_v['class']} len={meta_v['len']}>")
+        for e in svc.get("n_series", []):
+            names = "无名字段" if e["name_len_byte"] is None else f"名字长度={e['name_len_byte']}"
+            out.append(
+                f"  n 位域序列 @{e['ts']}s: bitfield={e['bitfield_hex']} "
+                f"解码长度={e['decoded_len']} {names}"
+            )
     if summary["mdns"]["questions"]:
         out.append("")
         out.append("## mDNS 查询")

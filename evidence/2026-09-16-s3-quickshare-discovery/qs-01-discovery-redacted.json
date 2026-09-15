@@ -326,6 +326,14 @@
     },
     "first_ts": 27.751,
     "last_ts": 101.684,
+    "n_series": [
+     {
+      "ts": 31.745,
+      "bitfield_hex": "32",
+      "decoded_len": 17,
+      "name_len_byte": null
+     }
+    ],
     "instance_windows": [
      {
       "pseudonym": "<instance-3>",

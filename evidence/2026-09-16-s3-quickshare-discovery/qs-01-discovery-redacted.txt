@@ -26,6 +26,7 @@
   TXT 常量: f=5200
   TXT 已脱敏: n <text len=23>
   TXT 已脱敏: IPv4 <ip len=13>
+  n 位域序列 @31.745s: bitfield=32 解码长度=17 无名字段
 
 ## mDNS 查询
 - _xross1._udp.local type=12 ×104（询问者：<ip-1>×104）

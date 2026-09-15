@@ -1,0 +1,36 @@
+{
+ "schema_version": 1,
+ "run_id": "2026-09-16-s3-quickshare-visibility",
+ "task": "S3 抓包 #2：可见性档位差分（Quick Share 发现，headless 侧分析）",
+ "kind": "manual",
+ "evidence_level": "manual",
+ "is_test_evidence": false,
+ "synthetic": false,
+ "case_ids": ["S3-05", "S3-06", "S3-07"],
+ "result": "pass",
+ "base_commit": "6f1ed75（S3 首次抓包结果）",
+ "commands": [
+  {
+   "seq": 1,
+   "purpose": "用户执行：三档可见性差分抓包（所有人 / 仅联系人 / 隐藏），每档切换后记 date",
+   "command": "sudo tcpdump -i en0 -U -w captures/qs-03-visibility.pcap 'udp port 5353 or udp port 1900'",
+   "exit_code": 0,
+   "result": "858 包 / 245.557 s（本机 02:39:23 起）。用户三个 date 标记 = 相对 108.0 / 169.0 / 207.0 s。原始 pcap 未入库（.gitignore），sha256 见 redacted.json 的 meta.source_sha256"
+  },
+  {
+   "seq": 2,
+   "purpose": "脱敏 + 位域时间序列（差分的核心读数）",
+   "command": "python3 tools/capture_redact.py captures/qs-03-visibility.pcap --out-dir evidence/2026-09-16-s3-quickshare-visibility --label qs-03-visibility",
+   "exit_code": 0,
+   "result": "pass。隐私核查：产物中无任何 IPv4/IPv6/MAC 字面量（grep 无命中）。工具本切片修掉一处分类缺陷：MAC 形状（如 AirPlay 的 deviceid `AA:BB:CC:DD:EE:FF`）曾被误判为 IP"
+  }
+ ],
+ "artifacts": [
+  "evidence/2026-09-16-s3-quickshare-visibility/qs-03-visibility-redacted.json",
+  "evidence/2026-09-16-s3-quickshare-visibility/qs-03-visibility-redacted.txt",
+  "evidence/2026-09-16-s3-quickshare-visibility/qs-03-visibility-REDACTION.md"
+ ],
+ "credentials_redacted": true,
+ "license_route_approved": false,
+ "notes": "**差分结果（本次观测）**\n1. `_FC9F5ED42C8A._tcp` 的广播在 245.6 s 内呈**突发**：窗口 5.3–56.6 / 52.6–67.8 / 108.6–121.3 / 117.7–123.2 / 122.7–130.7 / 167.4–176.1 s，之间有 35–70 s 的**完全静默**（67.8→108.6、130.7→167.4、176.1→245.6）。\n2. 每个突发使用**新的实例名**（共 6 个实例，全部 14 字符、首字符 `I`，与 F-01 布局一致）→ endpoint id 每次轮换。\n3. **关键读数：`n` 的位域在整个 245.6 s 内从未变化**（序列只有一条：`bitfield=0x32`、解码 17 字节、无名字段），端口恒为 53601，TXT 键恒为 `n`/`f`/`IPv4`。\n\n→ 在本次观测里，**可见性档位没有改变 mDNS 广播的任何字节**：既没有看到 F-42 预期的那一位翻转，也没有看到「仅可见时带设备名」。三种解释都与数据相容、目前无法区分：(a) 位域里的 visibility 位并不随该设置变化（设置影响的是别处，如 BLE 广告或对端应答）；(b) 三档在抓包窗口内并未全部生效；(c) 名字字段的出现条件不是可见性档位。\n\n**所以本切片停在「待用户确认档位时序」**：需要用户给出三个 `date` 各对应哪一档（以及抓包起始时是哪一档），才能把突发窗口与档位对齐、进而判定。若对齐后仍无字节差异，下一步是 **BLE 侧（Ubuntu `btmon`）** 与 **关掉手机 Wi-Fi 的对照**（判定 `_FC9F5ED42C8A` 与 `_nearbypresence` 是否同属那台手机）。\n\n**副产物（顺手观测到，与 f02 无关）**\n- 与 `_FC9F5ED42C8A` **同一组地址假名**还广播 `_nearbypresence._tcp`（端口 38691、TXT 键 `bp`、99 字符取值）；该设备**不是**抓包里广播 `_companion-link`/`_airplay`/`_device-info` 的那些 Mac（地址假名集合不相交）。是否即三星手机，需用「关掉手机 Wi-Fi 再抓 30 s」的对照钉死。\n- 意外拿到**库存 Apple 接收端的 AirPlay TXT**（那些 Mac 的 `_airplay._tcp`）：`features=0x4A7FCFD5,0x38174FDE`、`flags=0x204`、`rsf=0x8`、`acl=0`、`at=4`、`act=2`、`igl=0`、`gcgl=0`；键集合 act/acl/deviceid/fex/features/rsf/flags/gid/igl/gcgl/model/at/protovers/pi/psi/pk/srcvers；`_device-info` 报 `osxvers=25`、`icolor=9`；`_companion-link` 键 rpMac/rpHN/rpFl/rpHA/rpVr/rpAD/rpHI/rpBA。这正是 MANUAL_TESTS 里「本机广播的 TXT 字节与真实接收端对照」要的东西（**接收端**取值；发送端的 `audioFormat`/`ct` 仍需 Apple TV 那条线）。\n\n**边界**：抓包只证明「网线上出现了这些字节」；不构成实现准入、不解除任何 blocked 行。"
+}
