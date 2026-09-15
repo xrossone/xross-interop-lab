@@ -4,6 +4,14 @@
  "notes": "证据登记簿：dossier/specs 中的 evidence_refs 必须指向这里登记的 id（tools/test_dossiers.py 强制）。kind 词表：run-manifest | device-run | source-tree | page-review | user-observation。",
  "entries": [
   {
+   "id": "run-2026-09-15-t31-airplay-gate",
+   "kind": "run-manifest",
+   "level": "source-reviewed",
+   "date": "2026-09-15",
+   "path": "evidence/2026-09-15-t31-airplay-gate/run-manifest.json",
+   "notes": "T31 AirPlay 规范/来源/语料 gate（四份产出 + T31-01..03 纪律测试；字段级事实表每行带来源；FairPlay 不入实现）"
+  },
+  {
    "id": "run-2026-09-15-t29-media-sinks",
    "kind": "run-manifest",
    "level": "build-verified",

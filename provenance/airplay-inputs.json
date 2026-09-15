@@ -1,0 +1,102 @@
+{
+ "schema_version": 1,
+ "created_at": "2026-09-15",
+ "scope": "AirPlay legacy-mirror 线的输入清单（T31 gate）：每一份进入实现上下文的材料都必须在这里登记用途/许可/边界",
+ "rules": [
+  "没有登记的来源不得进入 impl/ 的实现上下文（T32 gate）",
+  "FairPlay/设备认证材料永久 vendor-gated：不获取、不使用、不绕过（allowed_in_crate=false）",
+  "行级事实引用必须注明 commit+行；不复制表达、不翻译、不链接"
+ ],
+ "entries": [
+  {
+   "id": "R01",
+   "name": "FDH2/UxPlay",
+   "commit_ref": "lab clone d9791de；POC clone 44024fe（含 GHSA-479c-ww7g-wgp8 修复）",
+   "license": "GPL-3.0（依赖及文件级混合）",
+   "use": "compatibility-oracle（外部二进制行为对照 + fallback 引擎）",
+   "boundary": "只运行未修改二进制；不复制/翻译/链接源码；行级事实引用需注明 commit+行；随产品分发须履行 GPL-3.0 源码 offer（独立发布单元）",
+   "allowed_in_crate": false,
+   "gate": "T05 组合审查未闭合（production_approved=false）；外部引擎接入需用户 scope S1"
+  },
+  {
+   "id": "R02",
+   "name": "metaneutrons/shairplay-rust",
+   "commit_ref": "2fb72b3（v0.10.0；本地分支 fix/pair-setup-pin 未提交改动）",
+   "license": "LGPL-3.0-or-later",
+   "use": "architectural-reference（RTSP/管线结构事实）",
+   "boundary": "行级事实引用注明 commit+行；不复制表达、不翻译、不链接（用户 2026-09-15 决议：质量不达标）",
+   "allowed_in_crate": false,
+   "gate": "不适用（不链接）；引用需在 specs-reviewed 留痕"
+  },
+  {
+   "id": "R05",
+   "name": "juhovh/shairplay",
+   "commit_ref": "096b61ad",
+   "license": "LGPL/GPL 混合",
+   "use": "structural-reference（legacy 流程结构对照）",
+   "boundary": "只作结构对照；不复制/翻译",
+   "allowed_in_crate": false,
+   "gate": "与 R02 同"
+  },
+  {
+   "id": "R08",
+   "name": "SteeBono/airplayreceiver",
+   "commit_ref": "806fd39e",
+   "license": "MIT（根声明，root-file-only）",
+   "use": "structural-reference",
+   "boundary": "MIT 但仍不复制表达；结构思想参考",
+   "allowed_in_crate": false,
+   "gate": "如需复制需逐文件许可复核（当前不需要）"
+  },
+  {
+   "id": "R09",
+   "name": "YimingZhanshen/Airplay2OnWindows",
+   "commit_ref": "8e1e03d3",
+   "license": "MIT（根声明，root-file-only）",
+   "use": "structural-reference（Windows 路径对照）",
+   "boundary": "同上",
+   "allowed_in_crate": false,
+   "gate": "同上"
+  },
+  {
+   "id": "R10",
+   "name": "openairplay/airplay-spec",
+   "commit_ref": "00063da0",
+   "license": "**无许可文件**（intake status=restricted）",
+   "use": "spec-source（只做事实核对）",
+   "boundary": "**只能事实引用**：不复制文本/文件进仓；引用注明来源 URL 与 commit",
+   "allowed_in_crate": false,
+   "gate": "restricted：许可不明，任何文本再分发都不允许"
+  },
+  {
+   "id": "R06",
+   "name": "EstebanKubata/playfair",
+   "commit_ref": "（不解析）",
+   "license": "GPL 及**密码材料来源待核查**",
+   "use": "**no-use**",
+   "boundary": "FairPlay 材料：不获取、不使用、不绕过；不进入任何实现上下文",
+   "allowed_in_crate": false,
+   "gate": "vendor-gated（永久）：独立 permissive 产物在密钥获取环节 blocked；外部合规 provider 可另行研究"
+  },
+  {
+   "id": "own-poc-record",
+   "name": "docs/research/airplay-research.md（本仓真机 POC 记录）",
+   "commit_ref": "本仓 HEAD",
+   "license": "自有记录",
+   "use": "primary-evidence（transient 链路、pair-setup-pin 字节观测量、无声/画质现象）",
+   "boundary": "设备名/版本如实记录；不含任何密钥材料",
+   "allowed_in_crate": true,
+   "gate": "无"
+  },
+  {
+   "id": "specs-reviewed-m01",
+   "name": "specs-reviewed/m01-airplay-legacy-mirror.md（含 T31 字段级事实表）",
+   "commit_ref": "本仓 HEAD",
+   "license": "自有整理（事实引用已注明来源）",
+   "use": "field-level-facts（RTSP/plist/帧头/音频链）",
+   "boundary": "未知字段标『待固化』，不得填猜测值",
+   "allowed_in_crate": true,
+   "gate": "新增字段必须带来源（tools/test_airplay_gate.py 强制）"
+  }
+ ]
+}

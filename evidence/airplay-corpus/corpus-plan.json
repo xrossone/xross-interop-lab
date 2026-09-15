@@ -1,0 +1,124 @@
+{
+ "schema_version": 1,
+ "plan_id": "airplay-legacy-mirror-corpus",
+ "created_at": "2026-09-15",
+ "task": "T31 · AirPlay 独立实现前的规范/来源/兼容语料 gate",
+ "rules": [
+  "全部 fixture 自制：字段来自 specs-reviewed/m01 的字段级事实表（每条带来源）",
+  "不得复制任何第三方报文/代码/文本；抓包若要进语料，必须经用户批准并脱敏（captures/ 不入库）",
+  "device_required=true 的条目在 S1/S2 批准前一律 status=blocked，不得声称 device-verified"
+ ],
+ "entries": [
+  {
+   "id": "fx-airplay-mdns-txt",
+   "kind": "message",
+   "authored": "self",
+   "facts_from": "specs-reviewed/m01 字段级事实表（发现与传输）",
+   "device_required": false,
+   "status": "planned",
+   "note": "TXT 特性位组合（transient legacy 位 + PIN 模式位）；用于 discovery 解析单测"
+  },
+  {
+   "id": "fx-airplay-info",
+   "kind": "message",
+   "authored": "self",
+   "facts_from": "实测 2026-09-15（/info 请求存在）+ RTSP 通用头",
+   "device_required": false,
+   "status": "planned",
+   "note": "RTSP 请求/响应外壳；响应字段只填已固化项，未知留空并标待固化"
+  },
+  {
+   "id": "fx-airplay-pair-pin-start",
+   "kind": "message",
+   "authored": "self",
+   "facts_from": "实测 2026-09-15（POST /pair-pin-start）",
+   "device_required": false,
+   "status": "planned"
+  },
+  {
+   "id": "fx-airplay-pair-setup-pin-step1",
+   "kind": "message",
+   "authored": "self",
+   "facts_from": "实测 2026-09-15（86 字节 binary plist {method,user}）+ UxPlay 行级引用",
+   "device_required": false,
+   "status": "planned"
+  },
+  {
+   "id": "fx-airplay-pair-setup-pin-step2",
+   "kind": "message",
+   "authored": "self",
+   "facts_from": "UxPlay@44024fe:lib/srp.c（SHA1 系 proof 20B）+ 实测",
+   "device_required": false,
+   "status": "planned",
+   "note": "SRP 计算本身是公开算法（SRP-6a/SHA-1），fixture 用固定向量自测，不引入 FairPlay 材料"
+  },
+  {
+   "id": "fx-airplay-pair-setup-pin-step3",
+   "kind": "message",
+   "authored": "self",
+   "facts_from": "实测 2026-09-15（{epk 32B, authTag 16B}）",
+   "device_required": false,
+   "status": "planned"
+  },
+  {
+   "id": "fx-airplay-setup-video",
+   "kind": "message",
+   "authored": "self",
+   "facts_from": "实测 2026-09-15（SETUP stream_type=110）",
+   "device_required": false,
+   "status": "planned"
+  },
+  {
+   "id": "fx-airplay-setup-audio",
+   "kind": "message",
+   "authored": "self",
+   "facts_from": "实测 2026-09-15（SETUP stream_type=96）",
+   "device_required": false,
+   "status": "planned"
+  },
+  {
+   "id": "fx-airplay-video-frame-header",
+   "kind": "frame",
+   "authored": "self",
+   "facts_from": "实测 2026-09-15（128B 头：payload_len u32LE / type u16 / timestamp u64@8-15）",
+   "device_required": false,
+   "status": "planned",
+   "note": "未知字段位填 0 并在 fixture 注释中标 待固化(P-M01-1)——不得发明语义"
+  },
+  {
+   "id": "fx-airplay-avcc",
+   "kind": "frame",
+   "authored": "self",
+   "facts_from": "实测 2026-09-15（AvcC ≈30B，旋转时重发）",
+   "device_required": false,
+   "status": "planned",
+   "note": "自制最小 H.264 AvcC（SPS/PPS 用公开样例参数），用于 format change 路径"
+  },
+  {
+   "id": "fx-airplay-audio-rtp",
+   "kind": "frame",
+   "authored": "self",
+   "facts_from": "实测 2026-09-15（UDP RTP，ALAC/AES-CBC ekey）",
+   "device_required": false,
+   "status": "planned"
+  },
+  {
+   "id": "fx-airplay-malformed",
+   "kind": "adversarial",
+   "authored": "self",
+   "facts_from": "docs/07 §4 解析预算要求",
+   "device_required": false,
+   "status": "planned",
+   "note": "截断/长度不一致/超深 plist/超大 payload 的负向语料（对齐 GHSA-479c-ww7g-wgp8 教训）"
+  },
+  {
+   "id": "matrix-airplay-devices",
+   "kind": "device-matrix",
+   "authored": "device-run",
+   "facts_from": "plans/03 T33 验收 + vertical-gates.md A1–A10",
+   "device_required": true,
+   "status": "blocked",
+   "note": "需要用户 scope S1（外部引擎）+ S2（真机矩阵）；在批准前不得产生任何 device-verified 声明"
+  }
+ ]
+}

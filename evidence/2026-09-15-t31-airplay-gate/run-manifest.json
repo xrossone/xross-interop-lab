@@ -1,0 +1,75 @@
+{
+ "schema_version": 1,
+ "run_id": "2026-09-15-t31-airplay-gate",
+ "task": "T31 · AirPlay 独立实现前的规范/来源/兼容语料 gate",
+ "kind": "manual",
+ "evidence_level": "source-reviewed",
+ "is_test_evidence": true,
+ "synthetic": false,
+ "base_commit": "ff65784（T29 提交）",
+ "case_ids": [
+  "T31-01",
+  "T31-02",
+  "T31-03"
+ ],
+ "result": "pass",
+ "commands": [
+  {
+   "seq": 1,
+   "purpose": "red：gate 产出与纪律测试均不存在",
+   "command": "python3 -m unittest tools.test_airplay_gate",
+   "exit_code": 1,
+   "result": "fail（模块/产出缺失，预期 red）"
+  },
+  {
+   "seq": 2,
+   "purpose": "首轮：纪律测试判据过粗（表头行/禁止句/备注文本被误判）",
+   "command": "python3 -m unittest tools.test_airplay_gate",
+   "exit_code": 1,
+   "result": "fail 4 条（判据问题，非产出问题；已修：表头行跳过、只查能力表行、blocked 等价标记、只看 status/level 字段）"
+  },
+  {
+   "seq": 3,
+   "purpose": "green：T31-01..03 纪律检查",
+   "command": "python3 -m unittest tools.test_airplay_gate",
+   "exit_code": 0,
+   "result": "pass：4 tests（视频/音频能力分开、FairPlay blocked 但外部 provider 可研究、真机条目 device_required 且不声称 device-verified、字段表每行有可复查来源）"
+  },
+  {
+   "seq": 4,
+   "purpose": "lab 全量检查",
+   "command": "python3 -m unittest discover -s tools -p 'test_*.py'",
+   "exit_code": 0,
+   "result": "pass：32 tests OK（28 → 32）"
+  }
+ ],
+ "acceptance_mapping": {
+  "T31-01": "specs-reviewed/m01 的『能力声明』表把视频/音频/PIN/transient 分成四行，视频=链路已通画质未定(blocked)、音频=未验证(blocked)、PIN=未实现(blocked)、transient=参考实现实测可用；测试断言状态互不相同且不得写成笼统『支持可用』",
+  "T31-02": "provenance/airplay-inputs.json 登记 R06/playfair：allowed_in_crate=false + gate=vendor-gated；gap-analysis 的 key setup 行标『不可关闭(vendor-gated)/不实现（keying seam 留空）』；同时 R01(UxPlay) 仍为 compatibility-oracle 且接入需 S1（外部合规 provider 可继续研究）",
+  "T31-03": "evidence/airplay-corpus/corpus-plan.json 含 matrix-airplay-devices（device_required=true, status=blocked, 需 S1/S2），其余 12 条为自制 fixture；测试断言 status/level 绝不出现 device-verified"
+ },
+ "extra_coverage": {
+  "field_provenance": "字段级事实表 17 行每行来源可复查（实测/UxPlay@commit:file:line/shairplay-rust@commit/待固化/decisions/计划），未知字段以『待固化（P-M01-x）』显式登记，不填猜测值",
+  "corpus_plan": "13 条 fixture（messages/frames/adversarial/device-matrix），全部自制（字段出自字段表），抓包入语料需 S3 批准"
+ },
+ "artifacts": [
+  {
+   "path": "specs-reviewed/m01-airplay-legacy-mirror.md"
+  },
+  {
+   "path": "research/airplay/gap-analysis.md"
+  },
+  {
+   "path": "provenance/airplay-inputs.json"
+  },
+  {
+   "path": "evidence/airplay-corpus/corpus-plan.json"
+  },
+  {
+   "path": "tools/test_airplay_gate.py"
+  }
+ ],
+ "credentials_redacted": true,
+ "license_route_approved": false,
+ "notes": "本 run 无实现、无真机、无抓包。FairPlay/设备认证材料在任何产出中都标为不进入实现上下文（R06 allowed_in_crate=false）。字段级事实表把『已固化』与『待固化』分开，待固化项（128B 帧头其余字段、PIN 一次性语义、feature 位矩阵）留待 S2/S3。"
+}
