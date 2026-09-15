@@ -90,6 +90,14 @@ dependencies = [
 ]
 
 [[package]]
+name = "interop-media"
+version = "0.1.0"
+dependencies = [
+ "interop-contract",
+ "interop-ipc",
+]
+
+[[package]]
 name = "interop-platform"
 version = "0.1.0"
 dependencies = [

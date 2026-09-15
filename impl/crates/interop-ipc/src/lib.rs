@@ -16,4 +16,5 @@
 
 pub mod auth;
 pub mod frame;
+pub mod media_frame;
 pub mod server;

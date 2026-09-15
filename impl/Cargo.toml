@@ -5,6 +5,7 @@ members = [
     "crates/interop-file",
     "crates/interop-policy",
     "crates/interop-ipc",
+    "crates/interop-media",
     "crates/interop-platform",
     "crates/interop-runtime",
     "crates/interop-testkit",

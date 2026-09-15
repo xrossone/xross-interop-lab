@@ -1,0 +1,12 @@
+[package]
+name = "interop-media"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+publish.workspace = true
+
+# 媒体形态/时钟/帧队列（plans/03 T28）与 sink（T29）。
+# 无 GUI、无 codec、无网络依赖：图形与解码后端在 worker（apps/workers）里。
+[dependencies]
+interop-contract = { path = "../interop-contract" }
+interop-ipc = { path = "../interop-ipc" }

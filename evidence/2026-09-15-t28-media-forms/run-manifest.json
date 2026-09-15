@@ -1,0 +1,84 @@
+{
+ "schema_version": 1,
+ "run_id": "2026-09-15-t28-media-forms",
+ "task": "T28 · 实现媒体形态、时钟与数据 frame",
+ "kind": "manual",
+ "evidence_level": "build-verified",
+ "is_test_evidence": true,
+ "synthetic": false,
+ "base_commit": "11f1379（阶段 2 收尾）",
+ "case_ids": [
+  "T28-01",
+  "T28-02",
+  "T28-03",
+  "T28-04"
+ ],
+ "result": "pass",
+ "commands": [
+  {
+   "seq": 1,
+   "purpose": "red：media_frame/interop-media 未实现",
+   "command": "cargo test --manifest-path impl/Cargo.toml -p interop-ipc --test media_frame; cargo test --manifest-path impl/Cargo.toml -p interop-media",
+   "exit_code": 101,
+   "result": "fail（E0432 unresolved import interop_ipc::media_frame；interop-media 包不存在，预期 red）"
+  },
+  {
+   "seq": 2,
+   "purpose": "green：XMD1 帧 codec（36 字节头）",
+   "command": "cargo test --manifest-path impl/Cargo.toml -p interop-ipc --test media_frame",
+   "exit_code": 0,
+   "result": "pass：6 tests（超限分配前拒绝、36 字节往返、未知 critical 位拒绝、已知位报告、坏 magic/版本/kind/截断、粘包逐帧消费）"
+  },
+  {
+   "seq": 3,
+   "purpose": "green：媒体形态/时钟/流状态",
+   "command": "cargo test --manifest-path impl/Cargo.toml -p interop-media",
+   "exit_code": 0,
+   "result": "pass：5 tests（T28-02 分母 0、T28-03 format 变化需 reset、T28-04 native 无 export、时钟域分离 + 无 PTS 不伪造、有界队列背压）"
+  },
+  {
+   "seq": 4,
+   "purpose": "全 workspace 回归 + 静态检查",
+   "command": "cargo test --manifest-path impl/Cargo.toml --workspace; cargo clippy --manifest-path impl/Cargo.toml --workspace --all-targets",
+   "exit_code": 0,
+   "result": "pass：80 tests 全绿（69 → 80）；clippy 0 warnings"
+  }
+ ],
+ "acceptance_mapping": {
+  "T28-01": "只给 36 字节 header、payload_len=16MiB+1 → decode 返回 resource-limit（长度检查先于分配）；check_payload_len 同时守 encode 侧，16MiB 整合法",
+  "T28-02": "Timebase::new(1,0) 与 parse(\"1/0\") 均 invalid-frame；parse(\"90000\") 缺分母同样拒绝；1/90000 的 90000 ticks = 1_000_000µs",
+  "T28-03": "FormatTracker：首帧 Initialized、同 id Unchanged、新 id + discontinuity → Reset；**新 id 无 reset → invalid-frame 且状态不推进**（把这种流当成功的实现会让该测试红）",
+  "T28-04": "MediaSource::NativeOnly.export_encoded() → unsupported-feature；PCM/Resource 同样拒绝（语义各自说明）；Encoded 正常返回"
+ },
+ "extra_coverage": {
+  "clock_domains": "ClockMap 锚点换算（90000 ticks → +1000ms）、None 进 None 出（不伪造 PTS）、ClockDomain 三域标识；frame 的 NO_PTS 位与 pts_if_present() 配合",
+  "bounded_queue": "FrameQueue 满/单帧超预算 → resource-limit；pop 释放字节预算；背压显式而非静默丢帧",
+  "frame_hardening": "未知 kind / 未知 critical flag 位 / 坏 magic → invalid-frame；版本不符 → version-unsupported；payload 截断 → invalid-frame"
+ },
+ "artifacts": [
+  {
+   "path": "impl/crates/interop-ipc/src/media_frame.rs"
+  },
+  {
+   "path": "impl/crates/interop-ipc/tests/media_frame.rs"
+  },
+  {
+   "path": "impl/crates/interop-media/src/lib.rs"
+  },
+  {
+   "path": "impl/crates/interop-media/src/descriptor.rs"
+  },
+  {
+   "path": "impl/crates/interop-media/src/clock.rs"
+  },
+  {
+   "path": "impl/crates/interop-media/src/stream.rs"
+  },
+  {
+   "path": "impl/crates/interop-media/tests/media.rs"
+  }
+ ],
+ "credentials_redacted": true,
+ "license_route_approved": false,
+ "notes": "XMD1 头按 docs/05 §7 逐字段实现（magic/header_version/kind/stream_id/flags/sequence/pts/payload_len，36 字节）。无 codec、无 GUI、无网络依赖；native 源只携带 opaque presentation id，不序列化任何指针。新增 crate interop-media（orchestrator 层，依赖 contract+ipc）。"
+}

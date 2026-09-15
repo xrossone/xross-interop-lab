@@ -4,6 +4,14 @@
  "notes": "证据登记簿：dossier/specs 中的 evidence_refs 必须指向这里登记的 id（tools/test_dossiers.py 强制）。kind 词表：run-manifest | device-run | source-tree | page-review | user-observation。",
  "entries": [
   {
+   "id": "run-2026-09-15-t28-media-forms",
+   "kind": "run-manifest",
+   "level": "build-verified",
+   "date": "2026-09-15",
+   "path": "evidence/2026-09-15-t28-media-forms/run-manifest.json",
+   "notes": "T28 媒体形态/时钟/XMD1 36 字节 frame（T28-01..04 + 时钟域/有界队列）；新 crate interop-media"
+  },
+  {
    "id": "run-2026-09-15-t00-execution-trust-boundary",
    "kind": "run-manifest",
    "level": "source-reviewed",
