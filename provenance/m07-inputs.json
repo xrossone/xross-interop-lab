@@ -1,0 +1,58 @@
+{
+  "schema_version": 1,
+  "created_at": "2026-09-15",
+  "scope": "dlna.upnp-av（M07）线的输入清单（T41 gate）：每一份进入实现上下文的材料都登记用途/许可/边界",
+  "rules": [
+    "没有登记的来源不得进入 impl/ 的实现上下文（T41 gate）",
+    "只取字段名/常量/结构事实（行级引用注明 commit+文件+行）；不复制表达、不翻译、不链接",
+    "P-M07-1（真实 TV protocolInfo/时序）未关闭前，不得写'支持某品牌 TV'或镜像能力",
+    "解析预算（深度/体积/元素数）是本仓策略，不是协议常量——必须标为策略值",
+    "真机语料（抓包/log）由用户执行，pcap 不入库"
+  ],
+  "entries": [
+    {
+      "id": "R46",
+      "name": "pupnp/pupnp",
+      "commit_ref": "2dfc275",
+      "license": "BSD-3-Clause",
+      "use": "facts-source：SSDP 消息形状与常量（M-SEARCH/MAN/MX/ST、NOTIFY 的 ssdp:alive/byebye、SSDP_PORT 1900、USN 形状）、SOAPACTION 头处理、GENA 订阅头（SID/SEQ/CALLBACK）与订阅上限",
+      "boundary": "行级事实引用注明文件+行；不复制代码表达、不链接；若未来直接复用该库需另行走组合审查",
+      "allowed_in_crate": true,
+      "gate": "只把字段/常量写进 specs-reviewed 字段表；实现按字段表写"
+    },
+    {
+      "id": "R47",
+      "name": "plutinosoft/Platinum",
+      "commit_ref": "2674fa6",
+      "license": "GPL/商业双轨（未核清）",
+      "use": "本轮未使用（只登记）",
+      "boundary": "restricted：任何表达不进入实现上下文",
+      "allowed_in_crate": false,
+      "gate": "如需使用先走 T05 式组合审查"
+    },
+    {
+      "id": "R48",
+      "name": "gerbera/gerbera",
+      "commit_ref": "1dc78d2",
+      "license": "GPL-2.0",
+      "use": "本轮未使用（原计划作 DMS/TV profile 事实对照）",
+      "boundary": "GPL：不复制、不翻译、不链接",
+      "allowed_in_crate": false,
+      "gate": "改用 R46/R49 的字段事实已足够"
+    },
+    {
+      "id": "R49",
+      "name": "GNOME/rygel",
+      "commit_ref": "dc8a47d",
+      "license": "LGPL-2.1（文件级混合）",
+      "use": "facts-source：AVTransport:1 服务类型串与动作/参数名、ContentDirectory Browse 参数与 701/720/402 错误码、protocolInfo 模板与协议集合",
+      "boundary": "只取标准 SCPD 中的动作名/参数名/错误码数字（UPnP AV 规范事实）；不复制 XML 文本、不翻译 Vala 实现、不链接",
+      "allowed_in_crate": true,
+      "gate": "服务描述部分不进入实现：我们只做动作名/参数校验与最小构造"
+    }
+  ],
+  "device_evidence": {
+    "status": "none",
+    "note": "TV 真机矩阵（P-M07-1）与拉流（T42）需要用户在场：本阶段不产生任何器件级证据"
+  }
+}

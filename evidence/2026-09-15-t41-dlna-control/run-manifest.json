@@ -1,0 +1,70 @@
+{
+ "schema_version": 1,
+ "run_id": "2026-09-15-t41-dlna-control",
+ "task": "T41 · DLNA/UPnP AV controller 与受限 media server（headless 切片）",
+ "kind": "manual",
+ "evidence_level": "build-verified",
+ "is_test_evidence": true,
+ "synthetic": false,
+ "base_commit": "d3e6df1（T33 文档收尾）",
+ "case_ids": ["T41-01", "T41-02", "T41-03", "T41-04"],
+ "result": "pass",
+ "commands": [
+  {
+   "seq": 1,
+   "purpose": "red：proto-upnp crate/模块不存在",
+   "command": "cargo test --manifest-path impl/Cargo.toml -p proto-upnp",
+   "exit_code": 101,
+   "result": "fail：could not compile（unresolved import proto_upnp::{dmc,dms,soap,ssdp,xml}）"
+  },
+  {
+   "seq": 2,
+   "purpose": "gate 纪律测试（字段表来源/blocked 行/能力分声明/语料/来源边界）",
+   "command": "python3 -m unittest tools.test_dlna_gate -v",
+   "exit_code": 0,
+   "result": "pass：7 tests（含 blocked 行不得准入实现、DLNA 不得声明镜像能力、品牌名不得出现在实现里）"
+  },
+  {
+   "seq": 3,
+   "purpose": "green：T41 验收 + SSDP/SOAP/XML 加固",
+   "command": "cargo test --manifest-path impl/Cargo.toml -p proto-upnp",
+   "exit_code": 0,
+   "result": "pass：21 tests（验收 10 + 单测 11）"
+  },
+  {
+   "seq": 4,
+   "purpose": "全 workspace 回归 + 静态检查 + lab 检查",
+   "command": "cargo test --manifest-path impl/Cargo.toml --workspace; cargo clippy --manifest-path impl/Cargo.toml --workspace --all-targets; python3 -m unittest discover -s tools",
+   "exit_code": 0,
+   "result": "pass：162 tests 全绿（141 → 162）；clippy 0 warnings；lab 46 tests OK（39 → 46）"
+  }
+ ],
+ "acceptance_mapping": {
+  "T41-01": "DescriptionFetchPolicy：允许 http 文档地址（IPv4/IPv6/主机名）；拒绝 file://、https、userinfo、127.x、localhost、169.254.x（含云元数据）、IPv6 link-local、组播 224/239/ff0x、0.0.0.0/::、带 fragment —— 一律 permission-required；超长 URL → invalid-frame。registry 只把通过策略的 LOCATION 建档（恶意目标明确返回 DmcError::FetchPolicy 且 registry 长度不变），缺 LOCATION 的 alive → MissingLocation",
+  "T41-02": "renderer 声明 rtsp/未知 MIME 时 http-get 推送被拒（DmcError::Unsupported，理由串明确『不提供屏幕镜像替代』）；声明 http-get:*:video/mp4:* 后 video/mp4 允许、video/hevc 仍拒（unsupported-profile）。能力表与 gate 测试同时保证实现里没有品牌名/镜像声明",
+  "T41-03": "Dms：根与已登记子对象可浏览；'../etc'、'3'、'music/../../secret'、'urn:x'、'' 全部 701；RequestedCount>256 → 402；未知 BrowseFlag → 402；extension_allowed 只放行批准扩展名",
+  "T41-04": "UrlLeaseStore：grant 后 is_live=true；revoke_for_url（Stop）→ 立即不可取且 live_count=0；超时 sweep 清理；显式 revoke 生效；token 为 16 字节系统熵（不可猜测）"
+ },
+ "extra_coverage": {
+  "ssdp": "M-SEARCH 严格校验（缺 MAN/MAN 值错/MX 超上限/未知方法全部拒绝）；NOTIFY alive/byebye 解析、按 USN 去重与更新、CACHE-CONTROL max-age 解析；报文 >8KiB 或头数 >48 → resource-limit；空 ST → invalid-frame；自造报文可回读（build_* + parse 往返）",
+  "xml_hardening": "DOCTYPE/ENTITY 拒绝（XXE）、未知实体引用拒绝、深度 >32、元素数 >4096、体积 >64KiB、非法标签名、标签不匹配、未闭合 —— 全部按 invalid-frame/resource-limit 拒绝；标准 5 实体与注释/声明正常处理",
+  "soap": "SetAVTransportURI/Play/Stop/Seek/GetTransportInfo/Browse 构造与回读；未知动作、服务类型不符、缺必需参数、未知参数、InstanceID≠0 全部拒绝；CurrentURIMetaData >32KiB → resource-limit；SOAP Fault 携带 701 与 UPnPError 结构",
+  "policy_values": "XML/SSDP 的深度/体积/元素数/头数上限、MX≤5、分页≤256、URL≤2048 都标注为『本仓策略值』（不是协议常量），与字段表 F-12 一致"
+ },
+ "artifacts": [
+  { "path": "impl/crates/proto-upnp/src/lib.rs" },
+  { "path": "impl/crates/proto-upnp/src/ssdp.rs" },
+  { "path": "impl/crates/proto-upnp/src/xml.rs" },
+  { "path": "impl/crates/proto-upnp/src/soap.rs" },
+  { "path": "impl/crates/proto-upnp/src/dmc.rs" },
+  { "path": "impl/crates/proto-upnp/src/dms.rs" },
+  { "path": "impl/crates/proto-upnp/tests/dlna_control.rs" },
+  { "path": "specs-reviewed/m07-dlna-upnp-av.md", "note": "F-01..F-14 字段表（R46/R49 行级来源；F-13/F-14 真实 TV 矩阵 blocked）" },
+  { "path": "provenance/m07-inputs.json", "note": "R46/R49 事实可入实现；R47/R48 restricted 未使用" },
+  { "path": "evidence/dlna/corpus-plan.json", "note": "12 条自制 fixture（含 T41-01..04 的负向与 invariant）" },
+  { "path": "tools/test_dlna_gate.py", "note": "7 条 gate 纪律测试" }
+ ],
+ "credentials_redacted": true,
+ "license_route_approved": false,
+ "notes": "**证据等级 build-verified**（SSDP/SOAP/XML/策略在本机可证）。**不是** device-verified：没有接触任何真实 TV（P-M07-1 blocked）。**没有**发现实现（SSDP 组播收发、描述 HTTP 抓取属下一步 + 需网络策略批准）：本切片只做编解码/策略/授权/租约，因此 demo 里只跑本地 fixture。GENA 事件投递与媒体字节传输（T24/T42）未实现。"
+}

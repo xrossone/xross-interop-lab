@@ -4,6 +4,14 @@
  "notes": "证据登记簿：dossier/specs 中的 evidence_refs 必须指向这里登记的 id（tools/test_dossiers.py 强制）。kind 词表：run-manifest | device-run | source-tree | page-review | user-observation。",
  "entries": [
   {
+   "id": "run-2026-09-15-t41-dlna-control",
+   "kind": "run-manifest",
+   "level": "build-verified",
+   "date": "2026-09-15",
+   "path": "evidence/2026-09-15-t41-dlna-control/run-manifest.json",
+   "notes": "T41 DLNA/UPnP AV 控制路径（headless）：SSDP 编解码、加固 XML、SOAP 动作校验、描述抓取策略、受限 ContentDirectory、URL lease 撤销（T41-01..04）；真实 TV 矩阵 blocked"
+  },
+  {
    "id": "run-2026-09-15-t33-airplay-mirror",
    "kind": "run-manifest",
    "level": "build-verified",

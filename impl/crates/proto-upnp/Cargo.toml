@@ -1,0 +1,13 @@
+[package]
+name = "proto-upnp"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+publish.workspace = true
+
+# DLNA/UPnP AV 控制路径（plans/03 T41 headless 切片）。
+# 只实现 `specs-reviewed/m07-dlna-upnp-av.md` 字段表 impl-allowed=yes 的行；
+# 真实 TV 矩阵（P-M07-1）不实现，也不声明镜像能力。
+[dependencies]
+interop-contract = { path = "../interop-contract" }
+getrandom = "0.2"

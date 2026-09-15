@@ -11,6 +11,7 @@ members = [
     "crates/interop-testkit",
     "crates/proto-airplay",
     "crates/proto-quickshare",
+    "crates/proto-upnp",
     "adapters/standalone-host",
     "apps/interopd",
     "apps/interop-cli",
