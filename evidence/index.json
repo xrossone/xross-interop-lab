@@ -4,6 +4,14 @@
  "notes": "证据登记簿：dossier/specs 中的 evidence_refs 必须指向这里登记的 id（tools/test_dossiers.py 强制）。kind 词表：run-manifest | device-run | source-tree | page-review | user-observation。",
  "entries": [
   {
+   "id": "run-2026-09-15-t32-airplay-control",
+   "kind": "run-manifest",
+   "level": "build-verified",
+   "date": "2026-09-15",
+   "path": "evidence/2026-09-15-t32-airplay-control/run-manifest.json",
+   "notes": "T32 AirPlay Rust discovery/control/session 核心（T32-01..04 严格 RTSP framing、认证前不建流、能力广告与实现一致、100 次快速断开资源回收）；keying 为 trait seam，默认不可用"
+  },
+  {
    "id": "run-2026-09-15-t31-airplay-gate",
    "kind": "run-manifest",
    "level": "source-reviewed",

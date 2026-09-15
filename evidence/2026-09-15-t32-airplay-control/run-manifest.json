@@ -1,0 +1,80 @@
+{
+ "schema_version": 1,
+ "run_id": "2026-09-15-t32-airplay-control",
+ "task": "T32 · AirPlay Rust discovery/control/session 核心",
+ "kind": "manual",
+ "evidence_level": "build-verified",
+ "is_test_evidence": true,
+ "synthetic": false,
+ "base_commit": "1abc3f0（T31 提交）",
+ "case_ids": [
+  "T32-01",
+  "T32-02",
+  "T32-03",
+  "T32-04"
+ ],
+ "result": "pass",
+ "commands": [
+  {
+   "seq": 1,
+   "purpose": "red：proto-airplay crate 不存在",
+   "command": "cargo test --manifest-path impl/Cargo.toml -p proto-airplay",
+   "exit_code": 101,
+   "result": "fail（package ID specification `proto-airplay` did not match any packages，预期 red）"
+  },
+  {
+   "seq": 2,
+   "purpose": "green：T32 验收套件 + discovery 单测",
+   "command": "cargo test --manifest-path impl/Cargo.toml -p proto-airplay",
+   "exit_code": 0,
+   "result": "pass：6 tests（T32-01..04 + TXT RDATA 编码 2 条）"
+  },
+  {
+   "seq": 3,
+   "purpose": "全 workspace 回归 + 静态检查 + lab 检查",
+   "command": "cargo test --manifest-path impl/Cargo.toml --workspace; cargo clippy --manifest-path impl/Cargo.toml --workspace --all-targets; python3 -m unittest discover -s tools",
+   "exit_code": 0,
+   "result": "pass：90 tests 全绿（84 → 90）；clippy 0 warnings；lab 32 tests OK"
+  }
+ ],
+ "acceptance_mapping": {
+  "T32-01": "POST 缺 Content-Length → invalid-frame；重复 Content-Length → invalid-frame（不做取第一个的宽容）；非法长度 → invalid-frame；Content-Length 999999 → resource-limit（分配前）；body 截断 → invalid-frame；合法 POST 往返（含 CSeq 提取）；GET /info 无 body 合法",
+  "T32-02": "未认证 SETUP → 401 且 has_stream=false、allocated_video_bytes=0、状态不推进；配对后 SETUP → 200 并建流（此时才分配 128KiB 视频缓冲）；keying 不可用（UnavailableKeying）时 SETUP → 503 且不建流、零分配",
+  "T32-03": "ImplementationInventory::current() 全 false → advertised_features 不含 video-receiver-h264/hevc；人为加入 HEVC → assert_advertised_matches_implementation 返回 unsupported-feature（构建/能力测试失败）；ServiceAdvertisement::for_receiver 同样不广告未实现项；两种 Bonjour 服务类型断言",
+  "T32-04": "100 次 accept/disconnect（一半先发 /info）后 active_sessions=0、reserved_ports=0、tracked_sessions=0；建流后 TEARDOWN → 端口回收、状态 Ended；并发上限 1 时第二条 → busy，TEARDOWN 释放名额后可再接受连接"
+ },
+ "extra_coverage": {
+  "keying_seam": "KeyingProvider trait + UnavailableKeying（默认，返回 vendor-gated）+ FakeKeying（测试用确定性字节，非真实材料）；StreamKeys 的 Debug 打码（密钥不进日志）",
+  "rtsp_hardening": "未知方法 / 非 RTSP/1.0 版本 → invalid-frame；头块 >8KiB → resource-limit；头数量上限 64；响应编码时 Content-Length 由应答方写死",
+  "discovery": "mdns_service_types() = [_airplay._tcp, _raop._tcp]；TXT features 位串真实位值标『待固化』不编造；RFC 1035 §3.3.14 的 TXT RDATA 编码（协议无关）+ 超 255 字节拒绝"
+ },
+ "artifacts": [
+  {
+   "path": "impl/crates/proto-airplay/Cargo.toml"
+  },
+  {
+   "path": "impl/crates/proto-airplay/src/lib.rs"
+  },
+  {
+   "path": "impl/crates/proto-airplay/src/rtsp.rs"
+  },
+  {
+   "path": "impl/crates/proto-airplay/src/session.rs"
+  },
+  {
+   "path": "impl/crates/proto-airplay/src/capability.rs"
+  },
+  {
+   "path": "impl/crates/proto-airplay/src/discovery.rs"
+  },
+  {
+   "path": "impl/crates/proto-airplay/src/keying.rs"
+  },
+  {
+   "path": "impl/crates/proto-airplay/tests/airplay_control.rs"
+  }
+ ],
+ "credentials_redacted": true,
+ "license_route_approved": false,
+ "notes": "本 crate 不含 FairPlay/设备认证材料的任何部分：密钥获取是 trait（keying seam），默认实现恒不可用，因此 SETUP 在无 keying 时返回 503——能力缺席而非假成功。所有报文为自制 fixture（字段出 specs-reviewed/m01 字段表）。**证据等级 build-verified**：控制链状态机与资源记账在 headless 下可验；真机互通（A1–A10）仍需 S1/S2。"
+}

@@ -1,0 +1,12 @@
+[package]
+name = "proto-airplay"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+publish.workspace = true
+
+# AirPlay legacy receiver 的控制链核心（plans/03 T32）。
+# 只含协议无关的 framing/状态机/能力门禁；**不含任何 FairPlay/设备认证材料**
+# （密钥获取经 keying seam，生产实现缺席 = 能力缺席）。
+[dependencies]
+interop-contract = { path = "../../crates/interop-contract" }

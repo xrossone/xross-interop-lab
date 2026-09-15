@@ -9,6 +9,7 @@ members = [
     "crates/interop-platform",
     "crates/interop-runtime",
     "crates/interop-testkit",
+    "crates/proto-airplay",
     "adapters/standalone-host",
     "apps/interopd",
     "apps/interop-cli",
