@@ -48,6 +48,13 @@ P-F02-1（LAN 发现载体）与 P-F02-3（可见性矩阵）**blocked**——�
 | F-31 | control | keep-alive：外层 `V1Frame.type=KEEP_ALIVE(5)` + `KeepAliveFrame{ack=1(bool), seq_num=2(uint32)}`；Android 每 **10 秒**发一次并期待对端同样发送，否则过一段时间断开（"a while" 没有给数值） | R17 `offline_wire_formats.proto:45,61,444-449`；R15 `PROTOCOL.md:228-230` | source-reviewed（10 s 是**来源取值**，不是规范常量；超时阈值 30 s 与判死基准同属**本仓策略**：基准 = 最后一次**收到**的对端帧，从未收到时用**首个**心跳——自己继续发心跳不得把判死推后） | yes |
 | F-32 | control | paired-key encryption 帧（Nearby Share 层，装在 BYTES payload 里）：`PairedKeyEncryptionFrame{signed_data=1, secret_id_hash=2, optional_signed_data=3, qr_code_handshake_data=4}`；**双方互发**；参考实现填随机字节（`secretIDHash` 6 B、`signedData` 72 B）且明说"要拿到里面的内容得跟 Google 服务器说话" → **材料不可离线推导**：本仓只做帧与状态机，材料由调用方提供 | R15 `wire_format.proto:322-340`；R15 `PROTOCOL.md:204-206` | source-reviewed（材料语义**未固化**：不得声称已实现配对或 PIN 免确认） | yes |
 | F-33 | control | paired-key result 帧：`PairedKeyResultFrame{status=1(enum UNKNOWN=0/SUCCESS=1/FAIL=2/UNABLE=3), os_type=2}`；参考实现双方都发 `UNABLE`，其后流程照常（PIN 仍由用户核对） | R15 `wire_format.proto:342-356`；R15 `PROTOCOL.md:208-212` | source-reviewed（真机实际取值待 P-F02-2） | yes |
+| F-34 | control | **DisconnectionFrame（外层）**：`V1Frame.type=DISCONNECTION(6)` + 字段 `disconnection=7`；正文 `DisconnectionFrame{request_safe_to_disconnect=1(bool), ack_safe_to_disconnect=2(bool)}`；proto 注释：让对端**立即**断开、"用于带宽升级绕过竞态，也可用于比等 socket 关闭更快地触发断开" | R17 `offline_wire_formats.proto:46,62,450-463`；R15 `NearbyShare/Protobuf/offline_wire_formats.pb.swift:1982-2011`（生成代码，字段同形） | source-reviewed（官方 proto + 两个实现） | yes |
+| F-35 | control | DisconnectionFrame 的**接收规则**（三路）：① 未带 `request_safe_to_disconnect` 或其为 false → **立即关闭**（"no need to apply safe-to-disconnect"）；② `request=1` 且 `ack=1` → 标记该端点 safe-to-disconnect 并通知停止等待；③ `request=1` 且 `ack=0` → 标记后移除端点，并**回发一帧 `request=1, ack=1`** | R17 `connections/implementation/endpoint_manager.cc:356-410`；发起侧用法 `endpoint_manager.cc:402-403,868-869` | source-reviewed（接收语义以参考实现为准） | yes |
+| F-36 | control | **两个参考实现在同一个帧上的字节差异（必须保留字段存在性）**：R17 的 `ForDisconnection` **总是显式设置两个 bool**（false 也写进去）；NearDrop 发的 `DisconnectionFrame` **一个字段都不设**（空正文），加完密就关连接 → 解码必须区分"字段缺席"与"字段=false"，否则无法字节级还原任一侧 | R17 `connections/implementation/offline_frames.cc:563-574`；R15 `NearbyShare/NearbyConnection.swift:411-423`（`disconnection = DisconnectionFrame()` 后直接发送） | source-reviewed（两来源**都实测过**这一帧：一侧显式、一侧空） | yes |
+| F-37 | control | **PAYLOAD_ACK 帧形状**：外层 `PAYLOAD_TRANSFER(3)` 内 `packet_type=PAYLOAD_ACK(3)`，**只带** `payload_header{id=<payload id>, total_size=-1}`——不带 chunk、不带 control_message（proto 注明"下方两字段按类型二选一"）；`-1` 是 `kIndeterminateSize`，表示大小未知 | R17 `offline_frames.cc:242-256`；`internal_payload.h:39`；`offline_wire_formats.proto:165-218` | source-reviewed（构造点即规格） | yes |
+| F-38 | control | **PAYLOAD_ACK 的语义与门槛**：接收方**只在最后一个 chunk 到达**且该端点启用 ack 时发送；启用条件里明确要求载荷类型**不是 BYTES**（即协商类 BYTES 载荷**不发** ack，只有 FILE 等才发）；发送侧收到 ack 时：未知 payload → **忽略**、对**incoming** payload 的 ack → **忽略**、否则标记"该端点已确认收到" | R17 `payload_manager.cc:850-874`（`is_last_chunk` 门槛）、`:968-978`（BYTES 排除）、`:1417-1438`（三种处理分支） | source-reviewed（参考实现即规格） | yes |
+| F-39 | control | 已废弃的替代路径：`ControlMessage.EventType.PAYLOAD_RECEIVED_ACK=3` 带注释 "Use PacketType.PAYLOAD_ACK instead" → 本仓**不实现 control 路径**，收到 `packet_type=CONTROL` 一律明确拒绝（不静默忽略） | R17 `offline_wire_formats.proto:195-206` | source-reviewed（废弃标注是官方 proto 原文） | yes |
+| F-40 | control | 补充 F-31：keep-alive 的参数其实是**握手协商字段**——`ConnectionRequestFrame{keep_alive_interval_millis=8, keep_alive_timeout_millis=9}`、`ConnectionResponseFrame{keep_alive_timeout_millis=9}`（都是 `optional int32`，**proto 里没有默认值**）→ 机制有据，但具体数值仍由实现决定；本仓不实现连接握手，故继续用本仓策略值并在报告里标注 | R17 `offline_wire_formats.proto:112-113,159` | source-reviewed（**修正 F-31 的表述**：不是"来源没提数值"，而是"数值属协商字段、proto 无默认值"） | yes |
 
 ## B. 与本仓实现的关系（T20 范围）
 
@@ -59,8 +66,12 @@ P-F02-1（LAN 发现载体）与 P-F02-3（可见性矩阵）**blocked**——�
 - **T21+ 已实现（headless 部分，2026-09-15）**：F-30/F-31（外层 keep-alive 帧与 10 s 节奏、超时策略）、
   F-32/F-33（paired-key encryption/result 帧编解码与交换状态机，材料由调用方提供）——
   见 `impl/crates/proto-quickshare/src/control.rs`。
-- **不实现**：F-01/F-02/F-04/F-24（发现与 QR，P-F02-1/3 未关闭）、`PAYLOAD_ACK`（未实现，显式返回）、
-  `DisconnectionFrame`（外层 6：帧结构已登记，本切片不做带宽升级路径）、
+- **T22headless 已实现（2026-09-15）**：F-34..F-39——`DisconnectionFrame`（外层 6/字段 7，含字段**存在性**
+  保留与 F-35 的三路接收规则）、`PAYLOAD_ACK`（形状 + "只对非 BYTES 的末块发" + 三种处理分支）、
+  以及 F-40（keep-alive 协商字段的校验与本仓策略回退）。见同一 `control.rs`。
+- **不实现**：F-01/F-02/F-04/F-24（发现与 QR，P-F02-1/3 未关闭）、
+  `packet_type=CONTROL`（F-39：已废弃路径，收到即**明确拒绝**，不静默忽略）、
+  带宽升级路径本身（F-34 的 safe-to-disconnect 只做成帧与决策，不做 channel 切换）、
   paired-key 的**材料语义**（F-32：不可离线推导，不做配对存储、不据 `SUCCESS` 免 PIN——见能力表）。
 - 因此 `impl/crates/proto-quickshare` 里**没有**任何 mDNS/BLE/QR/GMS 代码——这是机器检查项（`tools/test_quickshare_gate.py` QS-02）。
 
@@ -74,6 +85,9 @@ P-F02-1（LAN 发现载体）与 P-F02-3（可见性矩阵）**blocked**——�
 | payload/文件接收闭环 | `source-reviewed`（实现见 T21） | 真机互通未验；反向发送仍需 F-24 |
 | keep-alive 帧与节奏（F-31） | `source-reviewed`（实现见 T21+） | 真机是否每 10 s 发、断开阈值多少待对跑（P-F02-2）；超时阈值是本仓策略 |
 | paired-key 交换（F-32/F-33：帧 + 状态机） | `source-reviewed`（实现见 T21+） | **材料不可离线推导**：不做配对存储、不据 `SUCCESS` 免 PIN；真机实际 status 待 P-F02-2 |
+| DisconnectionFrame 与 safe-to-disconnect 决策（F-34..F-36） | `source-reviewed`（实现见 T22headless） | 只做帧与三路决策、**不做带宽升级**；真机是否走 safe 路径待 P-F02-2 |
+| PAYLOAD_ACK（F-37/F-38） | `source-reviewed`（实现见 T22headless） | 形状与门槛按参考实现（**BYTES 不 ack**）；真机 ack 时机待 P-F02-2 |
+| keep-alive 参数协商字段（F-40） | `not-implemented` | 连接握手不在本仓范围：字段只做校验，取值仍用本仓策略 |
 | 反向发送（Mac→Android） | `not-implemented` | 需要 QR/显式可发现（F-24）与 P-F02-3 |
 | 可见性模式矩阵（所有人/联系人/隐藏） | `blocked` | P-F02-3：两台 Android × 不同设置的真机矩阵 |
 | 4 位确认码一致性 | `source-reviewed`（启发式实现） | 真机比对（P-F02-2 关闭条件之二） |

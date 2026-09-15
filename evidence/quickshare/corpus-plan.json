@@ -2,7 +2,7 @@
   "schema_version": 1,
   "profile_id": "quickshare.lan.v1",
   "created_at": "2026-09-15",
-  "scope": "T19/T20 的自制语料计划：UKEY2 握手与 TCP framing。**全部自制**（按 specs-reviewed/f02 字段表的字段号构造）；不含任何抓包或第三方字节",
+  "scope": "T19/T20 的自制语料计划：UKEY2 握手与 TCP framing。**全部自制**（按 specs-reviewed/f02 字段表的字段号构造）；不含任何抓包或第三方字节；T22headless（2026-09-15）扩充：DisconnectionFrame/safe-to-disconnect 与 PAYLOAD_ACK（qs-025..030，全部自制）",
   "fixture_rules": [
     "每个 fixture 必须注明它验证字段表的哪一行（fact_ref）与期望结果",
     "负向 fixture 必须写明期望错误码（Alert 码或本仓错误码），不允许『只要失败就行』",
@@ -201,6 +201,54 @@
       "fact_ref": "F-32,F-33",
       "description": "paired-key 帧畸形：status 取值不在枚举内（如 9）、内层帧大小超过本仓上限、外层用内层编号发出",
       "expected": "invalid-frame / resource-limit（解析前拒绝）；不得把未知 status 当成 SUCCESS"
+    },
+    {
+      "id": "qs-025",
+      "kind": "positive",
+      "layer": "control",
+      "fact_ref": "F-34,F-36",
+      "description": "DisconnectionFrame 四种字面形态：① R17 风格显式 (false,false) ② NearDrop 风格**两字段都缺席**（空正文）③ (true,false) 发出 ④ (true,true) 应答",
+      "expected": "四种都能编码并**字节级往返**；字段存在性必须保留（缺席 ≠ false）；外层 type=6/字段 7"
+    },
+    {
+      "id": "qs-026",
+      "kind": "positive",
+      "layer": "control",
+      "fact_ref": "F-35",
+      "description": "收到 DisconnectionFrame 的三路决策：未请求/缺席 → 立即关闭；request=1,ack=1 → 标记等待结束（不回帧）；request=1,ack=0 → 标记 + 回发 request=1,ack=1",
+      "expected": "三路各自给出明确决策与是否需要回帧；只有第三路产生回帧且回帧是 (true,true)"
+    },
+    {
+      "id": "qs-027",
+      "kind": "positive",
+      "layer": "control",
+      "fact_ref": "F-37",
+      "description": "PAYLOAD_ACK 帧：外层 PAYLOAD_TRANSFER(3) 内 packet_type=3，正文只有 payload_header{id,total_size=-1}（无 chunk、无 control_message）",
+      "expected": "往返等值；total_size 必须是 -1（kIndeterminateSize）；构造出的帧不得带 chunk/control 字段"
+    },
+    {
+      "id": "qs-028",
+      "kind": "negative",
+      "layer": "control",
+      "fact_ref": "F-37,F-38",
+      "description": "PAYLOAD_ACK 的门槛与分支负例：BYTES 载荷的末块**不发** ack；非末块不发；收到未知 payload id 的 ack → 忽略；收到自己**incoming** payload 的 ack → 忽略",
+      "expected": "BYTES/非末块 → 不产生 ack 帧；未知与 incoming → 明确结果为忽略（不是错误、也不是标记成功）"
+    },
+    {
+      "id": "qs-029",
+      "kind": "negative",
+      "layer": "control",
+      "fact_ref": "F-39",
+      "description": "已废弃的 control 路径：packet_type=CONTROL 携 control_message{event=PAYLOAD_RECEIVED_ACK(3)}",
+      "expected": "明确 unsupported-feature 拒绝（提示用 PAYLOAD_ACK），不得静默忽略"
+    },
+    {
+      "id": "qs-030",
+      "kind": "positive",
+      "layer": "control",
+      "fact_ref": "F-40",
+      "description": "keep-alive 协商字段校验：请求侧 {interval,timeout} / 响应侧 {timeout} 的可选值——非正值、timeout<interval、超出 u32 一律拒绝；缺席 → 回退本仓策略值并标注来源",
+      "expected": "合法值被采纳并报告来源为协商；非法值 invalid-frame；缺席报告来源为本仓策略"
     }
   ],
   "device_corpus": {

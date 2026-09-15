@@ -185,6 +185,51 @@ class QuickShareGate(unittest.TestCase):
         must = {"qs-019", "qs-020", "qs-021", "qs-022", "qs-023", "qs-024"}
         self.assertTrue(must <= ids, f"缺少 T21+ 语料：{must - ids}")
 
+    # ---- T22headless：DisconnectionFrame / PAYLOAD_ACK ----
+
+    def test_disconnection_and_ack_rows_are_sourced(self):
+        rows = {cells[0]: cells for cells in table_rows(section(self.spec, FACTS_HEADING))}
+        for fid in ("F-34", "F-35", "F-36", "F-37", "F-38", "F-39", "F-40"):
+            self.assertIn(fid, rows, f"T22headless 字段行缺失：{fid}")
+        f34 = " ".join(rows["F-34"])
+        for needle in ("DISCONNECTION(6)", "request_safe_to_disconnect=1", "ack_safe_to_disconnect=2"):
+            self.assertIn(needle, f34, f"F-34 缺内容：{needle}")
+        f35 = " ".join(rows["F-35"])
+        for needle in ("立即关闭", "回发"):
+            self.assertIn(needle, f35, f"F-35 三路规则缺内容：{needle}")
+        f36 = " ".join(rows["F-36"])
+        for needle in ("存在性", "空正文", "显式"):
+            self.assertIn(needle, f36, f"F-36 必须写明两实现的字节差异：{needle}")
+        f37 = " ".join(rows["F-37"])
+        for needle in ("PAYLOAD_ACK(3)", "total_size=-1", "kIndeterminateSize"):
+            self.assertIn(needle, f37, f"F-37 缺内容：{needle}")
+        f38 = " ".join(rows["F-38"])
+        for needle in ("最后一个 chunk", "不是 BYTES", "忽略"):
+            self.assertIn(needle, f38, f"F-38 缺内容：{needle}")
+        f39 = " ".join(rows["F-39"])
+        self.assertIn("Use PacketType.PAYLOAD_ACK instead", f39, "F-39 必须记录官方的废弃标注原文")
+        f40 = " ".join(rows["F-40"])
+        for needle in ("keep_alive_interval_millis=8", "keep_alive_timeout_millis=9", "没有默认值"):
+            self.assertIn(needle, f40, f"F-40 缺内容：{needle}")
+
+    def test_corpus_covers_disconnection_and_ack(self):
+        ids = {f["id"] for f in self.corpus["fixtures"]}
+        must = {"qs-025", "qs-026", "qs-027", "qs-028", "qs-029", "qs-030"}
+        self.assertTrue(must <= ids, f"缺少 T22headless 语料：{must - ids}")
+
+    def test_capability_rows_cover_disconnection_and_ack(self):
+        caps = " ".join(" ".join(c) for c in table_rows(section(self.spec, CAPS_HEADING)))
+        self.assertIn("DisconnectionFrame", caps)
+        self.assertIn("PAYLOAD_ACK", caps)
+        self.assertIn("BYTES 不 ack", caps, "能力表必须写明 BYTES 载荷不发 ack（F-38）")
+        # 带宽升级与连接握手都不得被写成已实现
+        row = next(
+            (c for c in table_rows(section(self.spec, CAPS_HEADING)) if c and c[0].startswith("keep-alive 参数协商")),
+            None,
+        )
+        self.assertIsNotNone(row, "必须有 keep-alive 参数协商行")
+        self.assertIn("not-implemented", " ".join(row))
+
     def test_control_module_is_pure_framing(self):
         """paired-key 帧层不得含任何密码学原语：材料由调用方给，本层只做编解码与状态机。"""
         control = IMPL_SRC / "control.rs"
