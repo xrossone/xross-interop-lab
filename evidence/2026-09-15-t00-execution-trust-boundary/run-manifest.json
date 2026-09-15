@@ -1,0 +1,79 @@
+{
+ "schema_version": 1,
+ "run_id": "2026-09-15-t00-execution-trust-boundary",
+ "task": "T0 · ADR-003 执行与信任边界（用户采纳）+ decisions 台账同步 + ADR 纪律测试恢复",
+ "kind": "manual",
+ "evidence_level": "source-reviewed",
+ "is_test_evidence": true,
+ "synthetic": false,
+ "base_commit": "6c06cf8（阶段 2 goal 提交）",
+ "case_ids": [
+  "ADR-01",
+  "ADR-02",
+  "ADR-03",
+  "ADR-04"
+ ],
+ "result": "pass",
+ "commands": [
+  {
+   "seq": 1,
+   "purpose": "red：恢复的 ADR 纪律测试在没有任何 adr-*.md 时报告产出缺失",
+   "command": "python3 -m unittest discover -s tools -p 'test_*.py'",
+   "exit_code": 1,
+   "result": "FAILED (errors=1)：test_decision_records.ADRRecords.setUpClass → decisions/adr-*.md 不存在（red 状态）；其余 24 tests OK"
+  },
+  {
+   "seq": 2,
+   "purpose": "写入 ADR-003 + 台账 + provider/baseline 字段后的首次全量运行",
+   "command": "python3 -m unittest discover -s tools -p 'test_*.py'",
+   "exit_code": 1,
+   "result": "FAILED (failures=1)：ADR-02 未取到证据锚——测试只收集 Evidence 首行，多行 Evidence 的锚在续行（真实缺陷，见下条）"
+  },
+  {
+   "seq": 3,
+   "purpose": "修正 ADR-02 的续行收集后全量运行（final）",
+   "command": "python3 -m unittest discover -s tools -p 'test_*.py'",
+   "exit_code": 0,
+   "result": "pass：28 tests OK（= 既有 24 + ADR-01..04 四条）"
+  },
+  {
+   "seq": 4,
+   "purpose": "机器可读清单 JSON 有效性 + 字段落地检查",
+   "command": "python3 -c \"import json; [json.load(open(p)) for p in ['decisions/provider-adoption.json','decisions/xross-contract-baseline.json']]\"",
+   "exit_code": 0,
+   "result": "pass：两份 JSON 可解析；7 个 provider 均带 deployment_class/source_role（A=1 / B=4 / C=1 / vendor=null）"
+  }
+ ],
+ "acceptance_mapping": {
+  "ADR-01": "adr-003-execution-and-trust-boundary.md 含模板全部 section；Status=accepted（合法值）",
+  "ADR-02": "accepted 的 ADR 证据锚可解析：provenance/review-log.md、docs/goal-phase-2.md、research/xross-top-level-design.md、decisions/xross-contract-baseline.json、decisions/provider-adoption.json 均存在",
+  "ADR-03": "README.md 引用 decisions/adr-003-execution-and-trust-boundary.md，链接可解析（无悬空引用）",
+  "ADR-04": "decisions/README.md 台账含该 ADR 行且标注 accepted，与文件 Status 一致"
+ },
+ "artifacts": [
+  {
+   "path": "decisions/adr-003-execution-and-trust-boundary.md"
+  },
+  {
+   "path": "tools/test_decision_records.py"
+  },
+  {
+   "path": "decisions/README.md"
+  },
+  {
+   "path": "decisions/provider-adoption.json"
+  },
+  {
+   "path": "decisions/xross-contract-baseline.json"
+  },
+  {
+   "path": "provenance/review-log.md"
+  },
+  {
+   "path": "README.md"
+  }
+ ],
+ "credentials_redacted": true,
+ "license_route_approved": false,
+ "notes": "用户采纳原话记录于 provenance/review-log.md（2026-09-15）。本 run 不改变任何 provider 许可结论（production_approved 仍全 false）。对阶段 2 goal T0 措辞的一处加强并如实记录：T0 原文写『无 ADR 时跳过而非失败』，实现为『无 adr-*.md 即 red』——撤回事件之后需要回归保护，跳过型测试不提供保护。"
+}

@@ -2,7 +2,8 @@
 
 本目录放**可被审查的决议/清单**，不放讨论稿。写 ADR 用
 `references/research/xross-interop-plan-2026-09-15/templates/adr.md` 的 section 结构；
-机器可读的清单（allowlist / baseline / provider 表）见下表。
+机器可读的清单（allowlist / baseline / provider 表）见下表；ADR 状态由
+[tools/test_decision_records.py](../tools/test_decision_records.py) 强制（ADR-01..04）。
 
 ## 机器可读清单
 
@@ -12,19 +13,20 @@
 | [provider-adoption.json](provider-adoption.json) | T05 六项 provider 路线（reuse/worker/independent/vendor） | 同上；FairPlay 永久 vendor-gated |
 | [xross-contract-baseline.json](xross-contract-baseline.json) | T03 xross-dev 契约锚点（30 条）+ adapter seam | 锚定 xross-dev `099b6c72`；HEAD 已前移，实现前需复核 |
 
+## ADR 台账
+
+| ADR | 决议 | Status |
+| --- | --- | --- |
+| [adr-003-execution-and-trust-boundary.md](adr-003-execution-and-trust-boundary.md) | 执行与信任边界：产品集成走 xrossd 内第一方 interop bridge（协议名到此为止），协议执行走隔离低权限 worker（只经 scoped 能力面，禁用 control.v1 全权）；provider 分 A/B/C 部署类 | accepted（2026-09-15 用户采纳） |
+
 ## 待用户裁决（open）
 
 - **T05 provider 放行**：`provider-adoption.json` / `source-allowlist.json` 中所有
   `production_approved` 仍为 `false`。核心是 F01 LocalSend profile 是否保持 P0 且走 reuse（主仓 adapter）；
   其余（GStreamer 插件矩阵、windows-rs intake 等）按计划推进项。
-- **执行与信任边界（阶段 2 T0，ADR-003）**：建议不再二选一——产品集成用 xrossd 内**第一方 interop
-  bridge**（协议名到 bridge 为止），协议执行放**独立低权限 worker**（只走 scoped 能力面；产品化目标是
-  `xross.client.v1`，在它落地前不得用 control.v1 全权）。来源：用户 2026-09-15 转达的架构评审，
-  **待用户明示采纳**（采纳后 ADR status 由 `proposed` 升 `accepted`）。见
-  [../docs/goal-phase-2.md](../docs/goal-phase-2.md) T0 与
-  [../research/xross-top-level-design.md](../research/xross-top-level-design.md) §3/§9。
-- **阶段 3 scope 行**：首个真机 vertical（AirPlay via UxPlay 外部引擎 / Quick Share LAN 接收）需用户
-  新开 scope（外部引擎二进制、真机矩阵、可能的抓包批准）——清单由阶段 2 T5 产出。
+- **阶段 3 scope 行（首个真机 vertical）**：AirPlay via UxPlay 外部引擎 / Quick Share LAN 接收需要用户
+  新开 scope（外部引擎二进制、真机矩阵、可能的抓包批准）——清单由阶段 2 T5 产出。**执行与信任边界本身
+  已裁决**（见上表 ADR-003，accepted），不再属于 open。
 - **xross-dev 基线复核**：T03 映射锚定 `099b6c72`，xross-dev HEAD 已前移；
   首次实现对接前复核映射是否仍成立（`tools/test_xross_baseline.py` 会提示）。
 

@@ -52,3 +52,14 @@
 - 本轮所有决议由 AI agent 作出，全部 production_approved=false；用户尚未裁决。
 - localsend-rs 缺 LICENSE 文件是本次审查的发现之一。
 - "独立实现"路线的法律边界按 docs/06 §1 理解：本记录是工程风险管理，不构成法律意见。
+
+## 追加（2026-09-15，阶段 2 T0）：执行与信任边界裁决
+
+- **来源**：用户转达的第三方架构评审（建议"不二选一：first-party bridge + isolated protocol worker"），
+  由 agent 逐条核对本仓已核事实后落为 ADR-003 草案，状态 `proposed`。
+- **用户裁决**：2026-09-15，用户原话「采纳，你可以自己set goal然后开始。你自己决定吧。」——
+  ADR-003 升 `accepted`（`decisions/adr-003-execution-and-trust-boundary.md`）。
+- **边界**：本裁决不改变任何 provider 的许可结论（`production_approved` 全 false）；阶段 3 首个真机
+  vertical 所需的 scope 行（外部引擎二进制、真机矩阵、可能的抓包批准）仍待用户明示。
+- **记录纪律**：转述/转达材料一律标注来源与状态；只有用户原话可记为"用户裁决"
+  （阶段 1 的撤回事件即反例，见同一台账历史）。

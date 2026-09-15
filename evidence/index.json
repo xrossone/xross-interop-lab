@@ -4,6 +4,14 @@
  "notes": "证据登记簿：dossier/specs 中的 evidence_refs 必须指向这里登记的 id（tools/test_dossiers.py 强制）。kind 词表：run-manifest | device-run | source-tree | page-review | user-observation。",
  "entries": [
   {
+   "id": "run-2026-09-15-t00-execution-trust-boundary",
+   "kind": "run-manifest",
+   "level": "source-reviewed",
+   "date": "2026-09-15",
+   "path": "evidence/2026-09-15-t00-execution-trust-boundary/run-manifest.json",
+   "notes": "ADR-003 执行与信任边界（用户 2026-09-15 采纳，accepted）+ decisions 台账同步 + ADR 纪律测试恢复（ADR-01..04）"
+  },
+  {
    "id": "run-2026-09-15-t01-workspace",
    "kind": "run-manifest",
    "level": "build-verified",

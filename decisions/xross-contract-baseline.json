@@ -170,7 +170,7 @@
  ],
  "adapter_seam": {
   "name": "XrossHostAdapter：以 ControlServiceClient（gRPC/UDS + ControlToken）为唯一 xrossd 接入点",
-  "rationale": "主仓唯一受支持的本地正门是 daemon 控制面（control.proto + action broker）；媒体等缺失接口经 mock host 先行。唯一 seam = interop 侧只实现这一个 adapter trait，主仓升级只影响该 adapter；不建平行 Offer/Lease/身份模型 顶层设计细化：主仓本地 API 是 control.v1（仅第一方管理）与 client.v1（公开 seam，scoped actions）两个契约；第一方角色 vs 独立进程走哪条属产品形态裁决（pending-user-review），standalone 不受影响。"
+  "rationale": "主仓唯一受支持的本地正门是 daemon 控制面（control.proto + action broker）；媒体等缺失接口经 mock host 先行。唯一 seam = interop 侧只实现这一个 adapter trait，主仓升级只影响该 adapter；不建平行 Offer/Lease/身份模型 顶层设计细化：主仓本地 API 是 control.v1（仅第一方管理）与 client.v1（公开 seam，scoped actions）两个契约。ADR-003（accepted，2026-09-15 用户采纳）：产品集成侧=第一方 interop bridge（协议名到此为止），协议执行侧=隔离低权限 worker（只经 scoped 面，禁用 control.v1 全权；部署类 A/B/C），standalone 不受影响。"
  },
  "scope_conflicts": [
   {
@@ -204,6 +204,7 @@
   "device_directory_stance": "status.md/one_list.rs 实测裁决：LAN 与 fabric 双可见 = 故意两行（不按 alias/IP/model 合并）；与 plan 0007 stage D 的矛盾被显式记录。T11 endpoint registry 采用同一立场",
   "feature_ledger": "旧功能目录 reconciliation：FC-12 Nearby/LocalSend=built；FC-42 AirPlay=decision—probably not-carried——主仓帐本未 carry AirPlay/Miracast/Cast，interop lab 是重新打开这些方向的载体",
   "repo_focus": "GO.md（2026-09-08）：主仓当前焦点=付费后端（temporary-transfer R2/billing/operator console）；interop 集成窗口与用户另议",
+  "execution_trust_boundary": "ADR-003 accepted（用户 2026-09-15 采纳）：产品集成=第一方 interop bridge（协议名到此为止）；协议执行=隔离低权限 worker（supervisor 管理：固定 hash/参数白名单、pipe bootstrap、清环境/FD、有限重启），只经 scoped 能力面（产品化目标 client.v1；client.v1 落地前受限凭据 + HostPorts，禁用 control.v1 全权）；provider 部署类 A/B/C（LocalSend=A grandfathered；AirPlay/QuickShare/Miracast=B；Windows MiracastReceiver/厂商 SDK=C）；进程边界≠sandbox，隔离等级以 T13 实测为准如实标注",
   "reference": "research/xross-top-level-design.md（读于 a483bd14）"
  }
 }

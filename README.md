@@ -37,7 +37,7 @@ docs/goal-phase-2.md            # 阶段 2 goal prompt（T11–T13 收尾 + 执�
 docs/research/airplay-research.md  # AirPlay 真机 POC 记录（UxPlay/shairplay-rust）
 research/                       # 来源 intake + 逐 profile dossier（T02/T04 产出）
 specs-reviewed/                 # 审查后的 wire spec（F01/M01 实质；其余 review-pending）
-decisions/                      # source-allowlist / xross-contract-baseline / provider-adoption
+decisions/                      # source-allowlist / xross-contract-baseline / provider-adoption / ADR（见 decisions/README.md 台账）
 provenance/                     # approved-inputs / review-log
 evidence/                       # run manifest（run.schema.json 校验）+ intake 扫描
 tools/                          # 仓库检查脚本与测试（python3 -m unittest discover -s tools）
@@ -69,6 +69,11 @@ tools/                          # 仓库检查脚本与测试（python3 -m unitt
   LocalSend→reuse（主仓 adapter；用户自有 localsend-rs 属另一项目不引入）、
   QuickShare 参考→independent、GStreamer→worker、WinRT→independent、**FairPlay→永久 vendor-gated**；
   全部 `production_approved=false`（放行权保留给用户）。
+- **执行与信任边界（ADR-003，accepted 2026-09-15 用户采纳）**：产品集成 = xrossd 内第一方 interop
+  bridge（协议名到此为止）；协议执行 = 隔离低权限 worker（supervisor 管理，只经 scoped 能力面，
+  禁用 `control.v1` 全权）；provider 部署类 A/B/C（LocalSend=A grandfathered）。见
+  [decisions/adr-003-execution-and-trust-boundary.md](decisions/adr-003-execution-and-trust-boundary.md)
+  与 [decisions/README.md](decisions/README.md) 台账。
 - **T01/T06–T10/T14 实现**：`impl/` 7 个 crate + 1 adapter + 1 app；
   `cargo test --manifest-path impl/Cargo.toml --workspace` **46 tests 全绿**；
   clippy 0 warnings；覆盖 T01（卫生）、T06（schema/大整数/能力协商）、T07（scoped grant）、
