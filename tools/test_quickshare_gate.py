@@ -148,6 +148,56 @@ class QuickShareGate(unittest.TestCase):
         device = self.corpus.get("device_corpus", {})
         self.assertEqual(device.get("status"), "blocked", "真机语料必须标 blocked（需用户抓包）")
 
+    # ---- T21+：keep-alive 与 paired-key ----
+
+    def test_keepalive_and_paired_key_rows(self):
+        rows = {cells[0]: cells for cells in table_rows(section(self.spec, FACTS_HEADING))}
+        for fid in ("F-30", "F-31", "F-32", "F-33"):
+            self.assertIn(fid, rows, f"T21+ 的字段行缺失：{fid}")
+        # 编号冲突的裁决必须写明分层与待复核的 probe。
+        f30 = " ".join(rows["F-30"])
+        for needle in ("外层", "内层", "P-F02-2", "冲突"):
+            self.assertIn(needle, f30, f"F-30 裁决缺内容：{needle}")
+        # keep-alive 的 10 s 必须标为来源取值，超时标为本仓策略。
+        f31 = " ".join(rows["F-31"])
+        for needle in ("10 秒", "来源取值", "本仓策略", "ack", "seq_num"):
+            self.assertIn(needle, f31, f"F-31 缺内容：{needle}")
+        # paired-key 材料不可推导 + optional 字段号。
+        f32 = " ".join(rows["F-32"])
+        for needle in ("不可离线推导", "signed_data=1", "secret_id_hash=2", "调用方"):
+            self.assertIn(needle, f32, f"F-32 缺内容：{needle}")
+        f33 = " ".join(rows["F-33"])
+        for needle in ("SUCCESS=1", "UNABLE=3", "UNABLE"):
+            self.assertIn(needle, f33, f"F-33 缺内容：{needle}")
+
+    def test_paired_key_never_claims_pairing(self):
+        caps = list(table_rows(section(self.spec, CAPS_HEADING)))
+        paired = [c for c in caps if "paired-key" in c[0]]
+        self.assertTrue(paired, "能力表缺 paired-key 行")
+        for cells in paired:
+            self.assertIn("材料不可离线推导", cells[2], "paired-key 行必须写明材料不可推导")
+            self.assertNotIn("免 PIN", cells[1], "不得声明配对可免确认码")
+        keepalive = [c for c in caps if "keep-alive" in c[0]]
+        self.assertTrue(keepalive, "能力表缺 keep-alive 行")
+
+    def test_corpus_covers_keepalive_and_paired_key(self):
+        ids = {f["id"] for f in self.corpus["fixtures"]}
+        must = {"qs-019", "qs-020", "qs-021", "qs-022", "qs-023", "qs-024"}
+        self.assertTrue(must <= ids, f"缺少 T21+ 语料：{must - ids}")
+
+    def test_control_module_is_pure_framing(self):
+        """paired-key 帧层不得含任何密码学原语：材料由调用方给，本层只做编解码与状态机。"""
+        control = IMPL_SRC / "control.rs"
+        if not control.is_file():
+            self.skipTest("T21+ 实现尚未落地")
+        code = "\n".join(
+            line
+            for line in control.read_text(encoding="utf-8").splitlines()
+            if not line.strip().startswith("//")
+        ).lower()
+        for pattern in ("hkdf", "hmac", "sha2", "sha256", "aes", "cbc", "getrandom", "rand::"):
+            self.assertNotIn(pattern, code, f"帧/状态机层不得引入密码学或随机源：/{pattern}/")
+
     def test_no_invented_wire_for_blocked_layers(self):
         """状态 blocked 的字段表行不得出现在实现源码里（未固化的字节不许写）。"""
         if not IMPL_SRC.is_dir():

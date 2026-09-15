@@ -153,6 +153,54 @@
       "fact_ref": "T21-01,T21-02,T21-04",
       "description": "payloadID 混入、用户拒绝、伪造 filename、超预算、CANCEL 中断",
       "expected": "拒绝/REJECT/NOT_ENOUGH_SPACE；published_count 恒为 0 且无临时文件残留"
+    },
+    {
+      "id": "qs-019",
+      "kind": "positive",
+      "layer": "control",
+      "fact_ref": "F-31,F-30",
+      "description": "外层 keep-alive 帧：`V1Frame.type=KEEP_ALIVE(5)` + `KeepAliveFrame{ack,seq_num}`（自制序号；acket=0/false 与 ack=1/true 各一例）",
+      "expected": "往返等值；`seq_num` 单调递增；ack=1 表示该帧是对上一条的应答"
+    },
+    {
+      "id": "qs-020",
+      "kind": "positive",
+      "layer": "control",
+      "fact_ref": "F-31",
+      "description": "keep-alive 节奏：按 10 s（来源取值）推进时间轴，检查到点发送与对端静默后的超时判定（阈值为本仓策略）",
+      "expected": "到点才发；在阈值内收到对端帧则不判超时；超过本仓阈值 → 连接判死（明确结果，不静默继续）"
+    },
+    {
+      "id": "qs-021",
+      "kind": "negative",
+      "layer": "control",
+      "fact_ref": "F-30,F-31",
+      "description": "keep-alive 帧的畸形形态：缺 `type`、`type` 用了内层编号（3）、`KeepAliveFrame` 长度与实际字节不符、`seq_num` 回退",
+      "expected": "invalid-frame（层号混用必须拒绝：外层帧不得用内层枚举）"
+    },
+    {
+      "id": "qs-022",
+      "kind": "positive",
+      "layer": "control",
+      "fact_ref": "F-32,F-30",
+      "description": "paired-key encryption 帧（内层，装在 BYTES payload 里）：四个字段全带与只带前两个各一例（材料为自制固定字节）",
+      "expected": "外层是 PAYLOAD_TRANSFER 的 BYTES 载荷，内层解出 `PAIRED_KEY_ENCRYPTION(3)` 与四个字段；缺 `signed_data` 也接受（字段皆 optional）"
+    },
+    {
+      "id": "qs-023",
+      "kind": "positive",
+      "layer": "control",
+      "fact_ref": "F-33",
+      "description": "paired-key result 帧：status ∈ {UNKNOWN,SUCCESS,FAIL,UNABLE} 四值各一例（含参考实现的 UNABLE）",
+      "expected": "往返等值；**`SUCCESS` 不得被当成免 PIN 的依据**——本仓不做配对存储，仍要求用户核对 4 位确认码（策略）"
+    },
+    {
+      "id": "qs-024",
+      "kind": "negative",
+      "layer": "control",
+      "fact_ref": "F-32,F-33",
+      "description": "paired-key 帧畸形：status 取值不在枚举内（如 9）、内层帧大小超过本仓上限、外层用内层编号发出",
+      "expected": "invalid-frame / resource-limit（解析前拒绝）；不得把未知 status 当成 SUCCESS"
     }
   ],
   "device_corpus": {

@@ -44,6 +44,11 @@ P-F02-1（LAN 发现载体）与 P-F02-3（可见性矩阵）**blocked**——�
 | F-28 | control | introduction 的 `FileMetadata{name=1,type=2,payload_id=3,size=4,mime_type=5,id=6,parent_folder=7,is_sensitive_content=9}` 与 `ConnectionResponseFrame.Status{ACCEPT=1,REJECT=2,NOT_ENOUGH_SPACE=3,...}` | R15 `NearbyShare/ProtobufSource/wire_format.proto:30-73,248-267`（该文件由 R15 汇集自 Chromium，见 provenance 的许可注记） | source-reviewed（仅取字段号事实） | yes |
 | F-29 | transport | D2D 消息 `DeviceToDeviceMessage{message=1, sequence_number=2}`，序号必须递增（首条为 1，双方各自独立计数） | R18 `src/main/proto/device_to_device_messages.proto:18-27`；R15 `PROTOCOL.md:183` | source-reviewed（T21 采用严格 +1 策略） | yes |
 
+| F-30 | control | **分层模型与编号冲突的裁决**：外层（Nearby Connections 层）用 R17 的 `V1Frame.FrameType`（`PAYLOAD_TRANSFER=3`、`KEEP_ALIVE=5`、`DISCONNECTION=6`、`PAIRED_KEY_ENCRYPTION=7`），内层（Nearby Share 层，装在 BYTES payload 里）用 R15 自己的枚举（`INTRODUCTION=1`、`RESPONSE=2`、`PAIRED_KEY_ENCRYPTION=3`、`PAIRED_KEY_RESULT=4`）——**同一字段号在两层含义不同**。依据：PROTOCOL.md 明确写 paired-key 帧是**包在 payload 层里**发出的，而 payload transfer 帧本身是外层帧 | R17 `connections/implementation/proto/offline_wire_formats.proto:41-53,54-70`；R15 `NearbyShare/ProtobufSource/wire_format.proto:189-212`；R15 `PROTOCOL.md:185-206` | source-reviewed（**待真机复核**：外层 keep-alive 的 type 值需与 P-F02-2 的同一次对跑确认） | yes |
+| F-31 | control | keep-alive：外层 `V1Frame.type=KEEP_ALIVE(5)` + `KeepAliveFrame{ack=1(bool), seq_num=2(uint32)}`；Android 每 **10 秒**发一次并期待对端同样发送，否则过一段时间断开（"a while" 没有给数值） | R17 `offline_wire_formats.proto:45,61,444-449`；R15 `PROTOCOL.md:228-230` | source-reviewed（10 s 是**来源取值**，不是规范常量；超时阈值属**本仓策略**） | yes |
+| F-32 | control | paired-key encryption 帧（Nearby Share 层，装在 BYTES payload 里）：`PairedKeyEncryptionFrame{signed_data=1, secret_id_hash=2, optional_signed_data=3, qr_code_handshake_data=4}`；**双方互发**；参考实现填随机字节（`secretIDHash` 6 B、`signedData` 72 B）且明说"要拿到里面的内容得跟 Google 服务器说话" → **材料不可离线推导**：本仓只做帧与状态机，材料由调用方提供 | R15 `wire_format.proto:322-340`；R15 `PROTOCOL.md:204-206` | source-reviewed（材料语义**未固化**：不得声称已实现配对或 PIN 免确认） | yes |
+| F-33 | control | paired-key result 帧：`PairedKeyResultFrame{status=1(enum UNKNOWN=0/SUCCESS=1/FAIL=2/UNABLE=3), os_type=2}`；参考实现双方都发 `UNABLE`，其后流程照常（PIN 仍由用户核对） | R15 `wire_format.proto:342-356`；R15 `PROTOCOL.md:208-212` | source-reviewed（真机实际取值待 P-F02-2） | yes |
+
 ## B. 与本仓实现的关系（T20 范围）
 
 - **T20 已实现**：F-05（TCP framing 结构 + 本仓保守上限）、F-06..F-11、F-12（实现侧规则）、
@@ -51,8 +56,12 @@ P-F02-1（LAN 发现载体）与 P-F02-3（可见性矩阵）**blocked**——�
 - **T21 已实现（headless 部分）**：F-19/F-25/F-26/F-29（D2D 密钥链 + SecureMessage 信封 + 序号）、
   F-22/F-27/F-28（introduction 的报价投影、response 状态、payload 分块与 LAST_CHUNK 语义）；
   落盘走 `interop-file` 的预算/顺序写/原子发布，文件名穿越由 FILE-05 规则拒绝。
-- **不实现**：F-01/F-02/F-04/F-24（发现与 QR，P-F02-1/3 未关闭）、F-23（keep-alive，真机才需要）、
-  paired-key encryption/result 帧（本 profile 的 LAN 收文件路径不依赖它）、`PAYLOAD_ACK`（未实现，显式返回）。
+- **T21+ 已实现（headless 部分，2026-09-15）**：F-30/F-31（外层 keep-alive 帧与 10 s 节奏、超时策略）、
+  F-32/F-33（paired-key encryption/result 帧编解码与交换状态机，材料由调用方提供）——
+  见 `impl/crates/proto-quickshare/src/control.rs`。
+- **不实现**：F-01/F-02/F-04/F-24（发现与 QR，P-F02-1/3 未关闭）、`PAYLOAD_ACK`（未实现，显式返回）、
+  `DisconnectionFrame`（外层 6：帧结构已登记，本切片不做带宽升级路径）、
+  paired-key 的**材料语义**（F-32：不可离线推导，不做配对存储、不据 `SUCCESS` 免 PIN——见能力表）。
 - 因此 `impl/crates/proto-quickshare` 里**没有**任何 mDNS/BLE/QR/GMS 代码——这是机器检查项（`tools/test_quickshare_gate.py` QS-02）。
 
 ## C. 能力分声明（禁止一个布尔值概括）
@@ -61,8 +70,10 @@ P-F02-1（LAN 发现载体）与 P-F02-3（可见性矩阵）**blocked**——�
 |---|---|---|
 | LAN 发现（广播/监听 mDNS `_FC9F5ED42C8A._tcp.`） | `blocked` | P-F02-1：需用户批准网段抓包对照 R15/R17；重评条件＝抓包与源码对照一致 |
 | UKEY2 握手（P-256 / HKDF-SHA256 / SHA-512 commitment） | `source-reviewed`（实现见 T20） | 互通真机验证未做；F-12/F-15 冲突需具名真机实验 |
-| 传输加密（SecureMessage AES-256-CBC + HMAC-SHA256） | `not-implemented` | T21 |
-| payload/文件接收闭环 | `not-implemented` | T21/T22 |
+| 传输加密（SecureMessage AES-256-CBC + HMAC-SHA256） | `source-reviewed`（实现见 T21） | 真机互通未验（P-F02-2） |
+| payload/文件接收闭环 | `source-reviewed`（实现见 T21） | 真机互通未验；反向发送仍需 F-24 |
+| keep-alive 帧与节奏（F-31） | `source-reviewed`（实现见 T21+） | 真机是否每 10 s 发、断开阈值多少待对跑（P-F02-2）；超时阈值是本仓策略 |
+| paired-key 交换（F-32/F-33：帧 + 状态机） | `source-reviewed`（实现见 T21+） | **材料不可离线推导**：不做配对存储、不据 `SUCCESS` 免 PIN；真机实际 status 待 P-F02-2 |
 | 反向发送（Mac→Android） | `not-implemented` | 需要 QR/显式可发现（F-24）与 P-F02-3 |
 | 可见性模式矩阵（所有人/联系人/隐藏） | `blocked` | P-F02-3：两台 Android × 不同设置的真机矩阵 |
 | 4 位确认码一致性 | `source-reviewed`（启发式实现） | 真机比对（P-F02-2 关闭条件之二） |
