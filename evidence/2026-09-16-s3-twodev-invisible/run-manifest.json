@@ -1,0 +1,36 @@
+{
+ "schema_version": 1,
+ "run_id": "2026-09-16-s3-twodev-invisible",
+ "task": "S3 抓包 #3：两台 Quick Share 设备（三星 + ROG/Quick Share for Windows）同网段互相不可见",
+ "kind": "manual",
+ "evidence_level": "manual",
+ "is_test_evidence": false,
+ "synthetic": false,
+ "case_ids": ["S3-08", "S3-09"],
+ "result": "pass",
+ "base_commit": "4316052（S3 runbook §2b/§2c）",
+ "commands": [
+  {
+   "seq": 1,
+   "purpose": "用户执行：两台设备都设「所有人」时的 LAN 抓包（en0，mDNS/SSDP）",
+   "command": "sudo tcpdump -i en0 -U -w captures/qs-04-twodev.pcap 'udp port 5353 or udp port 1900'",
+   "exit_code": 0,
+   "result": "470 包 / 139.616 s。用户报告：**两台设备互相看不见**（Quick Share 设备列表里都没有对方）"
+  },
+  {
+   "seq": 2,
+   "purpose": "脱敏 + 广播者归属",
+   "command": "python3 tools/capture_redact.py captures/qs-04-twodev.pcap --out-dir evidence/2026-09-16-s3-twodev-invisible --label qs-04-twodev",
+   "exit_code": 0,
+   "result": "pass。隐私核查：产物中无任何 IP/MAC 字面量"
+  }
+ ],
+ "artifacts": [
+  "evidence/2026-09-16-s3-twodev-invisible/qs-04-twodev-redacted.json",
+  "evidence/2026-09-16-s3-twodev-invisible/qs-04-twodev-redacted.txt",
+  "evidence/2026-09-16-s3-twodev-invisible/qs-04-twodev-REDACTION.md"
+ ],
+ "credentials_redacted": true,
+ "license_route_approved": false,
+ "notes": "**观测（本切片最有价值的一条）**\n1. `_FC9F5ED42C8A._tcp` 全程**只有一个广播者**（一对双栈地址 = 三星手机），窗口 24.99–63.79 s；**ROG 从未在 mDNS 上广播任何服务**（它只以询问者身份出现，6 个包）。\n2. 手机侧同时查询两个服务类型：`_quickshare._tcp`（16 次，**无人应答**）与 `_FC9F5ED42C8A._tcp`（PTR+ANY）。即「手机在找、ROG 没出声」——互相看不见是**必然**结果，不是偶发。\n3. 抓包里另有设备查询 `_googlecast._tcp` 与 `_233637DE._sub._googlecast._tcp`（Cast 发送端在找设备）；该地址只作为询问者出现、无任何广播，**无法从包内确认是否即 ROG**，只作为「那台可能是 Windows 机」的旁证登记。\n4. `n` 位域**第三次**观测仍为 `0x32`（17 字节、无名字段）：与抓包 #1、#2 完全一致 ——「可见性档位不改变 mDNS 广播字节」在多设备场景下再次成立。\n5. 另有两台 Mac 在广播 `_smb`/`_rfb`/`_companion-link`，并查询 `_afpovertcp`/`_adisk`（Finder 浏览）；`_companion-link` 的 `rpFl` 本次为 `0x20000`（抓包 #2 里是 `0x10000`，同族字段取值随状态变化）。\n\n**根因未定（本切片不下结论）**：ROG 侧没有 mDNS 广播，可能是 (a) Quick Share for Windows 的发现走 **BLE**、不经 mDNS；(b) Windows Defender 防火墙 / 网络被标成「公用网络」拦掉了入站；(c) 蓝牙未开（Quick Share for Windows 的发现依赖 BLE，蓝牙关掉即找不到任何设备）。**这三条都要在 ROG 上逐项排除**，其中 (c) 最快也最常见。\n\n**下一步（用户侧动作，优先序）**：① ROG 打开蓝牙；② Windows 安全中心 → 防火墙和网络保护 → 允许应用通过防火墙 → 勾选 Quick Share（专用+公用），并把当前网络设为「专用网络」；③ ROG 与手机都用同一个 Google 账号；④ 重跑 §2b（同时开着 btmon 更好：Ubuntu 侧抓 BLE 能一次性判定 (a)）。\n\n**边界**：抓包只证明「网线上出现了这些字节」；本行不构成实现准入，也不解除任何 blocked 行。"
+}

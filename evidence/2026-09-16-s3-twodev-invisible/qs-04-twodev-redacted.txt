@@ -1,0 +1,68 @@
+# 脱敏摘录（470 包 / 139.616 s）
+原文 sha256: 48ffb4f4d7f0aa445ed17f8c4bef485dd5c7b3539cc9243e25858297a3b71755
+
+## 流
+- udp <ip-1>:5353 → <ip-2>:5353 318 包 / 90216 字节 [0.0s..139.616s] mdns
+- udp <ip-3>:5353 → <ip-2>:5353 21 包 / 4732 字节 [8.734s..90.387s] mdns
+- udp <ip-4>:5353 → <ip-5>:5353 21 包 / 5152 字节 [8.734s..90.387s] mdns
+- udp <ip-6>:5353 → <ip-2>:5353 18 包 / 4062 字节 [8.805s..90.416s] mdns
+- udp <ip-7>:5353 → <ip-5>:5353 18 包 / 4422 字节 [8.805s..90.416s] mdns
+- udp <ip-8>:5353 → <ip-2>:5353 33 包 / 8283 字节 [14.745s..133.676s] mdns
+- udp <ip-9>:5353 → <ip-5>:5353 35 包 / 10054 字节 [14.745s..133.676s] mdns
+- udp <ip-10>:5353 → <ip-2>:5353 6 包 / 618 字节 [23.142s..117.141s] mdns
+
+## mDNS 服务
+- _xross1._udp.local port=9559 实例数=1 广播者=['<ip-1>'] [0.0s..139.616s]
+  实例 <instance-1>: 首字符='d' 长度=52 [0.0s..139.616s]
+- _smb._tcp.local port=None 实例数=2 广播者=['<ip-3>', '<ip-4>', '<ip-6>', '<ip-7>'] [8.734s..8.805s]
+  实例 <instance-3>: 首字符='U' 长度=3 [8.734s..8.805s]
+  实例 <instance-4>: 首字符='H' 长度=13 [8.734s..8.805s]
+- _rfb._tcp.local port=None 实例数=1 广播者=['<ip-3>', '<ip-4>', '<ip-6>', '<ip-7>'] [8.734s..8.805s]
+  实例 <instance-4>: 首字符='H' 长度=13 [8.734s..8.805s]
+- _nearbypresence._tcp.local port=38691 实例数=1 广播者=['<ip-8>', '<ip-9>'] [14.745s..78.538s]
+  实例 <instance-5>: 首字符='n' 长度=56 [14.745s..78.538s]
+  TXT 键: bp
+  TXT 已脱敏: bp <long-text len=99>
+- _FC9F5ED42C8A._tcp.local port=53601 实例数=1 广播者=['<ip-8>', '<ip-9>'] [24.985s..63.793s]
+  实例 <instance-9>: 首字符='I' 长度=14 [24.985s..63.793s]
+  TXT 键: f, n, IPv4
+  TXT 常量: f=5200
+  TXT 已脱敏: n <text len=23>
+  TXT 已脱敏: IPv4 <ip len=13>
+  n 位域序列 @25.702s: bitfield=32 解码长度=17 无名字段
+- _companion-link._tcp.local port=None 实例数=1 广播者=['<ip-3>', '<ip-4>', '<ip-6>', '<ip-7>'] [40.256s..47.396s]
+  实例 <instance-10>: 首字符='M' 长度=11 [40.256s..47.396s]
+  TXT 键: rpMac, rpHN, rpFl, rpHA, rpVr, rpAD, rpHI, rpBA
+  TXT 常量: rpMac=0
+  TXT 常量: rpFl=0x20000
+  TXT 已脱敏: rpHN <text len=12>
+  TXT 已脱敏: rpHA <text len=12>
+  TXT 已脱敏: rpVr <text len=5>
+  TXT 已脱敏: rpAD <text len=12>
+  TXT 已脱敏: rpHI <text len=12>
+  TXT 已脱敏: rpBA <mac len=17>
+- _asquic._udp.local port=52468 实例数=1 广播者=['<ip-3>', '<ip-4>', '<ip-6>', '<ip-7>'] [52.289s..90.416s]
+  实例 <instance-12>: 首字符='C' 长度=36 [52.289s..90.416s]
+  TXT 键: 
+
+## mDNS 查询
+- _xross1._udp.local type=12 ×160（询问者：<ip-1>×160）
+- _afpovertcp._tcp.local type=12 ×4（询问者：<ip-3>×1, <ip-4>×1, <ip-6>×1, <ip-7>×1）
+- _smb._tcp.local type=12 ×4（询问者：<ip-3>×1, <ip-4>×1, <ip-6>×1, <ip-7>×1）
+- _rfb._tcp.local type=12 ×4（询问者：<ip-3>×1, <ip-4>×1, <ip-6>×1, <ip-7>×1）
+- _adisk._tcp.local type=12 ×4（询问者：<ip-3>×1, <ip-4>×1, <ip-6>×1, <ip-7>×1）
+- _nearbypresence._tcp.local type=255 ×6（询问者：<ip-8>×3, <ip-9>×3）
+- _googlecast._tcp.local type=12 ×6（询问者：<ip-10>×6）
+- _233637DE._sub._googlecast._tcp.local type=12 ×6（询问者：<ip-10>×6）
+- _FC9F5ED42C8A._tcp.local type=255 ×6（询问者：<ip-8>×3, <ip-9>×3）
+- _quickshare._tcp.local type=12 ×16（询问者：<ip-8>×8, <ip-9>×8）
+- _asquic._udp.local type=255 ×22（询问者：<ip-3>×6, <ip-4>×6, <ip-6>×5, <ip-7>×5）
+- _FC9F5ED42C8A._tcp.local type=12 ×10（询问者：<ip-8>×5, <ip-9>×5）
+
+## 脱敏统计
+- text_pseudonyms: 4
+- ip_pseudonyms: 10
+- instance_pseudonyms: 13
+- redacted_txt_values: 9
+- skipped_frames: 0
+- non_ip_frames: 0
