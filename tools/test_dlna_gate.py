@@ -163,6 +163,65 @@ class DlnaGate(unittest.TestCase):
         must = {"dl-019", "dl-020", "dl-021", "dl-022"}
         self.assertTrue(must <= ids, f"缺少 T42-01..04 的语料：{must - ids}")
 
+    # ---- T42+：GENA 通知构造与调度 ----
+
+    def test_gena_rows_are_sourced(self):
+        rows = {c[0]: c for c in table_rows(section(self.spec, FACTS_HEADING)) if len(c) >= 4}
+        for fid in ("F-23", "F-24", "F-25", "F-26", "F-27", "F-28", "F-29"):
+            self.assertIn(fid, rows, f"T42+ 字段行缺失：{fid}")
+            row = " ".join(rows[fid])
+            self.assertTrue(
+                "R46" in row or "R49" in row, f"{fid} 必须有 R46/R49 行级来源"
+            )
+        f23 = " ".join(rows["F-23"])
+        for needle in ("Content-Length", "+ 2", "NT: upnp:event", "NTS: upnp:propchange", "SID", "SEQ"):
+            self.assertIn(needle, f23, f"F-23 缺内容：{needle}")
+        f24 = " ".join(rows["F-24"])
+        self.assertIn("不发送 XML 声明", f24, "F-24 必须写明不发送 XML 声明")
+        self.assertIn("XML_VERSION", f24, "F-24 必须点名来源里那个未被发送的宏")
+        f25 = " ".join(rows["F-25"])
+        self.assertIn("原样", f25, "F-25 必须写明来源不做转义、由值的一方负责")
+        f26 = " ".join(rows["F-26"])
+        for needle in ("InstanceID val=", "channel=", "metadata-1-0/AVT/", "metadata-1-0/RCS/"):
+            self.assertIn(needle, f26, f"F-26 缺内容：{needle}")
+        f27 = " ".join(rows["F-27"])
+        for needle in ("150 ms", "来源实现取值"):
+            self.assertIn(needle, f27, f"F-27 缺内容：{needle}")
+        f28 = " ".join(rows["F-28"])
+        self.assertIn("从 0 开始", f28, "F-28 必须写明 SEQ 初始为 0")
+
+    def test_gena_capability_split_is_honest(self):
+        caps = " ".join(" ".join(c) for c in table_rows(section(self.spec, CAPS_HEADING)))
+        self.assertIn("GENA 通知", caps)
+        self.assertIn("构造", caps)
+        delivery = next(
+            (c for c in table_rows(section(self.spec, CAPS_HEADING)) if c and c[0].startswith("GENA 回调**连接**")),
+            None,
+        )
+        self.assertIsNotNone(delivery, "能力表必须有一行说明「回调连接」仍在范围外")
+        self.assertIn("not-implemented", " ".join(delivery))
+        # 范围声明行（F-22）必须仍写着不建连接
+        rows = {c[0]: c for c in table_rows(section(self.spec, FACTS_HEADING)) if len(c) >= 4}
+        self.assertIn("不实现", " ".join(rows["F-22"]))
+        self.assertIn("连接", " ".join(rows["F-22"]))
+
+    def test_gena_corpus_covers_notify_construction(self):
+        ids = {e["id"] for e in self.corpus["fixtures"]}
+        must = {"dl-025", "dl-026", "dl-027", "dl-028", "dl-029", "dl-030"}
+        self.assertTrue(must <= ids, f"缺少 T42+ 语料：{must - ids}")
+
+    def test_gena_impl_still_does_no_network_io(self):
+        """通知**构造**可以，**连接**不行：gena 模块里不得出现网络客户端。"""
+        gena = IMPL_SRC / "gena.rs"
+        if not gena.is_file():
+            self.skipTest("T42+ 实现尚未落地")
+        code = "\n".join(
+            line for line in gena.read_text(encoding="utf-8").splitlines()
+            if not line.strip().startswith("//")
+        )
+        for pattern in ("TcpStream", "UdpSocket", "std::net", "reqwest", "hyper", "Command::new"):
+            self.assertNotIn(pattern, code, f"gena 模块不得做网络 I/O / 进程调用：{pattern}")
+
     def test_renderer_implementation_does_no_network_io(self):
         dmr = IMPL_SRC / "dmr.rs"
         if not dmr.is_file():

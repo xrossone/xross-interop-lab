@@ -29,7 +29,14 @@
 | F-19 | control | AVTransport 状态变量：`CurrentTransportActions`(string)、`CurrentTrackURI`、`CurrentMediaDuration`、`NumberOfTracks`(ui4, 0..512) | R49 `data/xml/AVTransport2.xml.in:475-477,632-635,656-668` | source-reviewed | yes |
 | F-20 | control | 服务类型串：AVTransport 声明 `:2` 与 `:1` 两个版本；RenderingControl 为 `:2` | R49 `src/librygel-renderer/rygel-av-transport.vala:35,37`、`src/librygel-renderer/rygel-rendering-control.vala:30` | source-reviewed | yes |
 | F-21 | policy | renderer 侧对外来 `CurrentURI` 的策略（只接受 http(s)；`file://` 与内网/元数据目标拒绝；改动 URI 需用户同意）与 GENA 回调地址策略（同一类检查）属**本仓策略**——字段表只固定字段形状（F-04/F-10），没有规定策略阈值 | 本仓策略（引用 F-04、F-10 与 T42-01/T42-04） | source-reviewed（策略由本仓定义） | yes |
-| F-22 | events | **GENA 事件投递本切片不实现**：只做订阅校验（头形状/回调策略/退订/数量上限），不建立回调连接、不推送事件 | 本仓范围声明（F-10 只固定头与上限） | source-reviewed（本仓范围：只做校验与拒绝） | yes |
+| F-22 | events | **GENA 回调连接的建立不实现**（范围声明）：订阅校验与通知构造都在本仓，但**不自己建连接**——通知字节交给调用方提供的传输（路由/NAT/多接口行为不归本仓）；`notify` 事件只做形状与转义规则（见 F-23..F-29） | 本仓范围声明（F-10 只固定头与上限；F-23..F-29 固定通知字节） | source-reviewed（本仓范围：构造在本仓、连接不在本仓） | yes |
+| F-23 | events | NOTIFY 请求形状（**设备侧**）：请求行 `NOTIFY <回调路径> HTTP/1.1`；头 `Content-Type: text/xml; charset="utf-8"`、`Content-Length: <正文字节数 + 2>`（**+2 是来源的既有行为**：正文以 `\n\n` 结尾）、`NT: upnp:event`、`NTS: upnp:propchange`，随后每条订阅追加 `SID: uuid:<...>` 与 `SEQ: <n>` | R46 `upnp/src/gena/gena_device.c:440-482`（头）、`:304-314`（SID/SEQ）、`:1569-1571`（SID 形式 `uuid:%s`） | source-reviewed（T42+ gate；**只构造不建连**） | yes |
+| F-24 | events | propertyset 正文：`<e:propertyset xmlns:e="urn:schemas-upnp-org:event-1-0">\n` + 每个变量 `<e:property>\n<NAME>VALUE</NAME>\n</e:property>\n` + `</e:propertyset>\n\n`；**不发送 XML 声明**——来源把 `XML_VERSION` 宏留着但因为"与其他 UPnP 厂商不互操作"而明确不发送 | R46 `upnp/src/inc/gena.h:58-63`（宏与注释）、`upnp/src/gena/gena_device.c:110-165`（构造与注释） | source-reviewed（T42+ gate；**本仓按来源不写声明**） | yes |
+| F-25 | events | **值的转义由构造值的一方负责**：来源的 propertyset 构造把 `values[counter]` **原样** `sprintf` 进正文（不做任何转义）⇒ 生产值的一方必须先转义，否则正文非法。LastChange 的值就是一份**内嵌 XML 文档**，因此它必须整体被转义后放进 `<LastChange>…</LastChange>` | R46 `upnp/src/gena/gena_device.c:148-158`（原样写入） | source-reviewed（T42+ gate） | yes |
+| F-26 | events | LastChange 的内嵌文档形状（**服务侧**）：`<Event xmlns="<服务命名空间>"><InstanceID val="0">` + 每个变量 `<VAR val="<已转义值>"/>` + `</InstanceID></Event>`；带通道的变量为 `<VAR val=".." channel=".."/>`；AVTransport 命名空间 `urn:schemas-upnp-org:metadata-1-0/AVT/`、RenderingControl 为 `urn:schemas-upnp-org:metadata-1-0/RCS/` | R49 `src/librygel-renderer/rygel-changelog.vala:78-118`（`log`/`log_with_channel`/`finish`）、`rygel-av-transport.vala:40`、`rygel-rendering-control.vala:33` | source-reviewed（T42+ gate） | yes |
+| F-27 | events | LastChange 是**合并后**发出的：来源用一个 **150 ms** 的延迟窗口把短时间内的多次变量变化合并成一条通知（`Timeout.add(150, …)`） | R49 `src/librygel-renderer/rygel-changelog.vala:63-76` | source-reviewed（**150 ms 是来源实现取值**，不是规范常量；本仓投递由调用方驱动、窗口可配并如实标注） | yes |
+| F-28 | events | SEQ 规则：新订阅的 `SEQ` **从 0 开始**（初始事件），每次投递后 +1；来源在自增后若为负则**回绕到 1**（即 0 只用于初始事件） | R46 `upnp/src/gena/gena_device.c:1491`（初始 0）、`:409-412`（自增与回绕） | source-reviewed（T42+ gate） | yes |
+| F-29 | events | 控制点侧对通知的校验：`NT` 必须是 `upnp:event`、`NTS` 必须是 `upnp:propchange`（大小写不敏感的 `memptr_cmp`），SUBSCRIBE 请求里用 `NT: upnp:event` | R46 `upnp/src/gena/gena_ctrlpt.c:819-820`、`:408,426` | source-reviewed（T42+ gate） | yes |
 | F-13 | 能力 | `protocolInfo` 的具体 MIME 矩阵与品牌差异（三星/LG/Sony 各代）**未固化** | P-M07-1 未关闭 | blocked（impl 不准入） | no |
 | F-14 | 时序 | `SetAVTransportURI` 之后 `Play` 的时序容忍度（品牌差异）**未固化** | P-M07-1 未关闭 | blocked（impl 不准入） | no |
 
@@ -39,7 +46,7 @@
   （禁 DTD/实体、深度/体积/元素数预算）、SOAP 动作名与参数校验、DMC（发现 → 描述抓取策略 →
   protocolInfo 能力检查 → SetAVTransportURI/Play/Stop）、URL lease 撤销、受限 ContentDirectory
   （objectID 授权、分页上限、701/402）。
-- **不实现**：F-13/F-14（真实 TV 矩阵与时序）——不得据此写"支持某品牌 TV"；GENA 只做到解析与预算，
+- **不实现**：F-13/F-14（真实 TV 矩阵与时序）——不得据此写"支持某品牌 TV"；**GENA 不建立回调连接**（通知构造已实现，见 T42+），
   不实现回调投递；媒体字节传输属 T24/T42 的 read lease 范围。
 
 ## C. 能力分声明
@@ -52,7 +59,8 @@
 | DLNA renderer（接收 AVTransport/RenderingControl 动作） | `source-reviewed`（T42 实现） | 真机控制器（库存 TV/手机 App）未验（P-M07-1） |
 | **屏幕镜像（screen mirroring）** | `not-implemented` | DLNA 是"媒体 URL 推送"，**不假装镜像**（T41-02） |
 | GENA 订阅校验（头/回调策略/退订/上限） | `source-reviewed`（T42 实现） | 真机控制器订阅行为未验（P-M07-1） |
-| GENA 事件回调投递 | `not-implemented` | 只做校验与拒绝，不建立回调连接（F-22）；NAT 与多接口行为待真机复核 |
+| GENA 通知**构造与调度**（NOTIFY 字节、propertyset、LastChange 转义、SEQ 规则） | `source-reviewed`（实现见 T42+） | 字节形状按 F-23..F-29；**真机控制器是否接受**待 P-M07-1 |
+| GENA 回调**连接**（自己发起 HTTP） | `not-implemented` | 范围声明（F-22）：通知交给调用方传输，本仓不建连接 |
 | 真实 TV 兼容矩阵 | `blocked` | P-M07-1：需库存 TV 与用户在场 |
 
 ## D. 语料规则（`evidence/dlna/`）

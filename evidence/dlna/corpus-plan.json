@@ -2,7 +2,7 @@
   "schema_version": 1,
   "profile_id": "dlna.upnp-av",
   "created_at": "2026-09-15",
-  "scope": "T41 headless 切片的自制语料计划：SSDP 报文、SOAP 控制信封、设备描述 XML。全部自制；不含抓包或第三方字节",
+  "scope": "T41 headless 切片的自制语料计划：SSDP 报文、SOAP 控制信封、设备描述 XML。全部自制；不含抓包或第三方字节；T42+（2026-09-15）扩充：GENA 通知构造与 SEQ（dl-025..030，全部自制）",
   "fixture_rules": [
     "每个 fixture 注明它验证字段表的哪一行（fact_ref）与期望结果",
     "负向必须写明期望错误码（本仓错误码或字段表里的 701/402/720）",
@@ -153,6 +153,54 @@
       "fact_ref": "F-18,F-19",
       "description": "RenderingControl `SetVolume` 超出 0..100 或非整数；未知动作名；服务类型与动作不匹配（AVTransport 动作发到 RenderingControl）",
       "expected": "invalid-frame / unsupported-feature，且通过 SOAP Fault 返回（未知动作不得静默成功）"
+    },
+    {
+      "id": "dl-025",
+      "kind": "positive",
+      "layer": "gena",
+      "fact_ref": "F-23,F-24",
+      "description": "NOTIFY 请求字节：NOTIFY <path> HTTP/1.1 + Content-Type/Content-Length/NT/NTS/SID/SEQ；正文 propertyset 每个变量一个 e:property，结尾 \\n\\n，**不写 XML 声明**",
+      "expected": "头集合与顺序按字段表；Content-Length = 正文字节 + 2；正文不含 <?xml ...?>"
+    },
+    {
+      "id": "dl-026",
+      "kind": "positive",
+      "layer": "gena",
+      "fact_ref": "F-26,F-25",
+      "description": "LastChange 值：内嵌文档 <Event xmlns=\"...AVT/\"><InstanceID val=\"0\"><TransportState val=\"PLAYING\"/></InstanceID></Event>，作为字符串放进 <LastChange> 时必须整体转义",
+      "expected": "内嵌文档的 < & > \" 全部被转义；未转义的形态必须被判为非法"
+    },
+    {
+      "id": "dl-027",
+      "kind": "positive",
+      "layer": "gena",
+      "fact_ref": "F-26",
+      "description": "RenderingControl 的通道变量：<Volume val=\"50\" channel=\"Master\"/>（log_with_channel 形态）",
+      "expected": "带 channel 的变量按来源形态输出；命名空间为 .../RCS/"
+    },
+    {
+      "id": "dl-028",
+      "kind": "positive",
+      "layer": "gena",
+      "fact_ref": "F-28",
+      "description": "SEQ 规则：新订阅的初始事件 SEQ=0，之后每次 +1；构造侧不得跳号",
+      "expected": "初始 0 → 1 → 2…；回绕规则（自增后为负则回 1）在 u32 域内以显式策略处理并在报告标注"
+    },
+    {
+      "id": "dl-029",
+      "kind": "negative",
+      "layer": "gena",
+      "fact_ref": "F-23,F-29",
+      "description": "通知负例：NT/NTS 取值不符（控制点侧校验）、SID 不匹配订阅、已退订/过期订阅、回调地址非法",
+      "expected": "不产生通知字节；各自明确拒绝或标记不可投递"
+    },
+    {
+      "id": "dl-030",
+      "kind": "negative",
+      "layer": "gena",
+      "fact_ref": "F-25",
+      "description": "转义负例：变量值里出现 & < > \" 与 ]]> 等；以及把未转义的 LastChange 直接嵌入",
+      "expected": "转义后正文可被 XML 解析；未转义形态被拒绝（理由写明来源把转义责任交给值的一方）"
     }
   ],
   "device_corpus": {
