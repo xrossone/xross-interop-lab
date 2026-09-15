@@ -38,7 +38,7 @@ POST /fp-setup → SETUP(stream_type=110, video) → SETUP(stream_type=96, audio
 ## 音频流（stream_type=96）
 
 - Legacy ALAC（AES-CBC，ekey），44100 Hz（实测固定观察）；RTP UDP（use_udp=true，control_rport）。
-- `POST /audioMode mode="default"`；`POST /feedback` 每 2 秒心跳（elapsed_ms 字段单调增——语义待考）。
+- `POST /audioMode mode="default"`；`POST /feedback` 每 2 秒一次（`elapsed_ms` 单调增——**语义待考**，见 T36 增量：本仓只做形状校验与观测记账，不实现心跳语义）。
 - **开放项 P-M02 相关**：无声问题未解（resample 已试）。
 
 ## 状态机投影（interop 侧）
@@ -179,6 +179,17 @@ RTSP/plist/帧头长度字段全部先检查后分配；绝对 deadline；认证
 | 身份必须持久化的理由 | B 的注释：不持久化时"曾经配过的 iPhone 会发加密数据而连接失败" | shairplay-rust@2fb72b3:src/raop/types.rs:135-137 |
 | `/fp-setup` | **永久 vendor-gated**（FairPlay/设备认证材料）：本仓不实现、不绕过、不解析其载荷 | decisions/provider-adoption.json（P-FAIRPLAY）；provenance/airplay-inputs.json（R06） |
 
+### T36 增量（2026-09-15）：音频路径的两条控制请求（`/audioMode`、`/feedback`）
+
+| 项 | 事实 | 来源 |
+|---|---|---|
+| `/audioMode` 方法/路径 | `POST /audioMode`；请求体是 binary plist，含键 `mode`；实测取值为 `"default"` | 实测 2026-09-15（`docs/research/airplay-research.md:157`） |
+| `/audioMode` 的 Content-Type | 与配对路径同类：`application/x-apple-binary-plist`（同一实测会话里 plist 请求都带这个头） | 实测 2026-09-15（`docs/research/airplay-research.md:157` 与配对观测同批）+ UxPlay@d9791de:lib/raop_handlers.h:291 |
+| `/feedback` 方法/路径与节奏 | `POST /feedback`，实测**每 2 秒**一次 | 实测 2026-09-15（`docs/research/airplay-research.md:157`） |
+| `/feedback` 请求体字段 | 含 `elapsed_ms`，实测**单调增**；实测记录明确标注"这是请求处理耗时字段被复用的痕迹，**待考**" ⇒ **语义待固化** | 实测 2026-09-15（`docs/research/airplay-research.md:157`）；`specs-reviewed/m01` 音频流小节 |
+| 本仓对这两条请求的处置 | 只做**形状校验**（方法/路径/Content-Type/键名）与**观测记账**（单调性、到达间隔）；**不实现**"心跳语义"或据 `elapsed_ms` 推断任何时钟——语义未固化前不得写成已实现 | 本仓策略（`elapsed_ms` 语义**待固化**，见上一行；引用 P-M01-2 无声问题） |
+| plist 字节级编解码 | **不固化**：本仓允许的来源里没有 bplist 的字节级规格 ⇒ 请求体按**不透明**处理，键名由调用方提取后传入（与配对路径同一处置） | 本仓范围声明（bplist 字节级规格**待固化**：来源清单里没有该规格） |
+
 ### T34 禁止边界（不得进入实现上下文）
 
 - A 仓 `lib/playfair/`（含三组 16 字节密钥数组与置换表）与 B 仓 `src/crypto/`（`fairplay*.rs` 预计算表、
@@ -200,6 +211,7 @@ RTSP/plist/帧头长度字段全部先检查后分配；绝对 deadline；认证
 | PIN 配对（pair-setup-pin） | **未实现（blocked）** | 本仓尚无实现（P-M01-3 计划中） |
 | transient 直通 | **实测可用（参考实现）** | 实测 2026-09-15：iPad 跳过配对直连 `/fp-setup` |
 | AP1 实时音频 profile（`ct`/`spf`/采样率的解析与校验，T34） | **implemented（headless 解析层）** | 字段表 T34 增量（`ct` 四值表）；**不声明能解码**：ALAC/AAC 仍需解码器 |
+| 音频路径控制请求形状（`/audioMode`、`/feedback`，T36） | **implemented（headless：形状 + 观测记账）** | 字段表 T36 增量；`elapsed_ms` 语义**待考** → 不实现为心跳、不据它推时钟；真机复核对跑后才能升级 |
 | AP2 音频 profile（打包 `audioFormat` 与 SSRC 魔数的解析，T34） | **implemented（headless 解析层）** | 字段表 T34 增量；未知值一律拒绝，不猜 |
 | AP2 buffered 音频（type 103：ChaCha20-Poly1305 + AAC 解码） | **not-implemented（blocked）** | 需 ChaCha 与 AAC 解码器（参考实现用 symphonia）；本仓不做 |
 | 配对存储（登记/查询/遗忘 + 身份种子保管，T34） | **implemented（headless 存储层，无加密）** | 字段表 T34 配对存储行；**不得据此声称设备已认证** |

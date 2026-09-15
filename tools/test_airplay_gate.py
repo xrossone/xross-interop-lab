@@ -229,6 +229,46 @@ class AirPlayGate(unittest.TestCase):
         text = re.sub(r'"(?:[^"\\]|\\.)*"', '""', text)   # 字符串字面量
         return text.lower()
 
+    # ---- T36：音频路径控制请求（/audioMode、/feedback） ----
+
+    def test_t36_audio_control_rows_are_sourced(self):
+        facts = section(self.spec, FACTS_HEADING)
+        joined = " ".join(" ".join(c) for c in table_rows(facts))
+        for needle in ("/audioMode", "/feedback", "elapsed_ms", "application/x-apple-binary-plist"):
+            self.assertIn(needle, joined, f"T36 字段表缺内容：{needle}")
+        # 语义未固化必须写明，且不得把心跳写成已实现
+        self.assertIn("待考", joined, "必须保留实测记录的『待考』标注")
+        self.assertIn("语义待固化", joined, "必须显式标注语义待固化")
+        self.assertIn("不实现", joined, "必须写明不实现心跳语义")
+        # 能力表：这一行只能声称形状与观测
+        caps = " ".join(" ".join(c) for c in table_rows(section(self.spec, CAPS_HEADING)))
+        self.assertIn("/audioMode", caps)
+        row = next(
+            (c for c in table_rows(section(self.spec, CAPS_HEADING)) if c and "/audioMode" in c[0]),
+            None,
+        )
+        self.assertIsNotNone(row, "能力表必须有音频控制请求行")
+        self.assertIn("形状", " ".join(row), f"只能声称形状校验：{row}")
+        self.assertIn("待考", " ".join(row), f"必须写明语义待考：{row}")
+
+    def test_t36_corpus_covers_audio_control(self):
+        ids = {e["id"] for e in self.corpus["entries"]}
+        must = {"fx-airplay-audiomode-shape", "fx-airplay-feedback-shape", "fx-airplay-feedback-observation"}
+        self.assertTrue(must <= ids, f"缺少 T36 语料：{must - ids}")
+
+    def test_t36_impl_never_claims_heartbeat_semantics(self):
+        """实现里不得把 /feedback 说成心跳或时钟：语义未固化（T36）。"""
+        src = LAB / "impl/crates/proto-airplay/src/audio_control.rs"
+        if not src.is_file():
+            self.skipTest("T36 实现尚未落地")
+        text = src.read_text(encoding="utf-8")
+        code = "\n".join(
+            line for line in text.splitlines() if not line.strip().startswith("//")
+        )
+        for bad in ("clock", "Clock", "playback_position"):
+            self.assertNotIn(bad, code, f"不得据 elapsed_ms 推时钟（T36）：{bad}")
+        self.assertIn("待考", text, "实现里必须保留语义待考的标注")
+
     def test_t34_impl_has_no_crypto_and_no_fairplay(self):
         """T34 的实现面：音频 profile 与配对存储都不得含加密原语的实现或依赖。"""
         src = LAB / "impl/crates/proto-airplay/src"
