@@ -21,6 +21,12 @@ impl std::fmt::Debug for StreamKeys {
 }
 
 impl StreamKeys {
+    /// 由合规 provider 实现填充密钥材料（例如未来获批的外部引擎）。
+    /// 不提供 Serialize/Display；调用方负责不在日志里打印。
+    pub fn from_bytes(bytes: Vec<u8>) -> Self {
+        Self { bytes }
+    }
+
     /// 生产代码应只在解密路径内使用；不提供 Serialize/Display。
     pub fn expose_for_decrypt(&self) -> &[u8] {
         &self.bytes

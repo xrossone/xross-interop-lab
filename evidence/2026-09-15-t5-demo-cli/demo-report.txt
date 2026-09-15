@@ -56,7 +56,7 @@ TEARDOWN 后       : stream=false reserved_ports=0
 喂入帧数          : 6
 null  sink        : frames=6 bytes=2071 pts=[Some(0)..Some(166665)] codec=h264 dims=1920x1080 changes=1
 file  sink        : frames=6 bytes=2055 pts=[Some(0)..Some(166665)] codec=h264 dims=1920x1080 changes=1
-      落盘 /var/folders/n6/tx2574_56h33v09wbc2hk_nm0000gn/T/xinterop-demo-63259.bin（2055 字节）
+      落盘 /var/folders/n6/tx2574_56h33v09wbc2hk_nm0000gn/T/xinterop-demo-70309.bin（2055 字节）
 音频              : resample 44100Hz→48000Hz ratio=147/160 frames 441→480（10ms→10ms, speed_ratio=1.000）
 native 窗口       : unavailable（platform-unavailable）
 20000x12000       : resource-limit（area=240000000 > max_pixels=67108864）
@@ -70,10 +70,24 @@ native 窗口       : unavailable（platform-unavailable）
   - 未知 critical flag 0x80000000      rejected invalid-frame
   - 声明 payload 17MiB（无实际数据）          rejected resource-limit
 
+## AirPlay 镜像路径（T33）
+  - configure 1920x1080    ok
+  - rotate → 1080x1920     ok
+  - rotate → 1920x1080     ok
+视频              : forwarded=279 dropped=33 format_changes=3 recoveries=1
+背压/恢复         : 高水位 131072 B / 预算 262144 B，超预算丢帧 1，关键帧恢复=true
+音频              : 200 块，重采样 200 块，352800 → 384000 样本（高水位 3840 B）
+漂移（代 1）     : 采样 200，max=2ms mean=0ms
+能力广告          : Array []（HEVC 拒绝=true）
+  · blocked: 真机镜像（iPhone/iPad → 本机）：需 S1（外部引擎/解码材料）与 S2（真机矩阵）
+  · blocked: 屏幕呈现：native window sink 未实现（无 GUI 自动化，不以屏幕录制假装 raw output）
+  · blocked: 30 分钟墙钟运行与 RSS 趋势：本 demo 用合成时间轴 + 缓冲高水位代理；真机长跑在待用户清单
+  · blocked: AirPlay features TXT 位串与 PIN 一致性：待真机抓包/实测裁决
+
 ## Quick Share / UKEY2（T19/T20）
 framing           : 4 字节大端长度前缀，本仓上限 5242880 B（非协议常量，F-05）
 握手              : cipher="P256_SHA512(100)" key_schedule="HKDF-SHA256" established=true
-双方一致          : auth=true next_secret=true pin=true（pin="3589"）
+双方一致          : auth=true next_secret=true pin=true（pin="7502"）
 分片等价          : true（[1048576,1,7] 种切分）
   - commitment 不符（ClientFinish 被改）     BadMessageData
   - random 31 字节                       BadRandom
@@ -102,6 +116,7 @@ F-15 冲突         : 采用 "HKDF-SHA256"；"与 stock Android 的成功握手 
   - Quick Share 字节格式未固化（P-F02-1 抓包、P-F02-3 可见性矩阵未关闭）→ 不写 wire 字段
   - native window sink 未实现：无 GUI 自动化，且不以屏幕录制假装 raw output
   - Quick Share 发现与 QR 路径未实现（P-F02-1/3 未关闭）：不写未固化的发现字节
+  - AirPlay 镜像无 decoder/无窗口：能路由到 sink，但不能显示（能力广告保持为空）
 
 ## 待用户手动测试
   - 真机投屏矩阵（iPhone/iPad → 本机：发现/连接/视频/音频/旋转/重连/10-30-60 分钟）——需 S1/S2
@@ -110,5 +125,6 @@ F-15 冲突         : 采用 "HKDF-SHA256"；"与 stock Android 的成功握手 
   - native 视频窗口 sink：只能在桌面会话内验证（不以屏幕录制假装 raw output）
   - 本机广播的 mDNS/TXT 字节与真实接收端对照（AirPlay features 位值固化需要真机抓包）
   - 与 stock Android 完成一次 Quick Share 握手并比对 4 位确认码（裁决 F-12/F-15 两处规范/实现冲突）
+  - AirPlay 真机镜像（iPhone/iPad → 本机）与 30 分钟墙钟长跑（drift/丢帧/RSS 趋势）——需 S1/S2
 
 汇总：全部场景断言通过（evidence_level=simulated，非真机）

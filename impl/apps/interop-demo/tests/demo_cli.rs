@@ -231,6 +231,34 @@ fn d08_quickshare_handshake_and_gate() {
     assert!(!q["blocked"].as_array().expect("blocked").is_empty());
 }
 
+/// D-09：AirPlay 镜像路径段——格式往返、背压关键帧恢复、显式重采样、能力广告为空。
+#[test]
+fn d09_airplay_mirror_path() {
+    let (code, v) = run_json(&["mirror", "--json"]);
+    assert_eq!(code, 0);
+    let m = &v["mirror"];
+    assert_eq!(m["evidence_level"], "simulated");
+    assert_eq!(m["video"]["format_changes"], 3, "横屏→竖屏→横屏三次配置");
+    assert_eq!(m["video"]["frames_forwarded"], 279);
+    assert_eq!(m["video"]["recoveries"], 1, "超预算后必须走关键帧恢复");
+    assert_eq!(m["video"]["recovering_then_keyframe_recovered"], true);
+    assert!(
+        m["video"]["peak_queued_bytes"].as_u64().expect("peak") <= m["video"]["queue_budget_bytes"].as_u64().expect("budget"),
+        "高水位不得超过预算"
+    );
+    assert_eq!(m["audio"]["blocks_forwarded"], 200);
+    assert_eq!(m["audio"]["resampled_blocks"], 200, "44.1k→48k 必须显式重采样每一块");
+    assert_eq!(m["audio"]["samples_out"], 384_000);
+    assert_eq!(m["drift"]["samples"], 200);
+    assert!(m["drift"]["max_abs_drift_ms"].as_i64().expect("drift") <= 3);
+    assert_eq!(m["capability"]["hevc_rejected"], true);
+    assert!(
+        m["capability"]["advertised_features"].as_array().expect("features").is_empty(),
+        "本路径无 decoder：能力广告必须为空"
+    );
+    assert!(!m["blocked"].as_array().expect("blocked").is_empty());
+}
+
 /// D-07：blocked 与待用户手动清单必须随输出给出（本阶段不允许"看起来全绿"）。
 #[test]
 fn d07_blocked_and_manual_lists_are_reported() {

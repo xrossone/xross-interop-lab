@@ -4,6 +4,14 @@
  "notes": "证据登记簿：dossier/specs 中的 evidence_refs 必须指向这里登记的 id（tools/test_dossiers.py 强制）。kind 词表：run-manifest | device-run | source-tree | page-review | user-observation。",
  "entries": [
   {
+   "id": "run-2026-09-15-t33-airplay-mirror",
+   "kind": "run-manifest",
+   "level": "build-verified",
+   "date": "2026-09-15",
+   "path": "evidence/2026-09-15-t33-airplay-mirror/run-manifest.json",
+   "notes": "T33 AirPlay 镜像路径（headless）：格式往返/关键帧恢复/显式重采样/按连接 clock generation（T33-01..04）；不含 decoder，广告为空；顺带修掉 interop-media sink 的 format 判定缺口"
+  },
+  {
    "id": "run-2026-09-15-t21-quickshare-transport",
    "kind": "run-manifest",
    "level": "build-verified",

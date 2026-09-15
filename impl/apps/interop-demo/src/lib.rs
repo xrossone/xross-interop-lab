@@ -11,6 +11,7 @@
 #![forbid(unsafe_code)]
 #![allow(clippy::result_large_err)]
 
+pub mod mirror;
 pub mod quickshare;
 pub mod report;
 pub mod scenarios;
@@ -25,6 +26,7 @@ pub const BLOCKED: &[&str] = &[
     "Quick Share 字节格式未固化（P-F02-1 抓包、P-F02-3 可见性矩阵未关闭）→ 不写 wire 字段",
     "native window sink 未实现：无 GUI 自动化，且不以屏幕录制假装 raw output",
     "Quick Share 发现与 QR 路径未实现（P-F02-1/3 未关闭）：不写未固化的发现字节",
+    "AirPlay 镜像无 decoder/无窗口：能路由到 sink，但不能显示（能力广告保持为空）",
 ];
 
 /// 待用户手动测试清单（真机/交互/GUI/外部引擎）。
@@ -35,6 +37,7 @@ pub const MANUAL_TESTS: &[&str] = &[
     "native 视频窗口 sink：只能在桌面会话内验证（不以屏幕录制假装 raw output）",
     "本机广播的 mDNS/TXT 字节与真实接收端对照（AirPlay features 位值固化需要真机抓包）",
     "与 stock Android 完成一次 Quick Share 握手并比对 4 位确认码（裁决 F-12/F-15 两处规范/实现冲突）",
+    "AirPlay 真机镜像（iPhone/iPad → 本机）与 30 分钟墙钟长跑（drift/丢帧/RSS 趋势）——需 S1/S2",
 ];
 
 /// 跑全部场景并汇总（JSON 与人类输出共用同一份数据）。
@@ -44,6 +47,7 @@ pub fn compute_report() -> DemoReport {
     let (sink, k_ok) = scenarios::sink_scenario();
     let (media_plane, m_ok) = scenarios::media_scenario();
     let (qshare, q_ok) = quickshare::quickshare_scenario();
+    let (mirror, r_ok) = mirror::mirror_scenario();
     let generated_unix_ms = std::time::SystemTime::now()
         .duration_since(std::time::UNIX_EPOCH)
         .map(|d| d.as_millis())
@@ -54,12 +58,13 @@ pub fn compute_report() -> DemoReport {
         evidence_level: EVIDENCE_LEVEL,
         wire: WIRE,
         generated_unix_ms,
-        ok: d_ok && s_ok && k_ok && m_ok && q_ok,
+        ok: d_ok && s_ok && k_ok && m_ok && q_ok && r_ok,
         discovery,
         session,
         sink,
         media_plane,
         quickshare: qshare,
+        mirror,
         blocked: BLOCKED.iter().map(|s| s.to_string()).collect(),
         manual_tests: MANUAL_TESTS.iter().map(|s| s.to_string()).collect(),
     }
@@ -276,6 +281,47 @@ pub fn render_human(r: &DemoReport, section: Option<&str>) -> String {
         }
     }
 
+    if want("mirror") {
+        let m = &r.mirror;
+        out.push_str("\n## AirPlay 镜像路径（T33）\n");
+        for (label, outcome) in &m.steps {
+            out.push_str(&format!("  - {label:<22} {outcome}\n"));
+        }
+        out.push_str(&format!(
+            "视频              : forwarded={} dropped={} format_changes={} recoveries={}\n",
+            m.video["frames_forwarded"],
+            m.video["frames_dropped"],
+            m.video["format_changes"],
+            m.video["recoveries"]
+        ));
+        out.push_str(&format!(
+            "背压/恢复         : 高水位 {} B / 预算 {} B，超预算丢帧 {}，关键帧恢复={}\n",
+            m.video["peak_queued_bytes"],
+            m.video["queue_budget_bytes"],
+            m.video["budget_drops_during_backpressure"],
+            m.video["recovering_then_keyframe_recovered"]
+        ));
+        out.push_str(&format!(
+            "音频              : {} 块，重采样 {} 块，{} → {} 样本（高水位 {} B）\n",
+            m.audio["blocks_forwarded"],
+            m.audio["resampled_blocks"],
+            m.audio["samples_in"],
+            m.audio["samples_out"],
+            m.audio["peak_resample_bytes"]
+        ));
+        out.push_str(&format!(
+            "漂移（代 {}）     : 采样 {}，max={}ms mean={}ms\n",
+            m.drift["generation"], m.drift["samples"], m.drift["max_abs_drift_ms"], m.drift["mean_drift_ms"]
+        ));
+        out.push_str(&format!(
+            "能力广告          : {:?}（HEVC 拒绝={}）\n",
+            m.capability["advertised_features"], m.capability["hevc_rejected"]
+        ));
+        for b in &m.blocked {
+            out.push_str(&format!("  · blocked: {b}\n"));
+        }
+    }
+
     if want("qshare") {
         let q = &r.quickshare;
         out.push_str("\n## Quick Share / UKEY2（T19/T20）\n");
@@ -366,6 +412,7 @@ pub fn parse_args(args: &[String]) -> Result<(Option<&'static str>, bool), Strin
             "sink" => section = Some("sink"),
             "media" => section = Some("media"),
             "qshare" | "quickshare" => section = Some("qshare"),
+            "mirror" => section = Some("mirror"),
             "--help" | "-h" => return Err("help".to_string()),
             other => return Err(format!("未知子命令 {other:?}")),
         }

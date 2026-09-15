@@ -3,7 +3,7 @@
   "interface_version": "interop.api/0.1",
   "evidence_level": "simulated",
   "wire": "self-authored-fixture",
-  "generated_unix_ms": 1789445887142,
+  "generated_unix_ms": 1789446471214,
   "ok": true,
   "discovery": {
     "evidence_level": "simulated",
@@ -375,7 +375,7 @@
       "format_changes": 1,
       "codec": "h264",
       "dimensions": "1920x1080",
-      "path": "/var/folders/n6/tx2574_56h33v09wbc2hk_nm0000gn/T/xinterop-demo-63257.bin",
+      "path": "/var/folders/n6/tx2574_56h33v09wbc2hk_nm0000gn/T/xinterop-demo-69204.bin",
       "file_size_bytes": 2055
     },
     "audio": {
@@ -464,7 +464,7 @@
       "key_schedule": "HKDF-SHA256",
       "next_secret_bytes": 32,
       "next_secrets_match": true,
-      "pin": "2210",
+      "pin": "0554",
       "pin_matches": true,
       "server_init_bytes": 116,
       "transcript_bytes": 252
@@ -564,13 +564,68 @@
       "F-12 cipher 选择规则冲突（规范概览 vs 实现）：以实现侧为准，待真机裁决"
     ]
   },
+  "mirror": {
+    "evidence_level": "simulated",
+    "wire": "self-authored-fixture",
+    "steps": [
+      {
+        "case": "configure 1920x1080",
+        "outcome": "ok"
+      },
+      {
+        "case": "rotate → 1080x1920",
+        "outcome": "ok"
+      },
+      {
+        "case": "rotate → 1920x1080",
+        "outcome": "ok"
+      }
+    ],
+    "video": {
+      "budget_drops_during_backpressure": 1,
+      "bytes_forwarded": 1245184,
+      "format_changes": 3,
+      "frames_dropped": 33,
+      "frames_forwarded": 279,
+      "peak_queued_bytes": 131072,
+      "queue_budget_bytes": 262144,
+      "recoveries": 1,
+      "recovering_then_keyframe_recovered": true
+    },
+    "audio": {
+      "blocks_forwarded": 200,
+      "peak_resample_bytes": 3840,
+      "plan": "Resample { source_rate: 44100, device_rate: 48000, ratio_num: 147, ratio_den: 160 }",
+      "resampled_blocks": 200,
+      "samples_in": 352800,
+      "samples_out": 384000
+    },
+    "drift": {
+      "generation": 1,
+      "max_abs_drift_ms": 2,
+      "mean_drift_ms": 0,
+      "samples": 200
+    },
+    "capability": {
+      "advertised_features": [],
+      "hevc_rejected": true,
+      "note": "本路径不含 decoder：能力广告保持为空（广告未实现能力会让能力一致性测试失败）"
+    },
+    "blocked": [
+      "真机镜像（iPhone/iPad → 本机）：需 S1（外部引擎/解码材料）与 S2（真机矩阵）",
+      "屏幕呈现：native window sink 未实现（无 GUI 自动化，不以屏幕录制假装 raw output）",
+      "30 分钟墙钟运行与 RSS 趋势：本 demo 用合成时间轴 + 缓冲高水位代理；真机长跑在待用户清单",
+      "AirPlay features TXT 位串与 PIN 一致性：待真机抓包/实测裁决"
+    ]
+  },
   "blocked": [
     "FairPlay/设备认证材料永久 vendor-gated：没有 keying 的 SETUP 一律 503，不建流不分配缓冲",
     "S1：外部引擎（UxPlay 等）与解码链路未获批 → 音视频接收实现缺席，能力广告为空",
     "真实 mDNS/SSDP 网络发现源未实现（只有 fake 源）：真机发现矩阵需 S2 设备与用户在场",
     "Quick Share 字节格式未固化（P-F02-1 抓包、P-F02-3 可见性矩阵未关闭）→ 不写 wire 字段",
     "native window sink 未实现：无 GUI 自动化，且不以屏幕录制假装 raw output",
-    "Quick Share 发现与 QR 路径未实现（P-F02-1/3 未关闭）：不写未固化的发现字节"
+    "Quick Share 发现与 QR 路径未实现（P-F02-1/3 未关闭）：不写未固化的发现字节",
+    "AirPlay 镜像无 decoder/无窗口：能路由到 sink，但不能显示（能力广告保持为空）"
   ],
   "manual_tests": [
     "真机投屏矩阵（iPhone/iPad → 本机：发现/连接/视频/音频/旋转/重连/10-30-60 分钟）——需 S1/S2",
@@ -578,6 +633,7 @@
     "Tauri demo 壳 GUI 交互验证（窗口/渲染/点击）——headless CLI 覆盖不到",
     "native 视频窗口 sink：只能在桌面会话内验证（不以屏幕录制假装 raw output）",
     "本机广播的 mDNS/TXT 字节与真实接收端对照（AirPlay features 位值固化需要真机抓包）",
-    "与 stock Android 完成一次 Quick Share 握手并比对 4 位确认码（裁决 F-12/F-15 两处规范/实现冲突）"
+    "与 stock Android 完成一次 Quick Share 握手并比对 4 位确认码（裁决 F-12/F-15 两处规范/实现冲突）",
+    "AirPlay 真机镜像（iPhone/iPad → 本机）与 30 分钟墙钟长跑（drift/丢帧/RSS 趋势）——需 S1/S2"
   ]
 }

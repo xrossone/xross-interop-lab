@@ -10,3 +10,5 @@ publish.workspace = true
 # （密钥获取经 keying seam，生产实现缺席 = 能力缺席）。
 [dependencies]
 interop-contract = { path = "../../crates/interop-contract" }
+interop-ipc = { path = "../../crates/interop-ipc" }
+interop-media = { path = "../../crates/interop-media" }

@@ -23,8 +23,24 @@ pub struct DemoReport {
     pub sink: SinkReport,
     pub media_plane: MediaPlaneReport,
     pub quickshare: QuickShareReport,
+    pub mirror: MirrorReport,
     pub blocked: Vec<String>,
     pub manual_tests: Vec<String>,
+}
+
+// ---------- AirPlay 镜像路径（T33）----------
+
+#[derive(Debug, Clone, Serialize)]
+pub struct MirrorReport {
+    pub evidence_level: &'static str,
+    pub wire: &'static str,
+    #[serde(serialize_with = "serialize_pairs")]
+    pub steps: Vec<(String, String)>,
+    pub video: serde_json::Value,
+    pub audio: serde_json::Value,
+    pub drift: serde_json::Value,
+    pub capability: serde_json::Value,
+    pub blocked: Vec<String>,
 }
 
 // ---------- Quick Share / UKEY2（T19/T20）----------

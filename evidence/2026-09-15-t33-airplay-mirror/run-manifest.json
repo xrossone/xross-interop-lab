@@ -1,0 +1,78 @@
+{
+ "schema_version": 1,
+ "run_id": "2026-09-15-t33-airplay-mirror",
+ "task": "T33 · AirPlay legacy 镜像接收路径（媒体面，headless 部分）",
+ "kind": "manual",
+ "evidence_level": "build-verified",
+ "is_test_evidence": true,
+ "synthetic": false,
+ "base_commit": "b13426f（T21 文档收尾）",
+ "case_ids": [
+  "T33-01",
+  "T33-02",
+  "T33-03",
+  "T33-04"
+ ],
+ "result": "pass",
+ "commands": [
+  {
+   "seq": 1,
+   "purpose": "red：mirror/audio/timing 模块不存在",
+   "command": "cargo test --manifest-path impl/Cargo.toml -p proto-airplay",
+   "exit_code": 101,
+   "result": "fail：could not compile（unresolved import proto_airplay::{audio,mirror,timing}）"
+  },
+  {
+   "seq": 2,
+   "purpose": "green：T33 验收套件 + 单测（此时暴露真实接口缺口，见 seq 3）",
+   "command": "cargo test --manifest-path impl/Cargo.toml -p proto-airplay",
+   "exit_code": 101,
+   "result": "fail（**真实缺口**）：t33_01 旋转配置被拒 —— interop-media 的 sink 侧 FormatTracker 用 discontinuity=false 复判 format 变化，导致协议层已校验通过的旋转在 sink 里再被拒"
+  },
+  {
+   "seq": 3,
+   "purpose": "修复接口缺口：sink 收到 on_config 即视为被要求重置解码器（discontinuity 的判定归协议层）",
+   "command": "cargo test --manifest-path impl/Cargo.toml -p proto-airplay -p interop-media",
+   "exit_code": 0,
+   "result": "pass：proto-airplay 20 tests、interop-media 9 tests（T29 既有断言不回归）"
+  },
+  {
+   "seq": 4,
+   "purpose": "全 workspace 回归 + 静态检查 + lab 检查",
+   "command": "cargo test --manifest-path impl/Cargo.toml --workspace; cargo clippy --manifest-path impl/Cargo.toml --workspace --all-targets; python3 -m unittest discover -s tools",
+   "exit_code": 0,
+   "result": "pass：141 tests 全绿（126 → 141）；clippy 0 warnings；lab 39 tests OK"
+  },
+  {
+   "seq": 5,
+   "purpose": "demo 输出（新增 mirror 段：格式往返/背压恢复/重采样/漂移/能力广告）",
+   "command": "cargo run -p interop-demo -- run --json; cargo run -p interop-demo -- mirror",
+   "exit_code": 0,
+   "result": "pass：ok=true；mirror 段 forwarded=279 dropped=33 format_changes=3 recoveries=1、音频 200 块全部显式重采样、漂移 max=2ms、广告能力为空"
+  }
+ ],
+ "acceptance_mapping": {
+  "T33-01": "横屏(1920x1080,fid=1)→竖屏(1080x1920,fid=2,discontinuity)→横屏(fid=3) 各 3 帧：frames_forwarded=9、format_changes=3、最终尺寸=1920x1080；负向：fid 变化缺 discontinuity → invalid-frame；未配置就送帧 → invalid-frame（无越界写入）；20000x12000 → resource-limit（分配前）；payload > XMD1 上限 → resource-limit",
+  "T33-02": "30 分钟合成时间轴（54,000 视频帧 @30fps + 90,000 音频块 @20ms，16kHz 源→48kHz 设备）：视频 0 丢弃、format_changes=1；音频 90,000 块全部显式重采样、samples_out=86,400,000；漂移采样 90,000 条、max ≤2ms（注入 0/1ms 抖动）；**内存趋势**：缓冲高水位 ≤ 预算 256KiB 且后半程不增长（peak 中点半程 == 全程）、重采样缓冲 ≤ 一个块的 2 倍",
+  "T33-03": "20 次 accept→配对→SETUP→5 帧→TEARDOWN→disconnect：20 个互不相同的 clock generation、keying 被调用 20 次（每次会话新密钥，不跨会话复用）；每轮结束 active_sessions/reserved_ports/tracked_sessions 全为 0（资源无持续增长）",
+  "T33-04": "ImplementationInventory::current() 广告集合为空；人为广告 HEVC → assert_advertised_matches_implementation 失败（unsupported-feature）；MirrorTrack::configure(Hevc) → unsupported-feature；音频轨道收到 encoded 帧（ALAC）→ unsupported-feature"
+ },
+ "extra_coverage": {
+  "backpressure": "队列超预算进入关键帧恢复态（丢弃非关键帧、恢复计数 +1），关键帧到达时清空待处理并恢复（demo：budget_drops=1、recoveries=1、关键帧后立即恢复）",
+  "clock_generation": "GenerationClock 按代隔离：generation 从 1 起、0 被拒；漂移为观测值（max/mean），无 PTS 不采样（不伪造时间）",
+  "interface_gap_fixed": "interop-media/src/sinks.rs：sink 不再用 discontinuity=false 复判 format 变化（该判定属协议层），否则协议层通过后仍会被 sink 拒绝；T29 既有断言全部保持"
+ },
+ "artifacts": [
+  { "path": "impl/crates/proto-airplay/src/mirror.rs" },
+  { "path": "impl/crates/proto-airplay/src/audio.rs" },
+  { "path": "impl/crates/proto-airplay/src/timing.rs" },
+  { "path": "impl/crates/proto-airplay/tests/airplay_mirror.rs" },
+  { "path": "impl/crates/proto-airplay/src/keying.rs", "note": "新增 StreamKeys::from_bytes（合规 provider 需要能构造密钥材料）" },
+  { "path": "impl/crates/interop-media/src/sinks.rs", "note": "修正 sink 侧 format 变化判定（真实接口缺口）" },
+  { "path": "impl/apps/interop-demo/src/mirror.rs", "note": "demo 新增 mirror 段" },
+  { "path": "evidence/2026-09-15-t5-demo-cli/demo-report.txt", "note": "含 mirror 段的一次真实运行输出" }
+ ],
+ "credentials_redacted": true,
+ "license_route_approved": false,
+ "notes": "**证据等级 build-verified**（媒体路径在本机可证）。**明确不是** device-verified，也**不是**「能看到画面」：本 task 不含 decoder，encoded AU/PCM 只被路由到 null sink 统计；能力广告因此保持为空。30 分钟长跑是**合成时间轴**（非墙钟），内存结论以缓冲高水位为代理指标，RSS 趋势与真机镜像在待用户手动清单。"
+}

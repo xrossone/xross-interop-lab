@@ -31,7 +31,7 @@
    "purpose": "green：demo 验收套件",
    "command": "cargo test --manifest-path impl/Cargo.toml -p interop-demo",
    "exit_code": 0,
-   "result": "pass：8 tests（D-01..D-08；含真实二进制子进程执行 CARGO_BIN_EXE_xinterop-demo）；T21 落地后 qshare 段新增 transport（SecureMessage 往返/篡改拒绝、payload 落盘 hash 对照、外部 payloadID 拒绝）"
+   "result": "pass：9 tests（D-01..D-09；T33 后新增 D-09 mirror 段；含真实二进制子进程执行 CARGO_BIN_EXE_xinterop-demo）；T21 落地后 qshare 段新增 transport（SecureMessage 往返/篡改拒绝、payload 落盘 hash 对照、外部 payloadID 拒绝）"
   },
   {
    "seq": 3,
@@ -56,6 +56,7 @@
   "D-05": "数据面：XMD1 头 36 字节、往返 equal=true、consumed=全长；4 条负向（截断头/未知 kind/未知 critical flag/声明 17MiB）全部按规定错误码拒绝，其中超限为 resource-limit（分配前）",
   "D-06": "未知子命令退出码 2；人类可读输出含 xinterop-demo/SETUP/503/vendor-gated/待固化 等关键结论",
   "D-07": "blocked 与待用户手动测试清单随 run 输出给出，两条清单均非空且含真机项（含 Quick Share 抓包/真机握手项）",
+  "D-09": "AirPlay 镜像路径段：三次配置（横/竖/横）format_changes=3、279 帧转发、超预算 1 次丢帧后关键帧恢复、音频 200 块全部显式重采样（samples_out=384000）、漂移 max≤3ms、能力广告为空且 HEVC 被拒",
   "D-08＋transport": "qshare 段还验证 T21 传输链：SecureMessage 往返与篡改拒绝、payload 3×16KiB 分块经解密后落盘且 sha256 与源内容一致、published_count=1、外来 payload id 被拒",
   "D-08": "Quick Share/UKEY2 段：4 字节大端长度前缀、cipher=P256_SHA512(100)、key_schedule=HKDF-SHA256、两实例握手 established 且 auth/next/pin 全一致（auth 32 字节）、3 种切分结果一致、9 条负向全按规定错误码、payload gate 未确认=confirmation-required → 错误码=PairingFailed → 确认后 open"
  },

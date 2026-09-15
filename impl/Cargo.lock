@@ -413,6 +413,8 @@ name = "proto-airplay"
 version = "0.1.0"
 dependencies = [
  "interop-contract",
+ "interop-ipc",
+ "interop-media",
 ]
 
 [[package]]

@@ -233,7 +233,11 @@ impl MediaSink for NullSink {
         format_id: u32,
         dims: Option<Dimensions>,
     ) -> Result<(), Error> {
-        let event = self.tracker.observe_config(format_id, false)?;
+        // sink 收到 `on_config` 即表示"调用方要求重启该格式的解码/输出"：
+        // 「变化必须带 discontinuity」的校验属于协议层（只有它看得见 sender 的 config 帧语义，
+        // 例如 `proto-airplay::mirror::MirrorTrack`）；sink 侧不重复判它，否则协议层校验通过
+        // 之后仍会在 sink 里被拒（2026-09-15 T33 发现的接口缺口）。
+        let event = self.tracker.observe_config(format_id, true)?;
         if matches!(event, crate::stream::FormatEvent::Initialized | crate::stream::FormatEvent::Reset)
         {
             self.stats.format_changes += 1;
@@ -308,7 +312,11 @@ impl MediaSink for FileSink {
         format_id: u32,
         dims: Option<Dimensions>,
     ) -> Result<(), Error> {
-        let event = self.tracker.observe_config(format_id, false)?;
+        // sink 收到 `on_config` 即表示"调用方要求重启该格式的解码/输出"：
+        // 「变化必须带 discontinuity」的校验属于协议层（只有它看得见 sender 的 config 帧语义，
+        // 例如 `proto-airplay::mirror::MirrorTrack`）；sink 侧不重复判它，否则协议层校验通过
+        // 之后仍会在 sink 里被拒（2026-09-15 T33 发现的接口缺口）。
+        let event = self.tracker.observe_config(format_id, true)?;
         if matches!(event, crate::stream::FormatEvent::Initialized | crate::stream::FormatEvent::Reset)
         {
             self.stats.format_changes += 1;
